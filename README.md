@@ -1,8 +1,8 @@
-Wappsto Device
+Wappsto IoT
 ===============================================================================
 
-[![Build Status](https://travis-ci.com/Wappsto/wappsto-python.svg?branch=master)](https://travis-ci.com/Wappsto/wappsto-python)
-[![Coverage Status](https://coveralls.io/repos/github/Wappsto/wappsto-python/badge.svg?branch=master)](https://coveralls.io/github/Wappsto/wappsto-python?branch=master)
+[![Build Status](https://travis-ci.com/Wappsto/python-wappsto-iot.svg?branch=master)](https://travis-ci.com/Wappsto/python-wappsto-iot)
+[![Coverage Status](https://coveralls.io/repos/github/Wappsto/python-wappsto-iot/badge.svg?branch=master)](https://coveralls.io/github/Wappsto/python-wappsto-iot?branch=master)
 
 The wappsto module provide a simple python interface to [wappsto.com](https://wappsto.com/) for easy Prototyping.
 
