@@ -14,6 +14,7 @@ from WappstoIoT.Service.Template import ServiceClass
 
 from WappstoIoT.schema.base_schema import Device as DeviceSchema
 from WappstoIoT.schema.base_schema import BaseMeta
+from WappstoIoT.schema.iot_schema import WappstoMethod
 # from WappstoIoT.schema.iot_schema import WappstoObjectType
 from WappstoIoT.schema.base_schema import PermissionType
 
@@ -157,9 +158,16 @@ class Device:
         This could result in the same device are created again, or if the
         device was not found, it will just be removed.
         """
-        pass
+        def _cb(obj, method):
+            if method in WappstoMethod.DELETE:
+                callback(self)
 
-    def onRefresh(  # TODO: Change me!
+        self.connection.subscribe_device_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
+
+    def onRefresh(
         self,
         callback: Callable[['Device'], None],
     ) -> None:
@@ -171,7 +179,14 @@ class Device:
         Callback:
             ValueObj: This object that have had a refresh request for.
         """
-        pass
+        def _cb(obj, method):
+            if method in WappstoMethod.GET:
+                callback(self)
+
+        self.connection.subscribe_device_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     def onChange(
         self,

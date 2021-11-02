@@ -25,6 +25,7 @@ from WappstoIoT.Modules.Device import Device
 # from WappstoIoT.Modules.Template import _UnitsInfo
 
 from WappstoIoT.schema import base_schema as WSchema
+from WappstoIoT.schema.iot_schema import WappstoMethod
 
 # from WappstoIoT.utils import exceptions
 from WappstoIoT.utils.certificateread import CertificateRead
@@ -35,7 +36,7 @@ from WappstoIoT.utils.certificateread import CertificateRead
 # #############################################################################
 
 from WappstoIoT.utils import observer 
-from WappstoIoT.Connection import Template as connection
+from WappstoIoT.connections import protocol as connection
 from WappstoIoT.Service import Template as service
 
 
@@ -159,8 +160,8 @@ class Network(object):
         self.end_point: ParseResult = cer.endpoint
         self.connection: ServiceClass
 
-        self._config_folder = configFolder
-        self.__config_file = configFolder / "configs.json"
+        # self._config_folder = configFolder
+        # self.__config_file = configFolder / "configs.json"
         # self._configs = self._load_config()
 
         self.__uuid = cer.network
@@ -244,7 +245,9 @@ class Network(object):
     def __update_self(self, updatedElements: WSchema.Network):
         # TODO(MBK): Check if new devices was added! & Check diff.
         # NOTE: If there was a diff, post local one.
-        self.element.copy(update=updatedElements.dict())
+        self.element.copy(update=updatedElements.dict(exclude_none=True))
+        # for device in self.element.device:
+        #     device
 
     def _certificate_check(self, path) -> Dict[str, Path]:
         """
@@ -361,13 +364,19 @@ class Network(object):
         """
         Configure a callback for when a change to the Network have occurred.
 
-        # UNSURE(MBK): Name & Event, is the Same! o.0
+        # UNSURE(MBK): How should it get the data back?
 
         # def Networkcallback(name: str, event: NetworkChangeType, /) -> None:
         #     pass
         """
-        # PUT
-        pass
+        def _cb(obj, method):
+            if method == WappstoMethod.PUT:
+                callback(...)
+
+        self.connection.subscribe_network_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     def onRequest(
         self,
@@ -381,8 +390,14 @@ class Network(object):
         # def Networkcallback(name: str, event: NetworkRequestType, /) -> None:
         #     pass
         """
-        # GET/DELETE
-        pass
+        def _cb(obj, method):
+            if method in [WappstoMethod.DELETE, WappstoMethod.GET]:
+                callback(...)
+
+        self.connection.subscribe_network_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     def onRefresh(
         self,
@@ -395,7 +410,14 @@ class Network(object):
         ...
         # It can not! there is no '{"status":"update"}' that can be set.
         """
-        pass
+        def _cb(obj, method):
+            if method == WappstoMethod.GET:
+                callback()
+
+        self.connection.subscribe_network_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     def onDelete(
         self,
@@ -409,7 +431,14 @@ class Network(object):
         unclaimed. Which mean that all the devices & value have to be
         recreated, and/or the program have to close.
         """
-        pass
+        def _cb(obj, method):
+            if method == WappstoMethod.DELETE:
+                callback()
+
+        self.connection.subscribe_network_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     # -------------------------------------------------------------------------
     #   Network methods

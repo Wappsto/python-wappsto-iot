@@ -11,7 +11,7 @@ from typing import Union
 import requests
 
 from WappstoIoT.utils import Timestamp
-from WappstoIoT.Schema.WappstoBasicAPI import WappstoElements
+from WappstoIoT.schema.base_schema import WappstoObject
 
 
 log = logging.getLogger(__name__)
@@ -28,13 +28,14 @@ ForcedTrace = False
 
 
 def generateId() -> str:
+    """Generate a Trace ID."""
     return "WappstoIoT_" + "".join(random.choices(
         string.ascii_letters + string.digits,
         k=10
     ))
 
 
-def parentId(wappsto_element: WappstoElements) -> Union[str, None]:
+def parentId(wappsto_element: WappstoObject) -> Union[str, None]:
     """
     Check if a trace package should be send, if so it returns the parent ID.
     """

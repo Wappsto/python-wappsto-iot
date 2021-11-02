@@ -271,7 +271,15 @@ class Value:
             ValueObj: The Object that have had a change to it.
             ChangeType: Name of what have change in the object.
         """
-        pass
+        def _cb(obj, method):
+            if method in WappstoMethod.PUT:
+                callback(...)
+
+        # UNSURE (MBK): on all state & value?
+        self.connection.subscribe_value_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     def onReport(
         self,
@@ -286,7 +294,14 @@ class Value:
             Value: the Object that have had a Report for.
             Union[str, int, float]: The Value of the Report change.
         """
-        pass
+        def _cb(obj, method):
+            if method == WappstoMethod.PUT:
+                callback(self, obj.data)
+
+        self.connection.subscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            callback=_cb
+        )
 
     def onRequest(
         self,
@@ -303,7 +318,15 @@ class Value:
             str: Name of what to do something with.
             any: The Data.
         """
-        pass
+        def _cb(obj, method):
+            if method in [WappstoMethod.DELETE, WappstoMethod.GET]:
+                callback(...)
+
+        # UNSURE (MBK): on all state & value?
+        self.connection.subscribe_value_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     def onControl(
         self,
@@ -346,8 +369,9 @@ class Value:
 
         def _cb(obj, method):
             if method == WappstoMethod.GET:
-                callback(self, obj.value)
+                callback(self)
 
+        # UNSURE (MBK): on all state & value?
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=_cb
@@ -358,7 +382,14 @@ class Value:
         callback: Callable[['Value'], None],
     ) -> None:
         """For when a 'DELETE' request have been called on this element."""
-        pass
+        def _cb(obj, method):
+            if method == WappstoMethod.DELETE:
+                callback(self)
+
+        self.connection.subscribe_value_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     # -------------------------------------------------------------------------
     #   Value methods
