@@ -1,6 +1,5 @@
 #directories
-test/saved_instances/
-test_logs/
+config/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

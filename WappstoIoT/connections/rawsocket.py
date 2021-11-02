@@ -1,41 +1,36 @@
 import logging
 import socket
-import ssl
+import threading
 import time
-# import threading
-
-
-from pathlib import Path
 
 from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import Union
 
-from WappstoDevice.Connection.Template import ConnectionClass
+from WappstoIoT.connections.protocol import Status
 
 
-class TlsSocker(ConnectionClass):
+class RawSocket:
     def __init__(
         self,
         address: str,
         port: int,
-        ca: Path,  # ca.crt
-        crt: Path,  # client.crt
-        key: Path  # client.key
+        observer: Optional[Callable[[str, str], None]] = None
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
+
+        self.observer_name = "CONNECTION"
+        self.observer = observer if observer else lambda st, nd: None
+        self.observer.post(self.observer_name, Status.DISCONNETCED)
+
+        self.send_ready = threading.Lock()
 
         self.address = address
         self.port = port
         self.socket_timeout = 30_000
         self.RECEIVE_SIZE = 2048
-
-        self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        self.ssl_context.verify_mode = ssl.CERT_REQUIRED
-        self.ssl_context.load_cert_chain(crt, key)
-        self.ssl_context.load_verify_locations(ca)
 
         self._socket_setup()
 
@@ -50,12 +45,13 @@ class TlsSocker(ConnectionClass):
         After 5 idle minutes, start sending keepalives every 1 minutes.
         Drop connection after 2 failed keepalives
         """
-        self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.raw_socket.setsockopt(
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(
             socket.SOL_SOCKET,
             socket.SO_KEEPALIVE,
             1
         )
+        self.socket.settimeout(2)
         if (
             hasattr(socket, "TCP_KEEPIDLE")
             and hasattr(socket, "TCP_KEEPINTVL")
@@ -64,22 +60,22 @@ class TlsSocker(ConnectionClass):
             self.log.debug(
                 "Setting TCP_KEEPIDLE, TCP_KEEPINTVL & TCP_KEEPCNT."
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.SOL_TCP,
                 socket.TCP_KEEPIDLE,
                 5 * 60
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_KEEPIDLE,
                 5 * 60
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_KEEPINTVL,
                 60
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_KEEPCNT,
                 2
@@ -89,27 +85,11 @@ class TlsSocker(ConnectionClass):
             self.log.debug(
                 f"Setting TCP_USER_TIMEOUT to {self.socket_timeout}ms."
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_USER_TIMEOUT,
                 self.socket_timeout
             )
-        self.wraped_socket = self._ssl_wrap()
-
-    def _ssl_wrap(self):
-        """
-        Wrap socket.
-
-        Wraps the socket using the SSL protocol as configured in the SSL
-        context, with hostname verification enabled.
-
-        Returns:
-            An SSL wrapped socket.
-        """
-        return self.ssl_context.wrap_socket(
-            self.raw_socket,
-            server_hostname=self.address
-        )
 
     def send(
         self,
@@ -131,7 +111,7 @@ class TlsSocker(ConnectionClass):
             data = data.encode('utf-8')
 
         try:
-            self.wraped_socket.sendall(data)
+            self.socket.sendall(data)
         except ConnectionError:
             msg = "Get an ConnectionError, while trying to send"
             self.log.exception(msg)
@@ -143,6 +123,7 @@ class TlsSocker(ConnectionClass):
             # Reconnect?
             return False
         else:
+            self.log.debug(f"Raw Data Send: {data}")
             return True
 
     def receive(self, parser: Callable[[bytes], Any]) -> Any:
@@ -162,20 +143,25 @@ class TlsSocker(ConnectionClass):
 
         """
         data = []
-        while self.wraped_socket:
-            data_chunk = self.wraped_socket.recv(self.RECEIVE_SIZE)
+        while True:
+            try:
+                data_chunk = self.socket.recv(self.RECEIVE_SIZE)
+            except socket.timeout:
+                continue
             data.append(data_chunk)
-            if not data_chunk:
-                # UNSURE(MBK): Should there be called a parser function here?
-                #         that is passed in, to check if the data is ok?
-                try:
-                    parsed_data = parser(b"".join(data))
-                except ValueError:  # parentClass for JSONDecodeError.
-                    pass
-                except TypeError:  # parentClass for pydantic.ValidationError
-                    pass
-                else:
-                    return parsed_data
+            # if data_chunk == b'':
+            #     raise RuntimeError("socket connection broken")
+            # UNSURE(MBK): Should there be called a parser function here?
+            #         that is passed in, to check if the data is ok?
+            try:
+                parsed_data = parser(b"".join(data))
+            except ValueError:  # parentClass for JSONDecodeError.
+                pass
+            except TypeError:  # parentClass for pydantic.ValidationError
+                pass
+            else:
+                self.log.debug(f"Raw Data Received: {data}")
+                return parsed_data
 
     def connect(self) -> bool:
         """
@@ -190,12 +176,16 @@ class TlsSocker(ConnectionClass):
 
         try:
             self.log.info("Trying to Connect.")
-            # self.wraped_socket.settimeout(10)  # Why?
-            self.wraped_socket.connect((self.address, self.port))
-            # self.wraped_socket.settimeout(None)  # Why?
+            self.observer.post(self.observer_name, Status.CONNECTING)
+            # self.socket.settimeout(10)  # Why?
+            self.socket.connect((self.address, self.port))
+            # self.socket.settimeout(None)  # Why?
             self.log.info(
-                f"Connected on interface: {self.wraped_socket.getsockname()[0]}"
+                f"Connected on interface: {self.socket.getsockname()[0]}"
             )
+            self.observer.post(self.observer_name, Status.CONNECTED)
+            # if self.sockt_thread is None:
+            #     self._start()
             return True
 
         except Exception as e:
@@ -238,10 +228,9 @@ class TlsSocker(ConnectionClass):
         Closes the socket object connection.
         """
         self.log.info("Closing connection...")
-
-        if self.wraped_socket:
-            self.wraped_socket.close()
-            self.wraped_socket = None
-        if self.raw_socket:
-            self.raw_socket.close()
-            self.raw_socket = None
+        self.observer.post(self.observer_name, Status.DISCONNECTING)
+        if self.socket:
+            self.socket.close()
+            self.socket = None
+        self.observer.post(self.observer_name, Status.DISCONNETCED)
+        self.log.info("Connection closed!")

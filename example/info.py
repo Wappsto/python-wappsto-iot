@@ -15,7 +15,8 @@ def main():
     )
 
     WappstoIoT.onStatusChange(
-        callback=lambda LayerEnum, newStatus: print(f"New status: {newStatus=}")
+        StatusID=WappstoIoT.StatusID.CONNECTION,
+        callback=lambda StatusID, newStatus: print(f"New status: {newStatus=}")
     )
     WappstoIoT.onDelete(
         callback=lambda obj: print("Network received a: Delete")

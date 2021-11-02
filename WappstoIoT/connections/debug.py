@@ -1,13 +1,34 @@
+import enum
+import logging
+
+from typing import Union
 from typing import Any
 from typing import Callable
-from typing import Union
 from typing import Optional
 
-from abc import ABC, abstractmethod
+
+class Status(str, enum.Enum):
+    CONNECTING = "Connecting"
+    CONNECTED = "Connected"
+    DISCONNECTING = "Disconnecting"
+    DISCONNETCED = "Disconnected"
 
 
-class ConnectionClass(ABC):
-    @abstractmethod
+class Debug:
+    """For debuging purposes."""
+    def __init__(
+        self,
+        address: str,
+        port: int,
+        observer: Callable[[str, str], None]
+    ):
+        self.log = logging.getLogger(__name__)
+        self.log.addHandler(logging.NullHandler())
+
+        self.observer_name = "CONNECTION"
+        self.observer = observer if observer else lambda st, nd: None
+        self.observer(self.observer_name, Status.DISCONNETCED)
+
     def send(
         self,
         data: Union[str, bytes]
@@ -22,7 +43,6 @@ class ConnectionClass(ABC):
             False.
         """
 
-    @abstractmethod
     def receive(
         self,
         parser: Callable[[bytes], Any]
@@ -44,7 +64,6 @@ class ConnectionClass(ABC):
         """
         pass
 
-    @abstractmethod
     def connect(self) -> bool:
         """
         Connect to the server.
@@ -55,9 +74,11 @@ class ConnectionClass(ABC):
             'True' if the connection was successful else
             'False'
         """
-        pass
+        self.observer(self.observer_name, Status.CONNECTING)
 
-    @abstractmethod
+        self.observer(self.observer_name, Status.CONNECTED)
+        return True
+
     def reconnect(
         self,
         retry_limit: Optional[int] = None
@@ -76,9 +97,13 @@ class ConnectionClass(ABC):
             'True' if the connection was successful else
             'False'
         """
-        pass
+        self.log.info("Reconnection...")
+        return True
 
-    @abstractmethod
     def disconnect(self) -> None:
         """Disconnect from the server."""
-        pass
+
+    def close(self) -> None:
+        self.log.info("Closing connection...")
+        self.observer(self.observer_name, Status.DISCONNECTING)
+        self.observer(self.observer_name, Status.DISCONNETCED)

@@ -1,12 +1,18 @@
-import logging
 import datetime
+import logging
+import random
+import string
 
 from enum import Enum
+
 from typing import Optional
+from typing import Union
 
 import requests
 
-from utils import Timestamp
+from WappstoIoT.utils import Timestamp
+from WappstoIoT.Schema.WappstoBasicAPI import WappstoElements
+
 
 log = logging.getLogger(__name__)
 log.addHandler(logging.NullHandler())
@@ -18,9 +24,26 @@ class TraceStatus(str, Enum):
     FAIL = "fail"        # If Send Failed.
 
 
+ForcedTrace = False
+
+
+def generateId() -> str:
+    return "WappstoIoT_" + "".join(random.choices(
+        string.ascii_letters + string.digits,
+        k=10
+    ))
+
+
+def parentId(wappsto_element: WappstoElements) -> Union[str, None]:
+    """
+    Check if a trace package should be send, if so it returns the parent ID.
+    """
+    return wappsto_element.meta.trace
+
+
 def send(
     trace_id: str,
-    parent: str,
+    parent_id: str,
     name: str,
     status: TraceStatus,
     timestamp: Optional[datetime.datetime] = None
@@ -45,7 +68,7 @@ def send(
     Args:
         trace_id: A generated ID, that should be added to
                   the Wappsto json meta trace filed.
-        parent: The trace-value from the Wappsto json meta field.
+        parent_id: The trace-value from the Wappsto json meta field.
         name: A descriptive name.
         status: Status for the traced package.
         timestamp: the timestamp in the ISO format.
@@ -57,17 +80,18 @@ def send(
     """
     params = {
         "id": trace_id,
-        "parent": parent,
+        "parent": parent_id,
         "name": name,
         "status": status,
         "timestamp": timestamp if timestamp else Timestamp.timestamp()
     }
 
+    log.info(f"Trace id: {trace_id}")
+
     r_data = requests.post(
         url='https://tracer.iot.seluxit.com/trace',
         params=params
     )
-    log.info(f"Trace data: {params}")
     log.debug(f"Trace reply: {r_data.text}")
 
     if r_data.status_code >= 300:

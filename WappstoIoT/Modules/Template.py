@@ -4,28 +4,34 @@ from abc import abstractmethod
 from typing import Any
 from typing import Dict
 from typing import Callable
-from typing import Union
+# from typing import Union
 from typing import List
-from typing import TypeVar
+# from typing import TypeVar
 from typing import Optional
 
 from enum import Enum
 
 from pydantic import BaseModel
 from pydantic import UUID4
-from pydantic import HttpUrl
+# from pydantic import HttpUrl
 
 from WappstoIoT.Service.Template import ServiceClass
 
-from WappstoIoT.Schema.RestSchema import PermissionType
-from WappstoIoT.Schema.RestSchema import WappstoElements
+from WappstoIoT.schema.base_schema import PermissionType
+from WappstoIoT.schema.base_schema import WappstoObject
 
-from WappstoIoT.Schema.IoTSchema import WappstoObjectType
+# from WappstoIoT.schema.iot_schema import WappstoObjectType
 
 
 # #############################################################################
 #                             Value Settings Schema
 # #############################################################################
+
+class IoTEvent(str, Enum):
+    CREATE = "create"  # POST
+    CHANGE = "change"  # PUT
+    REQUEST = "request"  # GET
+    DELETE = "delete"  # DELETE
 
 
 class ValueBaseType(str, Enum):
@@ -166,30 +172,33 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
 # #############################################################################
 
 
-class _UnitsInfo(BaseModel):
-    self_type: WappstoObjectType
-    parent: Optional[UUID4] = None
-    children: List[UUID4]
-    children_id_mapping: Dict[int, UUID4]
-    children_name_mapping: Dict[str, UUID4]  # Really needed?
+# class _UnitsInfo(BaseModel):
+#     self_type: WappstoObjectType
+#     parent: Optional[UUID4] = None
+#     name: Optional[str] = None
+#     self_id: int
+#     children: List[UUID4]
+#     children_id_mapping: Dict[int, UUID4]
+#     children_name_mapping: Dict[str, UUID4]
 
 
-class _Config(BaseModel):
-    network_uuid: UUID4
-    network_name: str  # Really needed?
-    port: int
-    end_point: HttpUrl
-    connectSync: Optional[bool]
-    storeQueue: Optional[bool]
-    mixMaxEnforce: Optional[str]
-    stepEnforce: Optional[str]
-    deltaHandling: Optional[str]
-    period_handling: Optional[str]
+# class _Config(BaseModel):
+#     network_uuid: UUID4
+#     # network_name: str  # Really needed?
+#     port: int
+#     end_point: HttpUrl
+#     # connectSync: Optional[bool]
+#     # storeQueue: Optional[bool]
+#     # mixMaxEnforce: Optional[str]
+#     # stepEnforce: Optional[str]
+#     # deltaHandling: Optional[str]
+#     # period_handling: Optional[str]
 
 
-class _ConfigFile(BaseModel):
-    configs: _Config
-    units: Dict[UUID4, _UnitsInfo]
+# class _ConfigFile(BaseModel):
+#     configs: _Config
+#     # NOTE: the str, should be UUID4, but can't do to pydantic error!
+#     units: Dict[str, _UnitsInfo]
 
 
 def dictDiff(olddict: Dict[Any, Any], newdict: Dict[Any, Any]):
@@ -203,7 +212,7 @@ def dictDiff(olddict: Dict[Any, Any], newdict: Dict[Any, Any]):
 
 class WappstoUnit(ABC):
 
-    schema: WappstoElements
+    schema: WappstoObject
 
     @property
     @abstractmethod
@@ -239,9 +248,9 @@ class WappstoUnit(ABC):
     def connection(self) -> ServiceClass:
         pass
 
-    @abstractmethod
-    def _get_json(self) -> List[_UnitsInfo]:
-        pass
+    # @abstractmethod
+    # def _get_json(self) -> List[_UnitsInfo]:
+    #     pass
 
     @abstractmethod
     def delete(self):

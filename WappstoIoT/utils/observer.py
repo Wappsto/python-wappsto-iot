@@ -18,7 +18,7 @@ default_subscriber = [
 subscriber: Dict[str, List[Callable[[str, Any], None]]] = {}
 
 
-def subscribe(event_name: str, fn: Callable[[str, Any], None]) -> None:
+def subscribe(event_name: str, callback: Callable[[str, Any], None]) -> None:
     """
     Subscribe to the event with given event name.
 
@@ -28,12 +28,12 @@ def subscribe(event_name: str, fn: Callable[[str, Any], None]) -> None:
 
     Args:
         event_name: The Unique name for the wanted event.
-        fn: The function that need triggeret on the given event.
+        callback: The function that need triggeret on the given event.
             The function will be called with the 'event_name', and 'data', 
             that the event generate.
     """
-    obs_log.debug(f"New Subscriber: {event_name=}, {fn=}")
-    subscriber.setdefault(event_name, default_subscriber).append(fn)
+    obs_log.debug(f"New Subscriber: {event_name=}, {callback=}")
+    subscriber.setdefault(event_name, default_subscriber).append(callback)
 
 
 def post(event_name: str, data: Any) -> None:
@@ -49,7 +49,7 @@ def post(event_name: str, data: Any) -> None:
         fn(event_name, data)
 
 
-def unsubscribe(event_name: str, fn: Callable[[str, Any], None]) -> bool:
+def unsubscribe(event_name: str, callback: Callable[[str, Any], None]) -> bool:
     """
     Unsubscribe from given event name.
 
@@ -58,7 +58,7 @@ def unsubscribe(event_name: str, fn: Callable[[str, Any], None]) -> bool:
 
     Args:
         event_name: The Unique name for the wanted event.
-        fn: The function that need triggeret on the given event.
+        callback: The function that need triggeret on the given event.
             The function will be called with the 'event_name', and 'data', 
             that the event generate.
 
@@ -66,11 +66,11 @@ def unsubscribe(event_name: str, fn: Callable[[str, Any], None]) -> bool:
         True, is the function was removed from the subcriber list.
         False, if it could not be, as in could not find it.
     """
-    obs_log.debug(f"Unsubscribing: {event_name=}, {fn=}")
+    obs_log.debug(f"Unsubscribing: {event_name=}, {callback=}")
 
     try:
-        # NOTE: Faster then testing if fn is in the list, when it is (60%+).
-        subscriber.get(event_name, []).remove(fn)
+        # NOTE: Faster then testing if callback is in the list, when it is (60%+).
+        subscriber.get(event_name, []).remove(callback)
     except ValueError:
         return False
     else:

@@ -16,11 +16,20 @@ from typing import Union
 from pydantic import BaseModel
 from pydantic import conint
 from pydantic import constr
+from pydantic import Extra
 from pydantic import Field
 from pydantic import UUID4
 
 
-class InclusionStatus(Enum, str):
+class WappstoMethods(str, Enum):
+    """The methods that the Wappsto are using."""
+    DELETE = "DELETE"
+    PUT = "PUT"
+    POST = "POST"
+    GET = "GET"
+
+
+class InclusionStatus(str, Enum):
     STATUS_DEVICE_INCLUDING = 'STATUS_DEVICE_INCLUDING'
     STATUS_DEVICE_INCLUSION_SUCCESS = 'STATUS_DEVICE_INCLUSION_SUCCESS'
     STATUS_DEVICE_INCLUSION_FAILURE = 'STATUS_DEVICE_INCLUSION_FAILURE'
@@ -31,7 +40,7 @@ class InclusionStatus(Enum, str):
     INCLUDED = 'INCLUDED'
 
 
-class FirmwareStatus(Enum, str):
+class FirmwareStatus(str, Enum):
     UP_TO_DATE = 'UP_TO_DATE'
     UPDATE_AVAILABLE = 'UPDATE_AVAILABLE'
     UPLOADING = 'UPLOADING'
@@ -42,81 +51,82 @@ class FirmwareStatus(Enum, str):
     FLASHING_FAILURE = 'FLASHING_FAILURE'
 
 
-class Command(Enum, str):
-    idle = 'idle'
-    firmware_upload = 'firmware_upload'
-    firmware_flash = 'firmware_flash'
-    firmware_cancel = 'firmware_cancel'
-    include = 'include'
-    exclude = 'exclude'
-    connection_check = 'connection_check'
+class Command(str, Enum):
+    IDLE = 'idle'
+    FIRMWARE_UPLOAD = 'firmware_upload'
+    FIRMWARE_FLASH = 'firmware_flash'
+    FIRMWARE_CANCEL = 'firmware_cancel'
+    INCLUDE = 'include'
+    EXCLUDE = 'exclude'
+    CONNECTION_CHECK = 'connection_check'
 
 
-class OwnerEnum(Enum, str):
-    unassigned = 'unassigned'
+class OwnerEnum(str, Enum):
+    UNASSIGNED = 'unassigned'
 
 
-class Deletion(Enum, str):
-    pending = 'pending'
-    failed = 'failed'
+class Deletion(str, Enum):
+    PENDING = 'pending'
+    FAILED = 'failed'
 
 
 class WappstoVersion(str, Enum):
-    v2_0 = "2.0"
-    v2_1 = "2.1"
+    V2_0 = "2.0"
+    V2_1 = "2.1"
 
 
-class Permission(Enum, str):
-    read = 'r'
-    write = 'w'
-    readwrite = 'rw'
-    writeread = 'wr'
-    none = 'none'
+class PermissionType(str, Enum):
+    """All possible Value Permission Types."""
+    READ = 'r'
+    WRITE = 'w'
+    READWRITE = 'rw'
+    WRITEREAD = 'wr'
+    NONE = 'none'
 
 
-class EventStatus(Enum, str):
-    ok = 'ok'
-    update = 'update'
-    pending = 'pending'
+class EventStatus(str, Enum):
+    OK = 'ok'
+    UPDATE = 'update'
+    PENDING = 'pending'
 
 
-class StateType(Enum, str):
-    report = 'Report'
-    control = 'Control'
+class StateType(str, Enum):
+    REPORT = 'Report'
+    CONTROL = 'Control'
 
 
-class StateStatus(Enum, str):
-    send = 'Send'
-    pending = 'Pending'
-    failed = 'Failed'
+class StateStatus(str, Enum):
+    SEND = 'Send'
+    PENDING = 'Pending'
+    FAILED = 'Failed'
 
 
-class Level(Enum, str):
-    important = 'important'
-    error = 'error'
-    warning = 'warning'
-    info = 'info'
-    debug = 'debug'
+class Level(str, Enum):
+    IMPORTANT = 'important'
+    ERROR = 'error'
+    WARNING = 'warning'
+    INFO = 'info'
+    DEBUG = 'debug'
 
 
-class StatusType(Enum, str):
-    public_key = 'public key'
-    memory_information = 'memory information'
-    device_description = 'device description'
-    value_description = 'value description'
-    value = 'value'
-    partner_information = 'partner information'
-    action = 'action'
-    calculation = 'calculation'
-    timer = 'timer'
-    calendar = 'calendar'
-    statemachine = 'statemachine'
-    firmware_update = 'firmware update'
-    configuration = 'configuration'
-    exi = 'exi'
-    system = 'system'
-    application = 'application'
-    gateway = 'gateway'
+class StatusType(str, Enum):
+    PUBLIC_KEY = 'public key'
+    MEMORY_INFORMATION = 'memory information'
+    DEVICE_DESCRIPTION = 'device description'
+    VALUE_DESCRIPTION = 'value description'
+    VALUE = 'value'
+    PARTNER_INFORMATION = 'partner information'
+    ACTION = 'action'
+    CALCULATION = 'calculation'
+    TIMER = 'timer'
+    CALENDAR = 'calendar'
+    STATEMACHINE = 'statemachine'
+    FIRMWARE_UPDATE = 'firmware update'
+    CONFIGURATION = 'configuration'
+    EXI = 'exi'
+    SYSTEM = 'system'
+    APPLICATION = 'application'
+    GATEWAY = 'gateway'
 
 
 class WappstoMetaType(str, Enum):
@@ -130,10 +140,15 @@ class WappstoMetaType(str, Enum):
     'Device's only contains 'value's, and
     'Value's only contains 'State's.
     """
-    network = "network"
-    device = "device"
-    value = "value"
-    state = "state"
+    NETWORK = "network"
+    DEVICE = "device"
+    VALUE = "value"
+    STATE = "state"
+
+
+class Connection(BaseModel):
+    timestamp: Optional[datetime] = None
+    online: Optional[bool] = None
 
 
 class WarningItem(BaseModel):
@@ -173,7 +188,7 @@ class BaseMeta(BaseModel):  # Base Meta
 
     oem: Optional[Optional[str]] = None
     accept_manufacturer_as_owner: Optional[Optional[bool]] = None
-    redirect: Optional[
+    redirect: Optional[  # type: ignore
         constr(regex=r'^[0-9a-zA-Z_-]+$', min_length=1, max_length=200)
     ] = None
     
@@ -187,13 +202,13 @@ class BaseMeta(BaseModel):  # Base Meta
 
 class StatusMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
-        status = "status"
+        STATUS = "status"
     type: Optional[WappstoMetaType] = None
 
 
 class ValueMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
-        value = "value"
+        VALUE = "value"
     type: Optional[WappstoMetaType] = None
 
     historical: Optional[bool] = None 
@@ -201,7 +216,7 @@ class ValueMeta(BaseMeta):
 
 class StateMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
-        state = "state"
+        STATE = "state"
     type: Optional[WappstoMetaType] = None
 
     historical: Optional[bool] = None 
@@ -209,7 +224,7 @@ class StateMeta(BaseMeta):
 
 class DeviceMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
-        device = "device"
+        DEVICE = "device"
     type: Optional[WappstoMetaType] = None
 
     geo: Optional[Geo] = None
@@ -218,7 +233,7 @@ class DeviceMeta(BaseMeta):
 
 class NetworkMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
-        network = "network"
+        NETWORK = "network"
     type: Optional[WappstoMetaType] = None
 
     geo: Optional[Geo] = None
@@ -235,7 +250,7 @@ class Status(BaseModel):
     timestamp: datetime
     data: Optional[str] = None
     level: Level
-    type: StatusType
+    type: Optional[StatusType]
     meta: Optional[StatusMeta] = Field(None, title='meta-2.0:create')
 
 
@@ -243,7 +258,88 @@ class Info(BaseModel):
     enabled: Optional[bool] = None
 
 
-class DeviceItem(BaseModel):
+class State(BaseModel):
+    data: str
+    type: Optional[StateType]
+
+    meta: Optional[StateMeta] = Field(None, title='meta-2.0:create')
+    status: Optional[StateStatus] = None
+    status_payment: Optional[str] = None
+    timestamp: Optional[datetime] = None
+
+    class Config:
+        extra = Extra.forbid
+
+
+class BaseValue(BaseModel):
+    name: Optional[str] = None
+    type: Optional[str] = None
+
+    description: Optional[str] = None
+    period: Optional[str] = None
+    delta: Optional[str] = None
+    permission: Optional[PermissionType] = None
+    status: Optional[EventStatus] = None
+    meta: Optional[ValueMeta] = Field(None, title='meta-2.0:create')
+    state: Optional[List[Union[State, UUID4]]] = None
+    info: Optional[Info] = None
+
+
+class Number(BaseModel):
+    min: float
+    max: float
+    step: float
+    mapping: Optional[Dict[str, Any]] = None
+    meaningful_zero: Optional[bool] = None
+    ordered_mapping: Optional[bool] = None
+    si_conversion: Optional[str] = None
+    unit: Optional[str] = None
+
+
+class String(BaseModel):
+    max: Optional[conint(ge=1, multiple_of=1)] = None  # type: ignore
+    encoding: Optional[str] = None
+
+
+class Blob(BaseModel):
+    max: Optional[conint(ge=1, multiple_of=1)] = None  # type: ignore
+    encoding: Optional[str] = None
+
+
+class Xml(BaseModel):
+    xsd: Optional[str] = None
+    namespace: Optional[str] = None
+
+
+class StringValue(BaseValue):
+    string: Optional[String] = None
+
+    class Config:
+        extra = Extra.forbid
+
+
+class NumberValue(BaseValue):
+    number: Optional[Number] = None
+
+    class Config:
+        extra = Extra.forbid
+
+
+class BlobValue(BaseValue):
+    blob: Optional[Blob] = None
+
+    class Config:
+        extra = Extra.forbid
+
+
+class XmlValue(BaseValue):
+    xml: Optional[Xml] = None
+
+    class Config:
+        extra = Extra.forbid
+
+
+class Device(BaseModel):
     name: Optional[str] = None
     control_timeout: Optional[int] = None
     control_when_offline: Optional[bool] = None
@@ -275,81 +371,27 @@ class DeviceItem(BaseModel):
     ] = None
     info: Optional[Info] = None
 
-
-class Connection(BaseModel):
-    timestamp: Optional[datetime] = None
-    online: Optional[bool] = None
+    class Config:
+        extra = Extra.forbid
 
 
 class Network(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
-    device: Optional[List[Union[DeviceItem, UUID4]]] = None
+    device: Optional[List[Union[Device, UUID4]]] = None
     meta: Optional[NetworkMeta] = Field(None, title='meta-2.0:create')
     info: Optional[Info] = None
 
-
-class StateItem(BaseModel):
-    data: str
-    type: StateType
-
-    meta: Optional[StateMeta] = Field(None, title='meta-2.0:create')
-    status: Optional[StateStatus] = None
-    status_payment: Optional[str] = None
-    timestamp: Optional[datetime] = None
+    class Config:
+        extra = Extra.forbid
 
 
-class Number(BaseModel):
-    min: float
-    max: float
-    step: float
-    mapping: Optional[Dict[str, Any]] = None
-    meaningful_zero: Optional[bool] = None
-    ordered_mapping: Optional[bool] = None
-    si_conversion: Optional[str] = None
-    unit: Optional[str] = None
-
-
-class String(BaseModel):
-    max: Optional[conint(ge=1, multiple_of=1)] = None
-    encoding: Optional[str] = None
-
-
-class Blob(BaseModel):
-    max: Optional[conint(ge=1, multiple_of=1)] = None
-    encoding: Optional[str] = None
-
-
-class Xml(BaseModel):
-    xsd: Optional[str] = None
-    namespace: Optional[str] = None
-
-
-class BaseValue(BaseModel):
-    name: Optional[str] = None
-    type: Optional[str] = None
-
-    description: Optional[str] = None
-    period: Optional[str] = None
-    delta: Optional[str] = None
-    permission: Optional[Permission] = None
-    status: Optional[EventStatus] = None
-    meta: Optional[ValueMeta] = Field(None, title='meta-2.0:create')
-    state: Optional[List[Union[StateItem, UUID4]]] = None
-    info: Optional[Info] = None
-
-
-class StringValue(BaseValue):
-    string: Optional[String] = None
-
-
-class NumberValue(BaseValue):
-    number: Optional[Number] = None
-
-
-class BlobValue(BaseValue):
-    blob: Optional[Blob] = None
-
-
-class XmlValue(BaseValue):
-    xml: Optional[Xml] = None
+WappstoObject = Union[
+    Network,
+    Device,
+    StringValue,
+    NumberValue,
+    BlobValue,
+    XmlValue,
+    State
+]

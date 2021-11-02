@@ -23,9 +23,9 @@ def requestGPS(timeout: int = 60) -> Tuple[Union[int, None], Union[int, None]]:
 
 def sleep(sec: int) -> None:
     if sec < 3600:  # Hour.
-        os.system(f"rtcwake -m mem -s {sec}")
+        os.system(f"rtcwake -m mem -s {sec}")  # Suspend
     else:
-        os.system(f"rtcwake -m disk -s {sec}")
+        os.system(f"rtcwake -m disk -s {sec}")  # Hibernation
 
 
 def main():
