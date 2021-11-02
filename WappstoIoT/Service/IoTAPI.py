@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -78,11 +79,13 @@ class IoTAPI(ServiceClass):
             WappstoMethod.POST: JsonReply,
             WappstoMethod.PUT: JsonReply,
             WappstoMethod.DELETE: JsonReply,
+            # WappstoMethod.PATCH: JsonReply,
+            # WappstoMethod.HEAD: JsonReply,
         }
 
         self.subscribers: Dict[
             UUID,
-            Callable[[WappstoObject, WappstoMethod], None]
+            List[Callable[[WappstoObject, WappstoMethod], None]]
         ] = {}
 
         method_cb = {
@@ -140,7 +143,8 @@ class IoTAPI(ServiceClass):
             reply = self.jsonrpc.parser(data)
             self.log.debug(f"Package: {data.get('id', data)}; Reply: {reply}")
             if reply:
-                self.connection.send(reply.json(exclude_none=True))
+                with self.connection.send_ready:
+                    self.connection.send(reply.json(exclude_none=True))
         self.log.debug("Receive Handler Stopped!")
 
     def _send_logic(self, data, _id=None):
@@ -185,7 +189,8 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
-        self.connection.send(rpc_data.json(exclude_none=True))
+        with self.connection.send_ready:
+            self.connection.send(rpc_data.json(exclude_none=True))
         self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
         if _cb_event.wait(timeout=self.timeout):
             if _err_data:
@@ -206,6 +211,8 @@ class IoTAPI(ServiceClass):
             data=data,
             url=url
         )
+
+        self.log.debug(f"Sending for: {url}")
 
         _cb_event = threading.Event()
         _err_data: ErrorModel = None
@@ -230,7 +237,8 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
-        self.connection.send(rpc_data.json(exclude_none=True))
+        with self.connection.send_ready:
+            self.connection.send(rpc_data.json(exclude_none=True))
         self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
         if _cb_event.wait(timeout=self.timeout):
             if _data:
@@ -249,9 +257,9 @@ class IoTAPI(ServiceClass):
     def _cb_handler(self, data: JsonData, method: WappstoMethod):
         object_uuid = UUID(data.url.split("/")[-1])
         self.log.debug(f"{object_uuid=}")
-        cb = self.subscribers.get(object_uuid, self._default_cb)
-        self.workers.submit(cb, data.data, method)
-        self.log.debug("Submitted to Worker!")
+        for cb in self.subscribers.get(object_uuid, [self._default_cb]):
+            self.workers.submit(cb, data.data, method)
+            self.log.debug(f"Submitted to Worker: {cb}")
 
     def _default_cb(self, data: WappstoObject, method: WappstoMethod):
         self.log.warning(
@@ -288,10 +296,14 @@ class IoTAPI(ServiceClass):
 
     # def _patch(self, data: JsonData) -> Union[Success, JsonData]:
     #     # Add data and callback-function to a threadpool.
+    #     self.log.debug("_patch: Called!")
+    #     self._cb_handler(data=data, method=WappstoMethod.PATCH)
     #     return Success()
 
     # def _head(self, data: JsonData) -> Union[Success, JsonData]:
     #     # Add data and callback-function to a threadpool.
+    #     self.log.debug("_head: Called!")
+    #     self._cb_handler(data=data, method=WappstoMethod.HEAD)
     #     return Success()
 
     # #########################################################################
@@ -303,7 +315,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Network, WappstoMethod], None]
     ):
-        self.subscribers[uuid] = callback
+        self.subscribers.setdefault(uuid, []).append(callback)
 
     def post_network(self, data: Network) -> bool:
         # url=f"/services/2.0/network",
@@ -346,7 +358,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
     ):
-        self.subscribers[uuid] = callback
+        self.subscribers.setdefault(uuid, []).append(callback)
 
     def post_device(self, network_uuid: UUID, data: Device) -> bool:
         # url=f"/services/2.0/{uuid}/device",
@@ -389,7 +401,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[ValueUnion, WappstoMethod], None]
     ):
-        self.subscribers[uuid] = callback
+        self.subscribers.setdefault(uuid, []).append(callback)
 
     def post_value(self, device_uuid: UUID, data: ValueUnion) -> bool:
         # url=f"/services/2.0/{uuid}/value",
@@ -432,7 +444,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[State, WappstoMethod], None]
     ):
-        self.subscribers[uuid] = callback
+        self.subscribers.setdefault(uuid, []).append(callback)
 
     def post_state(self, value_uuid: UUID, data: State) -> bool:
         # url=f"/services/2.0/{uuid}/state",
