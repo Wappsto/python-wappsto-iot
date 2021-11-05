@@ -35,7 +35,8 @@ from WappstoIoT.schema.iot_schema import WappstoMethod
 # from WappstoIoT.schema.iot_scgema import WappstoObjectType
 
 from WappstoIoT.utils.certificateread import CertificateRead
-from WappstoIoT.utils import observer 
+from WappstoIoT.utils import observer
+from WappstoIoT.utils import Trace
 from WappstoIoT.connections.sslsocket import TlsSocket
 
 
@@ -53,6 +54,7 @@ class IoTAPI(ServiceClass):
 
     def __init__(self, ca: Path, crt: Path, key: Path, worker_count=2):
         self.log = logging.getLogger(__name__)
+        self.log.addHandler(logging.NullHandler())
         self.ca = ca
         self.crt = crt
         self.key = key
@@ -140,6 +142,17 @@ class IoTAPI(ServiceClass):
         while not self.killed.is_set():
             data = self.connection.receive(parser=json.loads)
             self.log.debug(f"Package received: {data.get('id', data)}")
+
+            trace_p_id = Trace.parentId(data)
+            if trace_p_id:
+                self.log.debug(f"Trace Received: {trace_p_id}")
+                Trace.send(
+                    trace_id=Trace.generateId(),
+                    parent_id=trace_p_id,
+                    name="Wappsto IoT Receive Thread",
+                    state=Trace.TraceStatus.PENDING
+                )
+
             reply = self.jsonrpc.parser(data)
             self.log.debug(f"Package: {data.get('id', data)}; Reply: {reply}")
             if reply:
