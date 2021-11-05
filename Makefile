@@ -6,7 +6,7 @@ clean-pyc:
 	find . -name '*.pyc' -exec rm --force {} +
 	find . -name '*.pyo' -exec rm --force {} +
 	find . -name '*~'    -exec rm --force {} +
-	find . -name '__pycache__' -exec rm -rf{} +
+	find . -name '__pycache__' -exec rm -rf {} +
 
 clean-build:
 	rm --force --recursive build/

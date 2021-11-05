@@ -1,5 +1,6 @@
 import uuid
 import datetime
+import logging
 
 from enum import Enum
 
@@ -11,8 +12,9 @@ from typing import Union
 from pydantic import UUID4
 
 from WappstoIoT.Service.Template import ServiceClass
-# from WappstoIoT.Modules.Template import _UnitsInfo
+from WappstoIoT.Modules.Template import dict_diff
 from WappstoIoT.Modules.Template import ValueBaseType
+# from WappstoIoT.Modules.Template import valueSettings
 from WappstoIoT.schema import base_schema as WSchema
 from WappstoIoT.schema.base_schema import PermissionType
 from WappstoIoT.schema.iot_schema import WappstoMethod
@@ -78,8 +80,8 @@ class Value:
         value_uuid: Optional[UUID4] = None,  # Only used on loading.
         name: Optional[str] = None,
         permission: PermissionType = PermissionType.READWRITE,
-        min_range: Optional[Union[int, float]] = None,
-        max_range: Optional[Union[int, float]] = None,
+        min: Optional[Union[int, float]] = None,
+        max: Optional[Union[int, float]] = None,
         step: Optional[Union[int, float]] = None,
         encoding: Optional[str] = None,
         xsd: Optional[str] = None,
@@ -93,20 +95,24 @@ class Value:
         si_conversion: Optional[str] = None,
         unit: Optional[str] = None,
     ):
+        self.log = logging.getLogger(__name__)
+        self.log.addHandler(logging.NullHandler())
 
         self.schema = self.__value_type_2_Schema[type]
+        self.report_state: WSchema.State
+        self.control_state: WSchema.State
         self.parent = parent
         self.element: Union[
             WSchema.StringValue,
             WSchema.NumberValue,
             WSchema.BlobValue,
             WSchema.XmlValue
-        ]
+        ] = self.schema()
         self.__id: int = value_id
         self.__uuid: UUID4 = value_uuid if value_uuid else uuid.uuid4()
 
-        self.children_uuid_mapping: Dict[UUID4, Value] = {}
-        self.children_id_mapping: Dict[int, UUID4] = {}
+        # self.children_uuid_mapping: Dict[UUID4, Value] = {}
+        # self.children_id_mapping: Dict[int, UUID4] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
 
         self.connection: ServiceClass = parent.connection
@@ -115,9 +121,9 @@ class Value:
                 ValueType=type,
                 encoding=encoding,
                 mapping=mapping,
-                max_range=max_range,
+                max_range=max,
                 meaningful_zero=meaningful_zero,
-                min_range=min_range,
+                min_range=min,
                 namespace=namespace,
                 ordered_mapping=ordered_mapping,
                 si_conversion=si_conversion,
@@ -126,22 +132,34 @@ class Value:
                 xsd=xsd,
         )
 
+        self.element = self.schema(
+            name=name,
+            description=description,
+            period=period,
+            delta=delta,
+            permission=permission,
+            **subValue,
+            meta=WSchema.ValueMeta(
+                version=WSchema.WappstoVersion.V2_0,
+                type=WSchema.WappstoMetaType.VALUE,
+                id=self.uuid
+            )
+        )
+
         element = self.connection.get_value(self.uuid)
 
         if element:
             self.__update_self(element)
-        else:
-            self.element = self.schema(
-                name=name,
-                description=description,
-                period=period,
-                delta=delta,
-                permission=permission,
-                **subValue,
-                meta=WSchema.BaseMeta(
-                    id=self.uuid
+            # self.__print(element)
+            if self.element != element:
+                # TODO: Post diff only.
+                self.log.info("Data Models Differ. Sending Local.")
+                self.connection.post_value(
+                    device_uuid=self.parent.uuid,
+                    data=self.element
                 )
-            )
+            self.__update_state()
+        else:
             self.connection.post_value(
                 device_uuid=self.parent.uuid,
                 data=self.element
@@ -149,17 +167,39 @@ class Value:
 
         self._createStates(permission)
 
-        # TODO: create States.
+    def __print(self, element):
+        self.log.debug(
+            type(self.element)
+        )
+        self.log.debug(
+            self.element
+        )
+        self.log.debug(
+            type(element)
+        )
+        self.log.debug(
+            element
+        )
 
     @property
-    def data(self) -> Union[str, int, float]:
+    def data(self) -> Optional[Union[str, int, float]]:
         """
-        Returns the last value.
+        Returns the last data value.
 
-        The returned value will be the last Report value,
-        unless there isn't one, then it will be the Control value.
+        The returned value will be the last Report value.
+        unless there isn't one, then it will return None.
         """
-        pass
+        return self.report_state.data
+
+    @property
+    def target(self) -> Optional[Union[str, int, float]]:
+        """
+        Returns the last target value.
+
+        The returned value will be the last Control value,
+        unless there isn't one, then it will return None.
+        """
+        return self.control_state.data
 
     @property
     def name(self) -> str:
@@ -168,7 +208,7 @@ class Value:
 
     @property
     def uuid(self) -> UUID4:
-        """Returns the name of the value."""
+        """Returns the uuid of the value."""
         return self.__uuid
 
     @property
@@ -249,8 +289,36 @@ class Value:
     #     return unit_list
 
     def __update_self(self, element):
-        # NOTE: If Element Diff from self. Post the local diff.
-        pass
+        new_dict = element.copy(update=self.element.dict(exclude_none=True))
+        new_dict.meta = element.meta.copy(update=new_dict.meta)
+        if type(self.element) is type(element):
+            self.element = new_dict
+        else:
+            new_dict = new_dict.dict(exclude_none=True)
+            old_type = type(element)
+            if old_type is WSchema.StringValue:
+                new_dict.pop('string')
+            elif old_type is WSchema.NumberValue:
+                new_dict.pop('number')
+            elif old_type is WSchema.BlobValue:
+                new_dict.pop('blob')
+            elif old_type is WSchema.XmlValue:
+                new_dict.pop('xml')
+            self.log.debug(f"CC: {new_dict}")
+            self.element = self.schema(**new_dict)
+
+        # TODO: Check for the Difference Value-types & ensure that it is right.
+
+    def __update_state(self):
+        for state_uuid in self.element.state:
+            state_obj = self.connection.get_state(uuid=state_uuid)
+            if state_obj:
+                self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
+                self.children_name_mapping[state_obj.type.name] = state_uuid
+                if state_obj.type == WSchema.StateType.REPORT:
+                    self.report_state = state_obj
+                elif state_obj.type == WSchema.StateType.CONTROL:
+                    self.control_state = state_obj
 
     # -------------------------------------------------------------------------
     #   Value 'on-' methods
@@ -273,7 +341,8 @@ class Value:
         """
         def _cb(obj, method):
             if method in WappstoMethod.PUT:
-                callback(...)
+                for key in dict_diff(self.schema.dict(), obj.dict()).keys():
+                    callback(self, key)
 
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_value_event(
@@ -294,6 +363,8 @@ class Value:
             Value: the Object that have had a Report for.
             Union[str, int, float]: The Value of the Report change.
         """
+        raise NotImplementedError("Method: 'onReport' is not Implemented.")
+
         def _cb(obj, method):
             if method == WappstoMethod.PUT:
                 callback(self, obj.data)
@@ -416,15 +487,15 @@ class Value:
         """
 
         self.connection.delete_value(uuid=self.uuid)
-        self._delete()
+        # self._delete()
 
-    def _delete(self):
-        # TODO: REDO!
-        for c_uuid, c_obj in self.children_uuid_mapping.items():
-            c_obj._delete()
-            self.children_id_mapping.pop(c_obj.id)
-            self.children_name_mapping.pop(c_obj.name)
-        self.children_uuid_mapping.clear()
+    # def _delete(self):
+    #     # TODO: REDO!
+    #     for c_uuid, c_obj in self.children_uuid_mapping.items():
+    #         c_obj._delete()
+    #     self.children_id_mapping.clear()
+    #     self.children_name_mapping.clear()
+    #     self.children_uuid_mapping.clear()
 
     def report(
         self,
@@ -438,12 +509,21 @@ class Value:
         whether it is a GPIO pin, a analog temperature sensor or a
         device over a I2C bus.
         """
+        self.log.info(f"Sending Report for: {self.report_state.meta.id}")
+        data = WSchema.State(
+            data=value,
+            timestamp=timestamp if timestamp else Timestamp.timestamp()
+        )
+        if (
+            data.timestamp and self.report_state.timestamp and
+            data.timestamp > self.report_state.timestamp or
+            not self.report_state.timestamp
+        ):
+            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+
         self.connection.put_state(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
-            data=WSchema.State(
-                data=value,
-                timestamp=timestamp if timestamp else Timestamp.timestamp()
-            )
+            data=data
         )
 
     def control(
@@ -458,7 +538,25 @@ class Value:
         have changed, whether it is because of an on device user controller,
         or the target was outside a given range.
         """
-        pass
+        raise NotImplementedError("Method: 'control' is not Implemented.")
+
+        self.log.info(f"Sending Control for: {self.control_state.meta.id}")
+
+        data = WSchema.State(
+            data=value,
+            timestamp=timestamp if timestamp else Timestamp.timestamp()
+        )
+        if (
+            data.timestamp and self.report_state.timestamp and
+            data.timestamp > self.report_state.timestamp or
+            not self.report_state.timestamp
+        ):
+            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+
+        self.connection.put_state(
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
+            data=data
+        )
 
     # -------------------------------------------------------------------------
     #   Other methods
@@ -469,38 +567,50 @@ class Value:
             permission == PermissionType.READ or
             permission == PermissionType.READWRITE
         ):
-            self._CreateReport(uuid.uuid4())
+            self._CreateReport()
         if (
             permission == PermissionType.WRITE or
             permission == PermissionType.READWRITE
         ):
-            self._CreateControl(uuid.uuid4())
+            self._CreateControl()
 
-    def _CreateReport(self, state_uuid):
-        report_uuid = uuid.uuid4()
-        data = WSchema.State(
-            data=float("NaN"),
-            type=WSchema.StateType.REPORT,
-            meta=WSchema.BaseMeta(
-                id=report_uuid
+    def _CreateReport(self):
+        if not self.children_name_mapping.get(WSchema.StateType.REPORT.name):
+            self.children_name_mapping[WSchema.StateType.REPORT.name] = uuid.uuid4()
+
+            self.report_state = WSchema.State(
+                data=float("NaN"),
+                type=WSchema.StateType.REPORT,
+                meta=WSchema.BaseMeta(
+                    id=self.children_name_mapping.get(WSchema.StateType.REPORT.name)
+                )
             )
-        )
-        self.children_name_mapping[WSchema.StateType.REPORT.name] = report_uuid
 
-        self.connection.post_state(value_uuid=self.uuid, data=data)
+            self.connection.post_state(value_uuid=self.uuid, data=self.report_state)
 
-    def _CreateControl(self, state_uuid):
-        control_uuid = uuid.uuid4()
-        data = WSchema.State(
-            data=float("NaN"),
-            type=WSchema.StateType.CONTROL,
-            meta=WSchema.BaseMeta(
-                id=control_uuid
+    def _CreateControl(self):
+        if not self.children_name_mapping.get(WSchema.StateType.CONTROL.name):
+            self.children_name_mapping[WSchema.StateType.CONTROL.name] = uuid.uuid4()
+
+            self.control_state = WSchema.State(
+                data=float("NaN"),
+                type=WSchema.StateType.CONTROL,
+                meta=WSchema.BaseMeta(
+                    id=self.children_name_mapping[WSchema.StateType.CONTROL.name]
+                )
             )
-        )
-        self.children_name_mapping[WSchema.StateType.CONTROL.name] = control_uuid
+            self.connection.post_state(value_uuid=self.uuid, data=self.control_state)
 
-        self.connection.post_state(value_uuid=self.uuid, data=data)
+        def _cb(obj, method):
+            if method == WappstoMethod.PUT:
+                if obj.timestamp > self.report_state.timestamp:
+                    self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
+                    self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+
+        self.connection.subscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
+            callback=_cb
+        )
 
     def close(self):
         pass

@@ -1,13 +1,15 @@
 import __main__
 import netrc
+import logging
+import atexit
 
 from pathlib import Path
 
-from urllib.parse import ParseResult
+# from urllib.parse import ParseResult
 
 from enum import Enum
 
-from typing import Dict, Optional, Union, Callable, Literal
+from typing import Any, Dict, Optional, Union, Callable, Literal
 
 from pydantic import UUID4
 # from pydantic import parse_file_as
@@ -17,6 +19,7 @@ from WappstoIoT.Service.Template import ServiceClass
 # from WappstoIoT.Service.RestAPI import RestAPI
 from WappstoIoT.Service.IoTAPI import IoTAPI
 
+from WappstoIoT.Modules.Template import dict_diff
 from WappstoIoT.Modules.Device import Device
 # from WappstoIoT.Modules.Value import Value
 
@@ -137,6 +140,11 @@ class Network(object):
         maximum range. Meaning if it is above the maximum it is changed to
         the maximum, if it is below the minimum, it is set to the minimum value.
         """
+        self.log = logging.getLogger(__name__)
+        self.log.addHandler(logging.NullHandler())
+
+        self.closed = False
+
         kwargs = locals()
         self.__uuid: UUID4
         self.element: WSchema.Network = self.schema()
@@ -145,48 +153,61 @@ class Network(object):
         self.children_id_mapping: Dict[int, UUID4] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
 
+        self.cloud_id_mapping: Dict[int, UUID4] = {}
+
         if not isinstance(configFolder, Path):
             if configFolder == ".":
-                configFolder = Path(__main__.__file__)
+                configFolder = Path(__main__.__file__).absolute().parent
             else:
                 configFolder = Path(configFolder)
 
-        # crt = configFolder / "client.crt"
-        # ca = configFolder / "ca.crt"
-        # key = configFolder / "client.key"
-
-        cer = CertificateRead(crt=configFolder / "client.crt")
-
-        self.end_point: ParseResult = cer.endpoint
         self.connection: ServiceClass
-
-        # self._config_folder = configFolder
-        # self.__config_file = configFolder / "configs.json"
-        # self._configs = self._load_config()
-
-        self.__uuid = cer.network
-
-        # TODO(MBK): Save and setup all the input settings!
 
         if connection == ConnectionTypes.IOTAPI:
             self._setup_IoTAPI(configFolder)
+            cer = CertificateRead(crt=configFolder / "client.crt")
+            self.__uuid = cer.network
+
         elif connection == ConnectionTypes.RESTAPI:
-            self._setup_RestAPI(configFolder, self._configs.configs)  # FIXME:
+            # TODO: Find & load configs.
+            configs: Dict[Any, Any] = {}
+            self._setup_RestAPI(configFolder, configs)  # FIXME:
 
         subscribe_all_status()
+
+        self.element = self.schema(
+            name=name,
+            description=description,
+            meta=WSchema.NetworkMeta(
+                version=WSchema.WappstoVersion.V2_0,
+                type=WSchema.WappstoMetaType.NETWORK,
+                id=self.uuid
+            )
+        )
 
         element = self.connection.get_network(self.uuid)
         if element:
             self.__update_self(element)
-            # TODO: Post diff.
+            # self.log.debug(
+            #     type(self.element.meta)
+            # )
+            # self.log.debug(
+            #     self.element.meta
+            # )
+            # self.log.debug(
+            #     type(element.meta)
+            # )
+            # self.log.debug(
+            #     element.meta
+            # )
+            if self.element != element:
+                # TODO: Post diff only.
+                self.log.info("Data Models Differ. Sending Local.")
+                self.connection.post_network(self.element)
         else:
-            self.element = self.schema(
-                name=name, description=description,
-                meta=WSchema.BaseMeta(
-                    id=self.uuid
-                )
-            )
             self.connection.post_network(self.element)
+
+        atexit.register(self.close)
 
     def clean(self) -> None:
         """
@@ -216,14 +237,14 @@ class Network(object):
     def _setup_RestAPI(self, configFolder, configs):
         # TODO: Setup the Connection.
         token = configs.get("token")
-        login = netrc.netrc().authenticators(self.end_point)
+        login = netrc.netrc().authenticators(configs.end_point)
         if token:
             kwargs = {"token": token}
         elif login:
             kwargs = {"username": login[0], "password": login[1]}
         else:
             raise ValueError("No login was found.")
-        self.connection = RestAPI(**kwargs, url=self.end_point)
+        self.connection = RestAPI(**kwargs, url=configs.end_point)
 
     def _device_name_gen(self, device_id):
         return f"device_{device_id}"
@@ -242,12 +263,13 @@ class Network(object):
     #     # self.__init_devices(self.uuid, configs)
     #     pass
 
-    def __update_self(self, updatedElements: WSchema.Network):
+    def __update_self(self, element: WSchema.Network):
         # TODO(MBK): Check if new devices was added! & Check diff.
         # NOTE: If there was a diff, post local one.
-        self.element.copy(update=updatedElements.dict(exclude_none=True))
-        # for device in self.element.device:
-        #     device
+        self.element = element.copy(update=self.element.dict(exclude_none=True))
+        self.element.meta = element.meta.copy(update=self.element.meta)
+        for nr, device in enumerate(self.element.device):
+            self.cloud_id_mapping[nr] = device
 
     def _certificate_check(self, path) -> Dict[str, Path]:
         """
@@ -468,8 +490,8 @@ class Network(object):
         """Helper function for Delete, to only localy delete."""
         for c_uuid, c_obj in self.children_uuid_mapping.items():
             c_obj._delete()
-            self.children_id_mapping.pop(c_obj.id)
-            self.children_name_mapping.pop(c_obj.name)
+        self.children_id_mapping.clear()
+        self.children_name_mapping.clear()
         self.children_uuid_mapping.clear()
 
     # -------------------------------------------------------------------------
@@ -506,19 +528,19 @@ class Network(object):
         elif device_id in self.children_id_mapping:
             return self.children_uuid_mapping[self.children_id_mapping[device_id]]
 
-        # kwargs['device_uuid'] = self._configs.units[self.uuid].children_id_mapping.get(device_id)
+        kwargs['device_uuid'] = self.cloud_id_mapping.get(device_id)
         # if kwargs['device_uuid']:
         #     kwargs['name'] = self._configs.units[self.uuid].children_name_mapping.get(kwargs['device_uuid'])
 
         if not kwargs['name']:
             kwargs['name'] = self._device_name_gen(device_id)
-        elif name in self.children_name_mapping.keys():
+        elif kwargs['name'] in self.children_name_mapping.keys():
             # The Device have already been created.
-            return self.children_uuid_mapping[self.children_name_mapping[name]]
+            return self.children_uuid_mapping[self.children_name_mapping[kwargs['name']]]
 
-        temp = Device(parent=self, **kwargs)
-        self.__add_device(temp, device_id, kwargs['name'])
-        return temp
+        device_obj = Device(parent=self, **kwargs)
+        self.__add_device(device_obj, device_id, kwargs['name'])
+        return device_obj
 
     def __add_device(self, device: Device, id: int, name: str):
         """Helper function for Create, to only localy create it."""
@@ -538,6 +560,8 @@ class Network(object):
 
     def close(self):
         """."""
-        self.connection.close()
+        if not self.closed:
+            self.connection.close()
+            self.closed = True
         # Disconnect
         pass

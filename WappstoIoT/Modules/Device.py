@@ -1,4 +1,5 @@
 import uuid
+import logging
 
 from enum import Enum
 
@@ -12,8 +13,8 @@ from pydantic import UUID4
 
 from WappstoIoT.Service.Template import ServiceClass
 
-from WappstoIoT.schema.base_schema import Device as DeviceSchema
-from WappstoIoT.schema.base_schema import BaseMeta
+# from WappstoIoT.schema.base_schema import Device as DeviceSchema
+from WappstoIoT.schema import base_schema as WSchema
 from WappstoIoT.schema.iot_schema import WappstoMethod
 # from WappstoIoT.schema.iot_schema import WappstoObjectType
 from WappstoIoT.schema.base_schema import PermissionType
@@ -50,7 +51,7 @@ class ChangeType(str, Enum):
 
 class Device:
 
-    schema = DeviceSchema
+    schema = WSchema.Device
 
     def __init__(
         self,
@@ -67,14 +68,19 @@ class Device:
         # communication
     ):
 
+        self.log = logging.getLogger(__name__)
+        self.log.addHandler(logging.NullHandler())
+
         self.parent = parent
-        self.element: DeviceSchema
+        self.element: WSchema.Device
         self.__id: int = device_id
         self.__uuid: UUID4 = device_uuid if device_uuid else uuid.uuid4()
 
         self.children_uuid_mapping: Dict[UUID4, Value] = {}
         self.children_id_mapping: Dict[int, UUID4] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
+
+        self.cloud_id_mapping: Dict[int, UUID4] = {}
 
         self.connection: ServiceClass = parent.connection
 
@@ -85,15 +91,29 @@ class Device:
             version=version,
             serial=serial,
             description=description,
-            meta=BaseMeta(
+            meta=WSchema.DeviceMeta(
+                version=WSchema.WappstoVersion.V2_0,
+                type=WSchema.WappstoMetaType.DEVICE,
                 id=self.uuid
             )
         )
 
         element = self.connection.get_device(self.uuid)
-
         if element:
             self.__update_self(element)
+            # self.log.debug(
+            #     self.element
+            # )
+            # self.log.debug(
+            #     element
+            # )
+            if self.element != element:
+                # TODO: Post diff only.
+                self.log.info("Data Models Differ. Sending Local.")
+                self.connection.post_device(
+                    network_uuid=self.parent.uuid,
+                    data=self.element,
+                )
         else:
             self.connection.post_device(
                 network_uuid=self.parent.uuid,
@@ -133,9 +153,13 @@ class Device:
     #     ))
     #     return unit_list
 
-    def __update_self(self, element):
-        # NOTE: If Element Diff from self. Post the local diff.
-        pass
+    def __update_self(self, element: WSchema.Device):
+        # TODO(MBK): Check if new devices was added! & Check diff.
+        # NOTE: If there was a diff, post local one.
+        self.element = element.copy(update=self.element.dict(exclude_none=True))
+        self.element.meta = element.meta.copy(update=self.element.meta)
+        for nr, value in enumerate(self.element.value):
+            self.cloud_id_mapping[nr] = value
 
     def _device_name_gen(self, name, value_id):
         return f"{name}_{value_id}"
@@ -241,8 +265,8 @@ class Device:
     def _delete(self):
         for c_uuid, c_obj in self.children_uuid_mapping.items():
             c_obj._delete()
-            self.children_id_mapping.pop(c_obj.id)
-            self.children_name_mapping.pop(c_obj.name)
+        self.children_id_mapping.clear()
+        self.children_name_mapping.clear()
         self.children_uuid_mapping.clear()
 
     # -------------------------------------------------------------------------
@@ -254,9 +278,9 @@ class Device:
         name: Optional[str] = None,
         value_id: Optional[int] = None,
         value_type: ValueType = ValueType.DEFAULT,
-        permission: PermissionType = PermissionType.READWRITE,
-        min_range: Optional[Union[int, float]] = None,
-        max_range: Optional[Union[int, float]] = None,
+        permission: Optional[PermissionType] = None,  # PermissionType.READWRITE,
+        min: Optional[Union[int, float]] = None,
+        max: Optional[Union[int, float]] = None,
         step: Optional[Union[int, float]] = None,
         encoding: Optional[str] = None,
         xsd: Optional[str] = None,
@@ -288,7 +312,7 @@ class Device:
 
         if not value_id:
             if self.children_id_mapping:
-                value_id = max(self.children_id_mapping.keys()) + 1
+                value_id = self._name_gen()
             else:
                 value_id = 0
         # Should we use create re-get a value?
@@ -299,6 +323,8 @@ class Device:
         for key, value in thisSetting.dict().items():
             if key in kwargs and kwargs[key] is None:
                 kwargs[key] = value
+
+        kwargs['value_uuid'] = self.cloud_id_mapping.get(value_id)
 
         # kwargs['value_uuid'] = self.parent._configs.units[self.uuid].children_id_mapping.get(value_id)
         # if kwargs['value_uuid']:
@@ -316,6 +342,9 @@ class Device:
 
         self.__add_value(value_obj, value_id, kwargs['name'])
         return value_obj
+
+    def _name_gen(self) -> int:
+        return max(self.children_id_mapping.keys()) + 1
 
     def __add_value(self, value: Value, id: int, name: str):
         """Helper function for Create, to only localy create it."""

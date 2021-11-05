@@ -16,7 +16,7 @@ class RawSocket:
         self,
         address: str,
         port: int,
-        observer: Optional[Callable[[str, str], None]] = None
+        observer: Optional[Callable[[str, str], None]] = None  # FIXME: !
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
@@ -143,16 +143,15 @@ class RawSocket:
 
         """
         data = []
-        while True:
+        while self.socket:
             try:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
             except socket.timeout:
                 continue
             data.append(data_chunk)
-            # if data_chunk == b'':
-            #     raise RuntimeError("socket connection broken")
-            # UNSURE(MBK): Should there be called a parser function here?
-            #         that is passed in, to check if the data is ok?
+            if data_chunk == b'':
+                self.log.debug("Received a empty package!")
+                # self.reconnect()
             try:
                 parsed_data = parser(b"".join(data))
             except ValueError:  # parentClass for JSONDecodeError.

@@ -33,16 +33,15 @@ Python Wappsto IoT Threading Structure Ideas.
  1)
     The Protocol & Connection runs in one thread, to ensure that there can be
     prioritized the order of when & that to be send. (Look into 'select')
-    On receive of data, if there is registered a callback, it should be passed on
+
+ 2) On receive of data, if there is registered a callback, it should be passed on
     to a thread-pool, so it will not hold the process.
-    On delivery of data it should, from the user side, be added to a queue,
+
+ 3) On delivery of data it should, from the user side, be added to a queue,
     but still be waiting on the reply from the server, on that it have received
     the data. If it have not received the date it should raise a exception.
- 2)
-    The Protocol & Connection running as an asynchronous process.
 
-
- *) All callback creates a new thread to be executed in,
+ \*) All callback creates a new thread to be executed in (or Threadpool),
     unless the given callback are running. If it is, drop the given try.
 
 ---
@@ -157,13 +156,33 @@ OnRequest == POST, GET & DELETE  + Control
 ---
 
 
+**Updates behind the Screen:**
+
+---
+Control data should be the only value, that are updated & save by the Librery.
+
+
+**Trace:**
+
+---
+
+The Trace Should, if possible, be tracing through the program.
+Which means that, a given reply (if any) to a request, should be traced as a
+child of that request, even duo it is through the user code.
+
+A way of setting this up, will be to alway give a object to the callback, that
+is the object that have been changed, but also the object that should be used
+to send a reply, if any, back to the server. That Object should ba a "Shadow"
+object of the existen object, with the only change that, it enforces a trace,
+on whatever are send from it, that are a child from the request.
+
+
 NOTEs:
 ===============================================================================
  * Bulk send data.
  * Send Blob data with encoding.
  * Send data with old timestamp.
 
- * Send data with that is 'NA'.
  * Need to refresh the control value after a sleep.
 
 Future Ideas:
@@ -172,7 +191,7 @@ Future Ideas:
 
 Known Bugs {icon bug color=red}
 ===============================================================================
-
+* [ ] Wrong format for all datetime's.
 
 
 Unsure {icon question-circle color=blue}

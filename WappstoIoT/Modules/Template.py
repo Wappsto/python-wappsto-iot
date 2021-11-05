@@ -5,7 +5,7 @@ from typing import Any
 from typing import Dict
 from typing import Callable
 # from typing import Union
-from typing import List
+# from typing import List
 # from typing import TypeVar
 from typing import Optional
 
@@ -201,7 +201,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
 #     units: Dict[str, _UnitsInfo]
 
 
-def dictDiff(olddict: Dict[Any, Any], newdict: Dict[Any, Any]):
+def dict_diff(olddict: Dict[Any, Any], newdict: Dict[Any, Any]):
     """Find & return what have updated from old to new dictionary."""
     return dict(set(newdict.items() - set(olddict.items())))
 

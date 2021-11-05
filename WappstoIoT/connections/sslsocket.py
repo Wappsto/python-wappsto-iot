@@ -51,7 +51,6 @@ class TlsSocket(RawSocket):
 
         Closes the socket object connection.
         """
-        self.log.info("Closing connection...")
         super().close()
         if self.raw_socket:
             self.raw_socket.close()
