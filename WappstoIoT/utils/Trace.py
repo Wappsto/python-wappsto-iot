@@ -35,10 +35,12 @@ def generateId() -> str:
     ))
 
 
-def parentId(wappsto_element: WappstoObject) -> Union[str, None]:
+def parentId(wappsto_element: Union[WappstoObject, dict]) -> Union[str, None]:
     """
     Check if a trace package should be send, if so it returns the parent ID.
     """
+    if isinstance(wappsto_element, dict):
+        return wappsto_element.get('meta', {}).get('trace', None)
     return wappsto_element.meta.trace
 
 
