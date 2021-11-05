@@ -21,6 +21,18 @@ from pydantic import Field
 from pydantic import UUID4
 
 
+def timestamp(dt: datetime) -> str:
+    """
+    Return The default timestamp used for Wappsto.
+
+    The timestamp are always set to the UTC timezone.
+
+    Returns:
+        The UTC time string in ISO format.
+    """
+    return dt.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+
+
 class WappstoMethods(str, Enum):
     """The methods that the Wappsto are using."""
     DELETE = "DELETE"
@@ -150,6 +162,11 @@ class Connection(BaseModel):
     timestamp: Optional[datetime] = None
     online: Optional[bool] = None
 
+    class Config:
+        json_encoders = {
+            datetime: timestamp
+        }
+
 
 class WarningItem(BaseModel):
     message: Optional[Optional[str]] = None
@@ -198,6 +215,11 @@ class BaseMeta(BaseModel):  # Base Meta
 
     set: Optional[List[UUID4]] = None
     contract: Optional[List[UUID4]] = None
+
+    class Config:
+        json_encoders = {
+            datetime: timestamp
+        }
 
 
 class StatusMeta(BaseMeta):
@@ -253,6 +275,11 @@ class Status(BaseModel):
     type: Optional[StatusType]
     meta: Optional[StatusMeta] = Field(None, title='meta-2.0:create')
 
+    class Config:
+        json_encoders = {
+            datetime: timestamp
+        }
+
 
 class Info(BaseModel):
     enabled: Optional[bool] = None
@@ -269,6 +296,9 @@ class State(BaseModel):
 
     class Config:
         extra = Extra.forbid
+        json_encoders = {
+            datetime: timestamp,
+        }
 
 
 class BaseValue(BaseModel):
@@ -284,6 +314,9 @@ class BaseValue(BaseModel):
     state: Optional[List[Union[State, UUID4]]] = None
     info: Optional[Info] = None
 
+    class Config:
+        extra = Extra.forbid
+
 
 class Number(BaseModel):
     min: float
@@ -294,6 +327,9 @@ class Number(BaseModel):
     ordered_mapping: Optional[bool] = None
     si_conversion: Optional[str] = None
     unit: Optional[str] = None
+
+    class Config:
+        extra = Extra.forbid
 
 
 class String(BaseModel):
