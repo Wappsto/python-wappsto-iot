@@ -5,13 +5,17 @@ import uuid
 
 import requests
 
-from WappstoIoT.Modules.Template import _ConfigFile, _Config
+# from WappstoIoT.Modules.Template import _ConfigFile, _Config, _UnitsInfo
+# from WappstoIoT.schema.iot_schema import WappstoObjectType
 
 
 from rich import traceback
+from rich.console import Console
 
+console = Console()
 traceback.install(show_locals=True)
 
+debug = False
 
 wappstoEnv = [
     "dev",
@@ -25,38 +29,43 @@ wappstoPort = {
     "dev": 52005,
     "qa": 53005,
     "stagning": 54005,
-    "prod": 51005
+    "prod": 443
 }
 
 wappstoUrl = {
     "dev": "https://dev.wappsto.com",
     "qa": "https://qa.wappsto.com",
-    "stagning": "https://stagningwappsto.com",
+    "staging": "https://stagning.wappsto.com",
     "prod": "https://wappsto.com",
 }
 
 
 def _log_request_error(rq):
-    print("Sendt data    :")
-    print(" - URL         : {}".format(rq.request.url))
-    print(" - Headers     : {}".format(rq.request.headers))
-    print(" - Request Body: {}".format(
-        json.dumps(rq.request.body, indent=4, sort_keys=True))
-    )
-
-    print("")
-    print("")
-
-    print("Received data :")
-    print(" - URL         : {}".format(rq.url))
-    print(" - Headers     : {}".format(rq.headers))
-    print(" - Status code : {}".format(rq.status_code))
-    try:
-        print(" - Request Body: {}".format(
-            json.dumps(json.loads(rq.text), indent=4, sort_keys=True))
+    if debug:
+        console.print("Sendt data    :")
+        console.print(" - URL         : {}".format(rq.request.url))
+        console.print(" - Headers     : {}".format(rq.request.headers))
+        console.print(" - Request Body: {}".format(
+            json.dumps(rq.request.body, indent=4, sort_keys=True))
         )
-    except (AttributeError, json.JSONDecodeError):
-        print(" - Request Body: {}".format(rq.text))
+
+        console.print("")
+        console.print("")
+
+        console.print("Received data :")
+        console.print(" - URL         : {}".format(rq.url))
+        console.print(" - Headers     : {}".format(rq.headers))
+        console.print(" - Status code : {}".format(rq.status_code))
+        try:
+            console.print(" - Request Body: {}".format(
+                json.dumps(json.loads(rq.text), indent=4, sort_keys=True))
+            )
+        except (AttributeError, json.JSONDecodeError):
+
+            console.print(" - Request Body: {}".format(rq.text))
+    rjson = json.loads(rq.text)
+    console.print(f"[bold red]{rjson['message']}")
+    exit(-2)
 
 
 def start_session(base_url, username, password):
@@ -74,10 +83,11 @@ def start_session(base_url, username, password):
         data=json.dumps(session_json)
     )
 
+    rjson = json.loads(rdata.text)
+
     if not rdata.ok:
         _log_request_error(rdata)
-        raise
-    rjson = json.loads(rdata.text)
+
     return rjson["meta"]["id"]
 
 
@@ -104,8 +114,13 @@ def create_network(
     if reset_manufacturer:
         request["factory_reset"] = {"reset_manufacturer": True}
 
+    request['manufacturer_as_owner'] = manufacturer_as_owner
+
     url = f"{base_url}/services/2.1/creator"
-    header = {"Content-type": "application/json", "X-session": str(session)}
+    header = {
+        "Content-type": "application/json",
+        "X-session": str(session)
+    }
 
     rdata = requests.post(
         url=url,
@@ -113,26 +128,33 @@ def create_network(
         data=json.dumps(request)
     )
 
+    rjson = json.loads(rdata.text)
+
     if not rdata.ok:
         _log_request_error(rdata)
-        raise
-    return json.loads(rdata.text)
+    return rjson
 
 
 def get_network(session, base_url, network_uuid):
     f_url = f"{base_url}/services/2.1/creator?this_network.id={network_uuid}"
-    header = {"Content-type": "application/json", "X-session": str(session)}
+    header = {
+        "Content-type": "application/json",
+        "X-session": str(session)
+    }
 
     fdata = requests.get(
         url=f_url,
         headers=header,
     )
+
+    data = json.loads(fdata.text)
+
     if not fdata.ok:
         _log_request_error(fdata)
-        raise
-    data = json.loads(fdata.text)
+
     if len(data['id']) == 0:
-        raise
+        console.print(f"[bold red]{data['message']}")
+        exit(-3)
     creator_id = data['id'][0]
     url = f"{base_url}/services/2.1/creator/{creator_id}"
 
@@ -143,34 +165,28 @@ def get_network(session, base_url, network_uuid):
 
     if not rdata.ok:
         _log_request_error(rdata)
-        raise
 
     return json.loads(rdata.text)
 
 
-def create_IoT_config_file(location, creator, args):
+def create_certificaties_files(location, creator, args):
     creator["ca"], creator["certificate"], creator["private_key"]
-    configs = _ConfigFile(
-        configs=_Config(
-            network_uuid=creator['network']['id'],
-            network_name=args.name,
-            port=wappstoPort[args.env],
-            end_point=wappstoUrl[args.env],
-        ),
-        units={}
-    )
-
-    with open(location/"config.json", "w") as file:
-        file.write(configs.json())
-    with open(location/"ca.crt", "w") as file:
+    with open(location / "ca.crt", "w") as file:
         file.write(creator["ca"])
-    with open(location/"client.crt", "w") as file:
+    with open(location / "client.crt", "w") as file:
         file.write(creator["certificate"])
-    with open(location/"client.key", "w") as file:
+    with open(location / "client.key", "w") as file:
         file.write(creator["private_key"])
 
 
 if __name__ == "__main__":
+
+    """
+    Is this even needed anymore?
+
+    We can get the Network UUID & endpoint from the certificates.
+    """
+
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -178,7 +194,7 @@ if __name__ == "__main__":
         type=str,
         choices=wappstoEnv,
         default="prod",
-        help="Wappsto enviroment."
+        help="Wappsto environment."
     )
     parser.add_argument(
         "--token",
@@ -194,22 +210,23 @@ if __name__ == "__main__":
     parser.add_argument(
         "--recreate",
         type=uuid.UUID,
-        help="Recreate Config file, for given network UUID."
+        help="Recreate Config file, for given network UUID. (Overwrites existent)"
     )
     parser.add_argument(
-        "name",
-        type=str,
-        default="TheNetwork",
-        help="The Name of the newly created Wappsto Network."
+        "--debug",
+        action='store_true',
+        help="Make the operation more talkative",
     )
 
     args = parser.parse_args()
 
+    debug = args.debug if args.debug else False
+
     if not args.token:
         session = start_session(
             base_url=wappstoUrl[args.env],
-            username=input("Wappsto Username:"),
-            password=getpass.getpass(prompt="Wappsto Password:"),
+            username=console.input("Wappsto Username:"),
+            password=console.input(prompt="Wappsto Password:", password=True),
         )
     else:
         session = args.token
@@ -224,7 +241,7 @@ if __name__ == "__main__":
 
     args.path.mkdir(exist_ok=True)
 
-    create_IoT_config_file(args.path, creator, args)
+    create_certificaties_files(args.path, creator, args)
 
-    print(f"New network: {creator['network']['id']}")
-    print(f"Settings saved at: {args.path}")
+    console.print(f"[bold green]New network: {creator['network']['id']}")
+    console.print(f"Settings saved at: {args.path}")
