@@ -32,6 +32,9 @@ class RawSocket:
         self.socket_timeout = 30_000
         self.RECEIVE_SIZE = 2048
 
+        self.log.debug(f"Address: {self.address}")
+        self.log.debug(f"Port: {self.port}")
+
         self._socket_setup()
 
     def _socket_setup(self) -> None:
@@ -115,7 +118,7 @@ class RawSocket:
         except ConnectionError:
             msg = "Get an ConnectionError, while trying to send"
             self.log.exception(msg)
-            # Reconnect?
+            self.reconnect()
             return False
         except TimeoutError:
             msg = "Get an TimeoutError, while trying to send"
@@ -148,10 +151,12 @@ class RawSocket:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
             except socket.timeout:
                 continue
-            data.append(data_chunk)
+
             if data_chunk == b'':
-                self.log.debug("Received a empty package!")
-                # self.reconnect()
+                self.log.debug("Server Closed socket.")
+                self.reconnect()
+            data.append(data_chunk)
+
             try:
                 parsed_data = parser(b"".join(data))
             except ValueError:  # parentClass for JSONDecodeError.
@@ -218,7 +223,8 @@ class RawSocket:
 
     def disconnect(self) -> None:
         """Disconnect from the server."""
-        self.close()
+        if self.socket:
+            self.socket.close()
 
     def close(self) -> None:
         """
