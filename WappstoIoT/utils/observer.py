@@ -32,7 +32,7 @@ def subscribe(event_name: str, callback: Callable[[str, Any], None]) -> None:
             The function will be called with the 'event_name', and 'data', 
             that the event generate.
     """
-    obs_log.debug(f"New Subscriber: {event_name=}, {callback=}")
+    obs_log.debug(f"New Subscriber: {event_name}, {callback}")
     subscriber.setdefault(event_name, default_subscriber).append(callback)
 
 
@@ -44,7 +44,7 @@ def post(event_name: str, data: Any) -> None:
         event_name: An unique name for the given event.
         data: The given event subscriber might want.
     """
-    obs_log.debug(f"New event was posted: {event_name=}, {data=}")
+    obs_log.debug(f"New event was posted: {event_name}, {data}")
     for fn in subscriber.get(event_name, default_subscriber):
         fn(event_name, data)
 
@@ -66,7 +66,7 @@ def unsubscribe(event_name: str, callback: Callable[[str, Any], None]) -> bool:
         True, is the function was removed from the subcriber list.
         False, if it could not be, as in could not find it.
     """
-    obs_log.debug(f"Unsubscribing: {event_name=}, {callback=}")
+    obs_log.debug(f"Unsubscribing: {event_name}, {callback}")
 
     try:
         # NOTE: Faster then testing if callback is in the list, when it is (60%+).

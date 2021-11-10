@@ -284,7 +284,7 @@ class Network(object):
         for k, f in self.certi_path.items():
             r_paths[k] = path / f
             if not r_paths[k].exists():
-                raise FileNotFoundError(f"'{f}' was not found in at: {path=}")
+                raise FileNotFoundError(f"'{f}' was not found in at: {path}")
 
         return r_paths
 

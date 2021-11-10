@@ -7,20 +7,20 @@
 
 import time
 
-from WappstoIoT import Network
+import WappstoIoT
 
 
 def main():
-    Network.Config(
+    network = WappstoIoT.Config(
         name="echo",
         configFolder="echo"
     )
 
-    device = Network.createDevice("EchoDevice")
+    device = network.createDevice("EchoDevice")
 
     value = device.createValue(
         name="Moeller",
-        value_type=Network.ValueType.STRING
+        value_type=WappstoIoT.ValueType.STRING
     )
 
     value.onControl(
@@ -33,7 +33,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        Network.close()
+        network.close()
 
 
 if __name__ == "__main__":

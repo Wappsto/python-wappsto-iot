@@ -48,7 +48,7 @@ class IoTAPI(ServiceClass):
     wappstoPort = {
         "dev": 52005,
         "qa": 53005,
-        "stagning": 54005,
+        "staging": 54005,
         "prod": 443
     }
 
@@ -98,6 +98,7 @@ class IoTAPI(ServiceClass):
             WappstoMethod.DELETE: self._delete,
             # WappstoMethod.HEAD: self._head,
         }
+
         if not self.connection.connect():
             raise
         self.jsonrpc = SlxJsonRpc(
@@ -126,11 +127,12 @@ class IoTAPI(ServiceClass):
 
     def _url_gen(self, crt):
         cer = CertificateRead(crt=crt)
+        port = self.wappstoPort.get(cer.endpoint.split('.')[0], 443)
         if cer.endpoint.split('.')[0] in self.wappstoPort.keys():
             addr = cer.endpoint
         else:
             addr = f"collector.{cer.endpoint}"
-        port = self.wappstoPort.get(cer.endpoint.split('.')[0], 443)
+
         if re.search(r'^[A-Za-z0-9+.-]+://', addr):
             addr = addr.split("://", maxsplit=1)[-1]
         # if not re.search(r':[0-9]+', addr):
@@ -155,25 +157,33 @@ class IoTAPI(ServiceClass):
 
             reply = self.jsonrpc.parser(data)
             self.log.debug(f"Package: {data.get('id', data)}; Reply: {reply}")
-            if reply:
-                with self.connection.send_ready:
-                    self.connection.send(reply.json(exclude_none=True))
+            self._simple_send(reply)
+            # self._send_logic(reply)
         self.log.debug("Receive Handler Stopped!")
+
+    def _simple_send(self, data, _id=None):
+        if data:
+            with self.connection.send_ready:
+                self.connection.send(data.json(exclude_none=True))
 
     def _send_logic(self, data, _id=None):
         # NOTE (MBK): Something do not work here!
-        with self.connection.send_ready:
-            if not data and self.jsonrpc.bulk_size() > 0:
-                self.log.debug(f"Before batch: {data=}")
-                data = self.jsonrpc.get_batch_data()
-                if not data:
-                    return
-                self.log.debug(f"After batch: {data=}")
-                _id = "; ".join(x.get('id') for x in data)
-            self.log.debug(f"Package: {_id};")
+        if not data:
+            return
+        with self.connection.send_ready:  # NOTE: Waiting here, until ready!
             with self.jsonrpc.batch():
-                self.connection.send(data.json(exclude_none=True))
-            self.log.debug(f"{self.jsonrpc.bulk_size()=}")
+                if self.jsonrpc.bulk_size():
+                    self.log.debug(f"Bulk Size: {self.jsonrpc.bulk_size()}")
+                    self.log.debug(f"Before batch: {data}")
+                    data = self.jsonrpc.get_batch_data()
+                    self.log.debug(f"After batch: {data}")
+                    # _id = "; ".join(x.id for x in data)
+                # else:
+                    # _id = data.id
+                self.log.debug(f"Package: {_id};")
+                if data:
+                    self.connection.send(data.json(exclude_none=True))
+        self.log.debug("Send Logic Ending!!!!!!!")
 
     # -------------------------------------------------------------------------
     #                               API Helpers
@@ -202,6 +212,7 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
+        # self._send_logic(rpc_data)
         with self.connection.send_ready:
             self.connection.send(rpc_data.json(exclude_none=True))
         self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
@@ -250,6 +261,7 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
+        # self._send_logic(rpc_data)
         with self.connection.send_ready:
             self.connection.send(rpc_data.json(exclude_none=True))
         self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
@@ -269,7 +281,7 @@ class IoTAPI(ServiceClass):
 
     def _cb_handler(self, data: JsonData, method: WappstoMethod):
         object_uuid = UUID(data.url.split("/")[-1])
-        self.log.debug(f"{object_uuid=}")
+        self.log.debug(f"Object UUID: {object_uuid}")
         for cb in self.subscribers.get(object_uuid, [self._default_cb]):
             self.workers.submit(cb, data.data, method)
             self.log.debug(f"Submitted to Worker: {cb}")

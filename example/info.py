@@ -9,20 +9,20 @@ import WappstoIoT
 
 
 def main():
-    WappstoIoT.config(
+    network = WappstoIoT.config(
         name="info",
         configFolder="info"
     )
 
-    WappstoIoT.onStatusChange(
+    network.onStatusChange(
         StatusID=WappstoIoT.StatusID.CONNECTION,
-        callback=lambda StatusID, newStatus: print(f"New status: {newStatus=}")
+        callback=lambda StatusID, newStatus: print(f"New status: {newStatus}")
     )
-    WappstoIoT.onDelete(
+    network.onDelete(
         callback=lambda obj: print("Network received a: Delete")
     )
 
-    device = WappstoIoT.createDevice()
+    device = network.createDevice()
 
     value = device.createValue(
         "StringInfo",
@@ -46,7 +46,7 @@ def main():
         data = input("Enter a Message: ")
 
         if data in ["exit", "x", "quit", "q"]:
-            WappstoIoT.close()
+            network.close()
             print("Manuel closing Wappsto.")
             break
         value.report(data)
