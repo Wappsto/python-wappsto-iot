@@ -25,7 +25,7 @@ def main():
 
     network = WappstoIoT.wappsto(
         configFolder="sensors",
-        storeQueue=True
+        offlineStorage=True
     )
 
     rediator = network.createDevice("radiator")

@@ -2,6 +2,7 @@ import __main__
 import netrc
 import logging
 import atexit
+import json
 
 from pathlib import Path
 
@@ -32,6 +33,8 @@ from WappstoIoT.schema.iot_schema import WappstoMethod
 
 # from WappstoIoT.utils import exceptions
 from WappstoIoT.utils.certificateread import CertificateRead
+from WappstoIoT.utils.offline_storage import OfflineStorage
+from WappstoIoT.utils.offline_storage import OfflineStorageFiles
 
 
 # #############################################################################
@@ -48,6 +51,7 @@ class StatusID(str, Enum):
     SERVICE = "SERVICE"
 
 
+# TODO: TEST the Status thingy.
 ConnectionStatus = connection.Status.DISCONNETCED
 ServiceStatus = service.Status.IDLE
 
@@ -118,10 +122,10 @@ class Network(object):
         stepEnforce="warning",  # "ignore", "enforce"
         deltaHandling="",
         period_handling="",
-        connectSync: bool = True,  # Start with a Network GET to sync.
+        connectSync: bool = True,  # Start with a Network GET to sync.  # TODO:
         pingPongPeriod: Optional[int] = None,  # Period between a RPC ping-pong.
-        storeQueue: bool = False,  # 
-        none_blocking=True,  # Whether the post should wait for reply or not.
+        offlineStorage: Union[OfflineStorage, bool] = False,
+        # none_blocking=True,  # Whether the post should wait for reply or not.
     ) -> None:
         """
         Configure the WappstoIoT settings.
@@ -160,18 +164,21 @@ class Network(object):
                 configFolder = Path(__main__.__file__).absolute().parent
             else:
                 configFolder = Path(configFolder)
+        self.configFolder = configFolder
 
         self.connection: ServiceClass
 
+        self._setup_offline_storage(offlineStorage)
+
         if connection == ConnectionTypes.IOTAPI:
             self._setup_IoTAPI(configFolder)
-            cer = CertificateRead(crt=configFolder / "client.crt")
+            cer = CertificateRead(crt=self.configFolder / "client.crt")
             self.__uuid = cer.network
 
         elif connection == ConnectionTypes.RESTAPI:
             # TODO: Find & load configs.
             configs: Dict[Any, Any] = {}
-            self._setup_RestAPI(configFolder, configs)  # FIXME:
+            self._setup_RestAPI(self.configFolder, configs)  # FIXME:
 
         subscribe_all_status()
 
@@ -248,6 +255,45 @@ class Network(object):
 
     def _device_name_gen(self, device_id):
         return f"device_{device_id}"
+
+    def _setup_offline_storage(
+        self,
+        offlineStorage: Union[OfflineStorage, bool]
+    ) -> None:
+        # TODO: Test me!!
+        if offlineStorage is False:
+            return
+        if offlineStorage is True:
+            offlineStorage = OfflineStorageFiles(
+                location=self.configFolder
+            )
+
+        observer.subscribe(
+            service.Status.SENDERROR,
+            lambda _, data: offlineStorage.save(data.json(exclude_none=True))
+        )
+
+        def _resend_logic(status, data):
+            nonlocal offlineStorage
+            try:
+                self.log.debug("Resending Offline data")
+                while True:
+                    data = offlineStorage.load(10)
+                    if data:
+                        s_data = [json.loads(d) for d in data]
+                        self.log.debug(f"Sending Data: {s_data}")
+                        self.connection._resend_data.send(
+                            json.dumps(s_data)
+                        )
+                    else:
+                        return
+            except Exception:
+                self.log.exception("")
+
+        observer.subscribe(
+            connection.Status.CONNECTED,
+            _resend_logic
+        )
 
     # -------------------------------------------------------------------------
     #   Save/Load helper methods

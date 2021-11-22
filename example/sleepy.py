@@ -38,7 +38,7 @@ def main():
 
     network = WappstoIoT.wappsto(
         configFolder="sensors",
-        storeQueue=True,
+        offlineStorage=True,
         connectSync=True,
     )
 

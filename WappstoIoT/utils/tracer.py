@@ -23,7 +23,7 @@ class TraceStatus(str, Enum):
     FAIL = "fail"        # If Send Failed.
 
 
-class ShadowTrace:
+class TraceWrapper:
     """."""
 
     def __init__(
@@ -43,7 +43,7 @@ class ShadowTrace:
             return getattr(self.class_obj, attr_name)
 
         def wrapper(*args, **kwargs):
-            with self.tracer.tracing:
+            with self.tracer.tracing():
                 getattr(self.class_obj, attr_name)(*args, **kwargs)
 
         return wrapper

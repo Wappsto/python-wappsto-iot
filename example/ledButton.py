@@ -17,7 +17,7 @@ def main():
     network = WappstoIoT.wappsto(
         name="ledButton",
         configFolder="ledButton",
-        storeQueue=True
+        offlineStorage=True
     )
 
     # Setting up the LED and events handling.
