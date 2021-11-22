@@ -201,7 +201,8 @@ Unsure {icon question-circle color=blue}
 
 TODO List {icon cog spin}
 ===============================================================================
-* [ ] Batch the packages, & thread-protect the send 'thread'.
+* [ ] Batch the packages.
+* [ ] Save Offline data.
 * [ ] Writing the System.
 * [ ] Documentation.
 * [ ] System Test.
