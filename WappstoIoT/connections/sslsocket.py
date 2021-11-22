@@ -29,7 +29,7 @@ class TlsSocket:
 
         self.observer_name = "CONNECTION"
         self.observer = observer if observer else lambda st, nd: None
-        self.observer.post(self.observer_name, Status.DISCONNETCED)
+        self.observer.post(Status.DISCONNETCED, None)
 
         self.send_ready = threading.Lock()
 
@@ -179,7 +179,10 @@ class TlsSocket:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
             except socket.timeout:
                 continue
-
+            except OSError:
+                # UNSURE:
+                self.reconnect()
+                continue
             if data_chunk == b'':
                 self.log.debug("Server Closed socket.")
                 self.reconnect()
@@ -208,14 +211,14 @@ class TlsSocket:
 
         try:
             self.log.info("Trying to Connect.")
-            self.observer.post(self.observer_name, Status.CONNECTING)
+            self.observer.post(Status.CONNECTING, None)
             # self.socket.settimeout(10)  # Why?
             self.socket.connect((self.address, self.port))
             # self.socket.settimeout(None)  # Why?
             self.log.info(
                 f"Connected on interface: {self.socket.getsockname()[0]}"
             )
-            self.observer.post(self.observer_name, Status.CONNECTED)
+            self.observer.post(Status.CONNECTED, None)
             # if self.sockt_thread is None:
             #     self._start()
             return True
@@ -236,6 +239,9 @@ class TlsSocket:
             'True' if the connection was successful else
             'False'
         """
+        if not self.socket:
+            return False
+
         self.log.info("Reconnection...")
 
         while retry_limit is None or retry_limit > 0:
@@ -261,12 +267,12 @@ class TlsSocket:
         Closes the socket object connection.
         """
         self.log.info("Closing connection...")
-        self.observer.post(self.observer_name, Status.DISCONNECTING)
+        self.observer.post(Status.DISCONNECTING, None)
         if self.socket:
             self.socket.close()
             self.socket = None
         if self.raw_socket:
             self.raw_socket.close()
             self.raw_socket = None
-        self.observer.post(self.observer_name, Status.DISCONNETCED)
+        self.observer.post(Status.DISCONNETCED, None)
         self.log.info("Connection closed!")

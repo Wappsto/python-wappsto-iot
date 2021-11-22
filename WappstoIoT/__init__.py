@@ -30,3 +30,6 @@ from WappstoIoT.Modules.Value import Period
 from WappstoIoT.Modules.Value import PermissionType
 from WappstoIoT.Modules.Value import ValueBaseType
 from WappstoIoT.Modules.Template import ValueType
+
+
+__version__ = "v0.5.0"

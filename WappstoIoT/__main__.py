@@ -1,4 +1,5 @@
-import getpass
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import json
 import pathlib
 import uuid
@@ -204,7 +205,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--path",
         type=pathlib.Path,
-        default="./config/",
+        default=".",
         help="The location to which the config files are saved."
     )
     parser.add_argument(

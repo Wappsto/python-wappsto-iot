@@ -9,7 +9,7 @@ import WappstoIoT
 
 
 def main():
-    network = WappstoIoT.config(
+    network = WappstoIoT.Wappsto(
         name="info",
         configFolder="info"
     )

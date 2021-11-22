@@ -36,13 +36,13 @@ def main():
 
     period_ns = 400000
 
-    WappstoIoT.config(
+    network = WappstoIoT.wappsto(
         configFolder="sensors",
-        storeQueue=True,
+        offlineStorage=True,
         connectSync=True,
     )
 
-    gps = WappstoIoT.createDevice("GPS")
+    gps = network.createDevice("GPS")
 
     latitude = gps.createValue(
         value_type=WappstoIoT.ValueType.LATITUDE,
@@ -52,7 +52,7 @@ def main():
         value_type=WappstoIoT.ValueType.LONGITUDE,
     )
 
-    sensors = WappstoIoT.createDevice("sensors")
+    sensors = network.createDevice("sensors")
     temperature = sensors.createValue(
         value_type=WappstoIoT.ValueType.TEMPERATURE,
         permission=WappstoIoT.PermissionType.READWRITE,
@@ -71,7 +71,7 @@ def main():
 
     try:
         while not killed.is_set():
-            WappstoIoT.connect()
+            network.connect()
             temperature.report(IioControl.read_raw(0))
             tempPWM.write(temp2pwm(
                 temperature.state.control.data
@@ -79,10 +79,10 @@ def main():
             lati, longi = requestGPS()
             latitude.report(lati)
             longitude.report(longi)
-            WappstoIoT.disconnect()
+            network.disconnect()
             sleep(temperature.period)
     finally:
-        WappstoIoT.close()
+        network.close()
 
 
 if __name__ == "__main__":

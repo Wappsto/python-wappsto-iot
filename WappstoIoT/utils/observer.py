@@ -33,7 +33,9 @@ def subscribe(event_name: str, callback: Callable[[str, Any], None]) -> None:
             that the event generate.
     """
     obs_log.debug(f"New Subscriber: {event_name}, {callback}")
-    subscriber.setdefault(event_name, default_subscriber).append(callback)
+    if event_name not in subscriber:
+        subscriber[event_name] = []
+    subscriber[event_name].append(callback)
 
 
 def post(event_name: str, data: Any) -> None:

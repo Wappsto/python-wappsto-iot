@@ -19,8 +19,10 @@ from WappstoIoT.schema.base_schema import WappstoMethods
 
 class Status(str, Enum):
     IDLE = "idle"
-    BATCHING = "batching"
+    # BATCHING = "batching"
     SENDING = "sending"
+    SENDERROR = "send Error"
+    SEND = "send"
 
 
 class ServiceClass(ABC):

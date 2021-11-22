@@ -29,7 +29,7 @@ The following explains the example code found in [info.py](./example/info.py).
 The wappsto module can be installed using PIP (Python Package Index) as follows:
 
 ```bash
-$ pip install -U wappsto_iot
+$ pip install -U wappstoiot
 ```
 
 ## License

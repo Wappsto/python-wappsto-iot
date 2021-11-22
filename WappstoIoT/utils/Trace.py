@@ -35,30 +35,31 @@ def generateId() -> str:
     ))
 
 
-def parentId(wappsto_element: Union[WappstoObject, dict]) -> Union[str, None]:
+def parentId(jsonrpc_elemt: Union[WappstoObject, dict]) -> Union[str, None]:
     """
     Check if a trace package should be send, if so it returns the parent ID.
     """
-    if isinstance(wappsto_element, dict):
-        return wappsto_element.get('meta', {}).get('trace', None)
-    return wappsto_element.meta.trace
+    log.debug(f"{jsonrpc_elemt=}")
+    if isinstance(jsonrpc_elemt, dict):
+        return jsonrpc_elemt.get('params', {}).get('meta', {}).get('trace', None)
+    return jsonrpc_elemt.meta.trace
 
 
 def send(
-    trace_id: str,
-    parent_id: str,
+    id: str,
+    parent: str,
     name: str,
     status: TraceStatus,
     timestamp: Optional[datetime.datetime] = None
-) -> bool:
+) -> Optional[dict]:
     """
     Send a Package Trace to Seluxit.
 
     Package tracing are used to debug, where the given package are lost,
     and/or the timing of the given package through the system.
 
-    A trace package should be send when a Wappsto json, with a trace value
-    in the meta field, are received. The trace package should contain
+    A trace package should be send when a JSONRPC object, with a trace value
+    in the params, meta field, are received. The trace package should contain
     a status that are set to 'pending'.
     When the reply for the traced Wappsto json are ready to be send
     (to the socket). The Wappsto json's meta field should have the trace filed
@@ -82,14 +83,14 @@ def send(
         False, if it was not.
     """
     params = {
-        "id": trace_id,
-        "parent": parent_id,
+        "id": id,
+        "parent": parent,
         "name": name,
         "status": status,
         "timestamp": timestamp if timestamp else Timestamp.timestamp()
     }
 
-    log.info(f"Trace id: {trace_id}")
+    log.info(f"Trace id: {id}")
 
     r_data = requests.post(
         url='https://tracer.iot.seluxit.com/trace',
@@ -99,8 +100,8 @@ def send(
 
     if r_data.status_code >= 300:
         log.error(f"Trace http error code: {r_data.status_code}")
-        return False
+        return None
 
     log.debug("Trace send!")
 
-    return True
+    return params
