@@ -14,7 +14,7 @@ from typing import List
 from typing import Optional
 from typing import Union
 
-from slxjsonrpc import SlxJsonRpc
+import slxjsonrpc
 from slxjsonrpc.schema.jsonrpc import ErrorModel
 
 from WappstoIoT.Service.Template import ServiceClass
@@ -36,7 +36,8 @@ from WappstoIoT.schema.iot_schema import WappstoMethod
 
 from WappstoIoT.utils.certificateread import CertificateRead
 from WappstoIoT.utils import observer
-from WappstoIoT.utils import Trace
+from WappstoIoT.utils import tracer
+
 from WappstoIoT.connections.sslsocket import TlsSocket
 
 
@@ -101,7 +102,7 @@ class IoTAPI(ServiceClass):
 
         if not self.connection.connect():
             raise
-        self.jsonrpc = SlxJsonRpc(
+        self.jsonrpc = slxjsonrpc.SlxJsonRpc(
             methods=WappstoMethod,
             method_cb=method_cb,
             result=result,
@@ -142,48 +143,66 @@ class IoTAPI(ServiceClass):
     def _receive_handler(self):
         self.log.debug("Receive Handler Started!")
         while not self.killed.is_set():
-            data = self.connection.receive(parser=json.loads)
-            self.log.debug(f"Package received: {data.get('id', data)}")
+            try:
+                data = self.connection.receive(parser=json.loads)
 
-            trace_p_id = Trace.parentId(data)
-            if trace_p_id:
-                self.log.debug(f"Trace Received: {trace_p_id}")
-                Trace.send(
-                    trace_id=Trace.generateId(),
-                    parent_id=trace_p_id,
-                    name="Wappsto IoT Receive Thread",
-                    state=Trace.TraceStatus.PENDING
+                if not data:
+                    continue
+
+                if not isinstance(data, list):
+                    data = [data]
+                for elemt in data:
+                    _ids = [elemt.get('id', elemt) for elemt in data]
+                    self.log.debug(f"Package received: {elemt.get('id', elemt)}")
+
+                trace = tracer.Trace.trace_list_check(
+                    jsonrpc_elemts=data,
+                    name="Wappsto IoT Receive Thread"
                 )
 
-            reply = self.jsonrpc.parser(data)
-            self.log.debug(f"Package: {data.get('id', data)}; Reply: {reply}")
-            self._simple_send(reply)
-            # self._send_logic(reply)
+                reply = self.jsonrpc.parser(data)
+                self.log.debug(f"Package ID: {_ids}; Reply: {reply}")
+
+                self._send_logic(reply)
+
+                self._trace_send_logic(trace, reply)
+
+            except Exception:
+                self.log.exception("Receive Handler Error:")
         self.log.debug("Receive Handler Stopped!")
 
-    def _simple_send(self, data, _id=None):
-        if data:
-            with self.connection.send_ready:
-                self.connection.send(data.json(exclude_none=True))
+    def _trace_send_logic(self, trace_list, reply_list) -> None:
+        if not trace_list:
+            return
+        for t, d in zip(trace_list, reply_list.__root__):
+            if not isinstance(d, ErrorModel):
+                t.send_ok(name="Wappsto IoT Receive Thread")
+            else:
+                t.send_failed(name="Wappsto IoT Receive Thread")
 
     def _send_logic(self, data, _id=None):
         # NOTE (MBK): Something do not work here!
-        if not data:
-            return
+        # if not data:
+        #     return
         with self.connection.send_ready:  # NOTE: Waiting here, until ready!
             with self.jsonrpc.batch():
-                if self.jsonrpc.bulk_size():
-                    self.log.debug(f"Bulk Size: {self.jsonrpc.bulk_size()}")
+                if self.jsonrpc.batch_size():
+                    size = self.jsonrpc.batch_size()
+                    self.log.debug(f"Bulk Size: {size}")
                     self.log.debug(f"Before batch: {data}")
-                    data = self.jsonrpc.get_batch_data()
+                    data = self.jsonrpc.get_batch_data(data)
                     self.log.debug(f"After batch: {data}")
-                    # _id = "; ".join(x.id for x in data)
-                # else:
-                    # _id = data.id
-                self.log.debug(f"Package: {_id};")
+
+                if isinstance(data, slxjsonrpc.RpcBatch):
+                    _id = "; ".join(x.id for x in data.__root__)
+                elif data:
+                    _id = data.id
+
+                if _id:
+                    self.log.debug(f"Package ID: {_id};")
+
                 if data:
                     self.connection.send(data.json(exclude_none=True))
-        self.log.debug("Send Logic Ending!!!!!!!")
 
     # -------------------------------------------------------------------------
     #                               API Helpers
@@ -212,9 +231,8 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
-        # self._send_logic(rpc_data)
-        with self.connection.send_ready:
-            self.connection.send(rpc_data.json(exclude_none=True))
+        self._send_logic(rpc_data)
+
         self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
         if _cb_event.wait(timeout=self.timeout):
             if _err_data:
@@ -261,9 +279,8 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
-        # self._send_logic(rpc_data)
-        with self.connection.send_ready:
-            self.connection.send(rpc_data.json(exclude_none=True))
+        self._send_logic(rpc_data)
+
         self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
         if _cb_event.wait(timeout=self.timeout):
             if _data:
