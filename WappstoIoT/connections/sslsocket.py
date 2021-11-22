@@ -179,7 +179,10 @@ class TlsSocket:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
             except socket.timeout:
                 continue
-
+            except OSError:
+                # UNSURE:
+                self.reconnect()
+                continue
             if data_chunk == b'':
                 self.log.debug("Server Closed socket.")
                 self.reconnect()
@@ -236,6 +239,9 @@ class TlsSocket:
             'True' if the connection was successful else
             'False'
         """
+        if not self.socket:
+            return False
+
         self.log.info("Reconnection...")
 
         while retry_limit is None or retry_limit > 0:
