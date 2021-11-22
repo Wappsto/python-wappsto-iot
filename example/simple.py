@@ -7,8 +7,7 @@
 
 import WappstoIoT
 
-if __name__ == "__main__":
-    network = WappstoIoT.Wappsto()
-    device = network.createDevice()
-    value = device.createValue()
-    value.report(5)
+network = WappstoIoT.Wappsto()
+device = network.createDevice()
+value = device.createValue()
+value.report(5)

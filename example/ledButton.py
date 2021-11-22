@@ -14,14 +14,14 @@ import WappstoIoT
 
 def main():
 
-    WappstoIoT.config(
+    network = WappstoIoT.wappsto(
         name="ledButton",
         configFolder="ledButton",
         storeQueue=True
     )
 
     # Setting up the LED and events handling.
-    led = WappstoIoT.createDevice("led")
+    led = network.createDevice("led")
     ledValue = led.createValue(
         "on/off",
         permission=WappstoIoT.PermissionType.WRITE,
@@ -31,7 +31,7 @@ def main():
     ledValue.onControl(lambda obj, value: PQPI_led.write(value))
 
     # Setting up the Button and events handling.
-    bnt = WappstoIoT.createDevice("button")
+    bnt = network.createDevice("button")
     bntValue = bnt.createValue(
         name="pushed",
         permission=WappstoIoT.PermissionType.READ,
@@ -47,12 +47,12 @@ def main():
     )
     bntValue.onRefresh(callback=PQPI_bnt.read())
 
-    while WappstoIoT.connectionStatus is WappstoIoT.connection.Status.CONNECTED:
+    while network.connectionStatus is network.connection.Status.CONNECTED:
         time.sleep(0.5)
 
     PQPI_bnt.close()
     PQPI_led.close()
-    WappstoIoT.close()
+    network.close()
 
 
 if __name__ == "__main__":

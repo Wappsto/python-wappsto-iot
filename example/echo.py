@@ -11,12 +11,14 @@ import WappstoIoT
 
 
 def main():
-    network = WappstoIoT.Config(
+    network = WappstoIoT.Wappsto(
         name="echo",
         configFolder="echo"
     )
 
-    device = network.createDevice("EchoDevice")
+    device = network.createDevice(
+        name="EchoDevice"
+    )
 
     value = device.createValue(
         name="Moeller",
@@ -24,9 +26,12 @@ def main():
     )
 
     value.onControl(
-        callback=lambda obj, new_value: value.report(new_value)
+        callback=lambda obj, new_value: obj.report(new_value)
     )
 
+    value.onRefresh(
+        callback=lambda obj: obj.report(f"{obj.data} Refreshed!")
+    )
     try:
         while True:
             time.sleep(0.5)

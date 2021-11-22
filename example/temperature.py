@@ -23,12 +23,12 @@ def main():
 
     period_ns = 400000
 
-    WappstoIoT.config(
+    network = WappstoIoT.wappsto(
         configFolder="sensors",
         storeQueue=True
     )
 
-    rediator = WappstoIoT.createDevice("radiator")
+    rediator = network.createDevice("radiator")
     temperature = rediator.createValue(
         "temperature",
         value_type=WappstoIoT.ValueType.TEMPERATURE,
@@ -63,7 +63,7 @@ def main():
                 temperature.report(value)
     finally:
         tempPWM.close()
-        WappstoIoT.close()
+        network.close()
 
 
 if __name__ == "__main__":
