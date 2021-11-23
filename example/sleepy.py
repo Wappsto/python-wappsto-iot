@@ -14,7 +14,7 @@ from typing import Tuple
 
 from porcupineIO import IioControl
 from porcupineIO import PWM
-import WappstoIoT
+import wappstoiot
 
 
 def requestGPS(timeout: int = 60) -> Tuple[Union[int, None], Union[int, None]]:
@@ -36,7 +36,7 @@ def main():
 
     period_ns = 400000
 
-    network = WappstoIoT.wappsto(
+    network = wappstoiot.Network(
         configFolder="sensors",
         offlineStorage=True,
         connectSync=True,
@@ -45,17 +45,17 @@ def main():
     gps = network.createDevice("GPS")
 
     latitude = gps.createValue(
-        value_type=WappstoIoT.ValueType.LATITUDE,
+        value_type=wappstoiot.ValueType.LATITUDE,
     )
 
     longitude = gps.createValue(
-        value_type=WappstoIoT.ValueType.LONGITUDE,
+        value_type=wappstoiot.ValueType.LONGITUDE,
     )
 
     sensors = network.createDevice("sensors")
     temperature = sensors.createValue(
-        value_type=WappstoIoT.ValueType.TEMPERATURE,
-        permission=WappstoIoT.PermissionType.READWRITE,
+        value_type=wappstoiot.ValueType.TEMPERATURE,
+        permission=wappstoiot.PermissionType.READWRITE,
         # UNSURE: Should we be able to set the init value for Control & Report?
     )
 

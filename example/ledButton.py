@@ -9,12 +9,12 @@ import time
 
 from porcupineIO import GPIO
 
-import WappstoIoT
+import wappstoiot
 
 
 def main():
 
-    network = WappstoIoT.wappsto(
+    network = wappstoiot.Network(
         name="ledButton",
         configFolder="ledButton",
         offlineStorage=True
@@ -24,8 +24,8 @@ def main():
     led = network.createDevice("led")
     ledValue = led.createValue(
         "on/off",
-        permission=WappstoIoT.PermissionType.WRITE,
-        value_type=WappstoIoT.ValueType.BOOLEAN
+        permission=wappstoiot.PermissionType.WRITE,
+        value_type=wappstoiot.ValueType.BOOLEAN
     )
     PQPI_led = GPIO(chip=0, pin=16, state=GPIO.OUTPUT)
     ledValue.onControl(lambda obj, value: PQPI_led.write(value))
@@ -34,8 +34,8 @@ def main():
     bnt = network.createDevice("button")
     bntValue = bnt.createValue(
         name="pushed",
-        permission=WappstoIoT.PermissionType.READ,
-        value_type=WappstoIoT.ValueType.BOOLEAN
+        permission=wappstoiot.PermissionType.READ,
+        value_type=wappstoiot.ValueType.BOOLEAN
     )
     PQPI_bnt = GPIO(
         chip=0,

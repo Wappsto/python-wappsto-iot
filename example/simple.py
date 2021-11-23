@@ -5,9 +5,9 @@
 # The certificates, have then been downloaded
 # unpack and saved into the config-folder of you project.
 
-import WappstoIoT
+import wappstoiot
 
-network = WappstoIoT.Wappsto()
+network = wappstoiot.Network()
 device = network.createDevice()
 value = device.createValue()
 value.report(5)

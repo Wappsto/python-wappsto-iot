@@ -12,7 +12,7 @@ import signal
 from porcupineIO import PWM
 from porcupineIO import IioControl
 
-import WappstoIoT
+import wappstoiot
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
 
     period_ns = 400000
 
-    network = WappstoIoT.wappsto(
+    network = wappstoiot.Network(
         configFolder="sensors",
         offlineStorage=True
     )
@@ -31,8 +31,8 @@ def main():
     rediator = network.createDevice("radiator")
     temperature = rediator.createValue(
         "temperature",
-        value_type=WappstoIoT.ValueType.TEMPERATURE,
-        permission=WappstoIoT.PermissionType.READWRITE,
+        value_type=wappstoiot.ValueType.TEMPERATURE,
+        permission=wappstoiot.PermissionType.READWRITE,
         period=98723
     )
 
@@ -48,7 +48,7 @@ def main():
 
     temperature.onRefresh(callback=temperature.report(IioControl.read_raw(0)))
 
-    # NOTE: Should be a option in WappstoIoT.config as Period=WappstoIoT.Period.PERIODIC_REFRESH
+    # NOTE: Should be a option in wappstoiot.Network as Period=wappstoiot.Period.PERIODIC_REFRESH
     def period_read():
         if not killed.is_set():
             threading.Timer(temperature.period, period_read).start()
