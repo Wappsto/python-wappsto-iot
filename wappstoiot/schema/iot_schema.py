@@ -12,13 +12,13 @@ from pydantic import BaseModel
 from pydantic import Extra
 from pydantic import validator
 
-from WappstoIoT.schema.base_schema import BlobValue
-from WappstoIoT.schema.base_schema import Device
-from WappstoIoT.schema.base_schema import Network
-from WappstoIoT.schema.base_schema import NumberValue
-from WappstoIoT.schema.base_schema import State
-from WappstoIoT.schema.base_schema import StringValue
-from WappstoIoT.schema.base_schema import XmlValue
+from .base_schema import BlobValue
+from .base_schema import Device
+from .base_schema import Network
+from .base_schema import NumberValue
+from .base_schema import State
+from .base_schema import StringValue
+from .base_schema import XmlValue
 
 
 def parwise(values):

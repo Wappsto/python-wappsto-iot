@@ -11,7 +11,7 @@ from typing import Optional
 
 import requests
 
-from WappstoIoT.utils import Timestamp
+from . import Timestamp
 
 
 force_trace: bool = False
