@@ -275,18 +275,20 @@ class Network(object):
 
         def _resend_logic(status, data):
             nonlocal offlineStorage
+            self.log.debug(f"Resend called with: {status=}")
             try:
                 self.log.debug("Resending Offline data")
                 while True:
                     data = offlineStorage.load(10)
-                    if data:
-                        s_data = [json.loads(d) for d in data]
-                        self.log.debug(f"Sending Data: {s_data}")
-                        self.connection._resend_data.send(
-                            json.dumps(s_data)
-                        )
-                    else:
+                    if not data:
                         return
+
+                    s_data = [json.loads(d) for d in data]
+                    self.log.debug(f"Sending Data: {s_data}")
+                    self.connection._resend_data(
+                        json.dumps(s_data)
+                    )
+
             except Exception:
                 self.log.exception("")
 
