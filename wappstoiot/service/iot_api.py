@@ -17,29 +17,29 @@ from typing import Union
 import slxjsonrpc
 from slxjsonrpc.schema.jsonrpc import ErrorModel
 
-from WappstoIoT.Service.Template import Status
-from WappstoIoT.Service.Template import ServiceClass
+from .Template import Status
+from .Template import ServiceClass
 
-from WappstoIoT.schema.base_schema import BlobValue
-from WappstoIoT.schema.base_schema import Device
-from WappstoIoT.schema.base_schema import Network
-from WappstoIoT.schema.base_schema import NumberValue
-from WappstoIoT.schema.base_schema import State
-from WappstoIoT.schema.base_schema import StringValue
-from WappstoIoT.schema.base_schema import XmlValue
-from WappstoIoT.schema.base_schema import WappstoObject
+from ..schema.base_schema import BlobValue
+from ..schema.base_schema import Device
+from ..schema.base_schema import Network
+from ..schema.base_schema import NumberValue
+from ..schema.base_schema import State
+from ..schema.base_schema import StringValue
+from ..schema.base_schema import XmlValue
+from ..schema.base_schema import WappstoObject
 
-from WappstoIoT.schema.iot_schema import JsonData
-from WappstoIoT.schema.iot_schema import JsonReply
-from WappstoIoT.schema.iot_schema import Success
-from WappstoIoT.schema.iot_schema import WappstoMethod
-# from WappstoIoT.schema.iot_scgema import WappstoObjectType
+from ..schema.iot_schema import JsonData
+from ..schema.iot_schema import JsonReply
+from ..schema.iot_schema import Success
+from ..schema.iot_schema import WappstoMethod
+# from ..schema.iot_scgema import WappstoObjectType
 
-from WappstoIoT.utils.certificateread import CertificateRead
-from WappstoIoT.utils import observer
-from WappstoIoT.utils import tracer
+from ..utils.certificateread import CertificateRead
+from ..utils import observer
+from ..utils import tracer
 
-from WappstoIoT.connections.sslsocket import TlsSocket
+from ..connections.sslsocket import TlsSocket
 
 
 ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]

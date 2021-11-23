@@ -16,34 +16,34 @@ from pydantic import UUID4
 # from pydantic import parse_file_as
 
 
-from WappstoIoT.Service.Template import ServiceClass
-# from WappstoIoT.Service.RestAPI import RestAPI
-from WappstoIoT.Service.IoTAPI import IoTAPI
+from ..Service.Template import ServiceClass
+# from .Service.RestAPI import RestAPI
+from ..Service.IoTAPI import IoTAPI
 
-from WappstoIoT.Modules.Template import dict_diff
-from WappstoIoT.Modules.Device import Device
-# from WappstoIoT.Modules.Value import Value
+from .Template import dict_diff
+from .Device import Device
+# from .Value import Value
 
-# from WappstoIoT.Modules.Template import _Config
-# from WappstoIoT.Modules.Template import _ConfigFile
-# from WappstoIoT.Modules.Template import _UnitsInfo
+# from .Template import _Config
+# from .Template import _ConfigFile
+# from .Template import _UnitsInfo
 
-from WappstoIoT.schema import base_schema as WSchema
-from WappstoIoT.schema.iot_schema import WappstoMethod
+from ..schema import base_schema as WSchema
+from ..schema.iot_schema import WappstoMethod
 
-# from WappstoIoT.utils import exceptions
-from WappstoIoT.utils.certificateread import CertificateRead
-from WappstoIoT.utils.offline_storage import OfflineStorage
-from WappstoIoT.utils.offline_storage import OfflineStorageFiles
+# from .utils import exceptions
+from ..utils.certificateread import CertificateRead
+from ..utils.offline_storage import OfflineStorage
+from ..utils.offline_storage import OfflineStorageFiles
 
 
 # #############################################################################
 #                        Status Observer Setup
 # #############################################################################
 
-from WappstoIoT.utils import observer 
-from WappstoIoT.connections import protocol as connection
-from WappstoIoT.Service import Template as service
+from ..utils import observer 
+from ..connections import protocol as connection
+from ..Service import Template as service
 
 
 class StatusID(str, Enum):

@@ -15,12 +15,12 @@ from pydantic import BaseModel
 from pydantic import UUID4
 # from pydantic import HttpUrl
 
-from WappstoIoT.Service.Template import ServiceClass
+from ..Service.Template import ServiceClass
 
-from WappstoIoT.schema.base_schema import PermissionType
-from WappstoIoT.schema.base_schema import WappstoObject
+from ..schema.base_schema import PermissionType
+from ..schema.base_schema import WappstoObject
 
-# from WappstoIoT.schema.iot_schema import WappstoObjectType
+# from ..schema.iot_schema import WappstoObjectType
 
 
 # #############################################################################

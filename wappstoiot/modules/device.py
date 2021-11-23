@@ -11,23 +11,23 @@ from typing import Optional
 from typing import Union
 from pydantic import UUID4
 
-from WappstoIoT.Service.Template import ServiceClass
+from ..Service.Template import ServiceClass
 
-# from WappstoIoT.schema.base_schema import Device as DeviceSchema
-from WappstoIoT.schema import base_schema as WSchema
-from WappstoIoT.schema.iot_schema import WappstoMethod
-# from WappstoIoT.schema.iot_schema import WappstoObjectType
-from WappstoIoT.schema.base_schema import PermissionType
+# from .schema.base_schema import Device as DeviceSchema
+from ..schema import base_schema as WSchema
+from ..schema.iot_schema import WappstoMethod
+# from .schema.iot_schema import WappstoObjectType
+from ..schema.base_schema import PermissionType
 
-from WappstoIoT.Modules.Value import Value
-from WappstoIoT.Modules.Template import valueSettings
-from WappstoIoT.Modules.Template import ValueType
-# from WappstoIoT.Modules.Template import _UnitsInfo
+from .Value import Value
+from .Template import valueSettings
+from .Template import ValueType
+# from .Template import _UnitsInfo
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     # NOTE: To avoid ciclic import
-    from WappstoIoT.Modules.Network import Network
+    from .Network import Network
 
 
 # #############################################################################

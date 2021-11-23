@@ -12,24 +12,24 @@ from typing import Callable
 from typing import Dict
 from typing import Union
 
-from WappstoIoT.Service.Template import ServiceClass
+from ..Template import ServiceClass
 
-from WappstoIoT.schema.base_schema import BlobValue
-from WappstoIoT.schema.base_schema import Device
-from WappstoIoT.schema.base_schema import Network
-from WappstoIoT.schema.base_schema import NumberValue
-from WappstoIoT.schema.base_schema import State
-from WappstoIoT.schema.base_schema import StringValue
-from WappstoIoT.schema.base_schema import XmlValue
+from ..schema.base_schema import BlobValue
+from ..schema.base_schema import Device
+from ..schema.base_schema import Network
+from ..schema.base_schema import NumberValue
+from ..schema.base_schema import State
+from ..schema.base_schema import StringValue
+from ..schema.base_schema import XmlValue
 
-from WappstoIoT.schema.base_schema import WappstoMetaType
-from WappstoIoT.schema.base_schema import WappstoMethods
-from WappstoIoT.schema.rest_schema import DeleteList
+from ..schema.base_schema import WappstoMetaType
+from ..schema.base_schema import WappstoMethods
+from ..schema.rest_schema import DeleteList
 
-from WappstoIoT.utils.Exceptions import WappstoError
-from WappstoIoT.schema.jsonrpc_schema import StreamEvents
+from ..utils.Exceptions import WappstoError
+from ..schema.jsonrpc_schema import StreamEvents
 
-from WappstoIoT.wappsto_ws import WappstoWebSocket
+from ..wappsto_ws import WappstoWebSocket
 
 
 class RestAPI(ServiceClass):

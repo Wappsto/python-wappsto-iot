@@ -4,32 +4,32 @@
 #                             Network Import Stuff
 # #############################################################################
 
-from WappstoIoT.Modules.Network import Network
-from WappstoIoT.Modules.Network import ConnectionStatus
-from WappstoIoT.Modules.Network import ConnectionTypes
-from WappstoIoT.Modules.Network import NetworkChangeType
-from WappstoIoT.Modules.Network import NetworkRequestType
-from WappstoIoT.Modules.Network import ServiceStatus
-from WappstoIoT.Modules.Network import StatusID
+from .modules.network import Network
+from .modules.network import ConnectionStatus
+from .modules.network import ConnectionTypes
+from .modules.network import NetworkChangeType
+from .modules.network import NetworkRequestType
+from .modules.network import ServiceStatus
+from .modules.network import StatusID
 
 
 # #############################################################################
 #                             Device Import Stuff
 # #############################################################################
 
-from WappstoIoT.Modules.Device import Device
+from .modules.device import Device
 
 
 # #############################################################################
 #                             Value Import Stuff
 # #############################################################################
 
-from WappstoIoT.Modules.Value import Value
-from WappstoIoT.Modules.Value import Delta
-from WappstoIoT.Modules.Value import Period
-from WappstoIoT.Modules.Value import PermissionType
-from WappstoIoT.Modules.Value import ValueBaseType
-from WappstoIoT.Modules.Template import ValueType
+from .modules.value import Value
+from .modules.value import Delta
+from .modules.value import Period
+from .modules.value import PermissionType
+from .modules.value import ValueBaseType
+from .modules.template import ValueType
 
 
 __version__ = "v0.5.1"
