@@ -34,7 +34,7 @@ def subscribe(event_name: str, callback: Callable[[str, Any], None]) -> None:
     """
     obs_log.debug(f"New Subscriber: {event_name}, {callback}")
     if event_name not in subscriber:
-        subscriber[event_name] = []
+        subscriber[event_name] = default_subscriber.copy()
     subscriber[event_name].append(callback)
 
 
@@ -46,7 +46,6 @@ def post(event_name: str, data: Any) -> None:
         event_name: An unique name for the given event.
         data: The given event subscriber might want.
     """
-    obs_log.debug(f"New event was posted: {event_name}, {data}")
     for fn in subscriber.get(event_name, default_subscriber):
         fn(event_name, data)
 

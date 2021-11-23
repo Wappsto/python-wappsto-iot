@@ -16,34 +16,34 @@ from pydantic import UUID4
 # from pydantic import parse_file_as
 
 
-from WappstoIoT.Service.Template import ServiceClass
-# from WappstoIoT.Service.RestAPI import RestAPI
-from WappstoIoT.Service.IoTAPI import IoTAPI
+from ..service.template import ServiceClass
+# from .service.rest_api import RestAPI
+from ..service.iot_api import IoTAPI
 
-from WappstoIoT.Modules.Template import dict_diff
-from WappstoIoT.Modules.Device import Device
-# from WappstoIoT.Modules.Value import Value
+from .template import dict_diff
+from .device import Device
+# from .value import Value
 
-# from WappstoIoT.Modules.Template import _Config
-# from WappstoIoT.Modules.Template import _ConfigFile
-# from WappstoIoT.Modules.Template import _UnitsInfo
+# from .template import _Config
+# from .template import _ConfigFile
+# from .template import _UnitsInfo
 
-from WappstoIoT.schema import base_schema as WSchema
-from WappstoIoT.schema.iot_schema import WappstoMethod
+from ..schema import base_schema as WSchema
+from ..schema.iot_schema import WappstoMethod
 
-# from WappstoIoT.utils import exceptions
-from WappstoIoT.utils.certificateread import CertificateRead
-from WappstoIoT.utils.offline_storage import OfflineStorage
-from WappstoIoT.utils.offline_storage import OfflineStorageFiles
+# from .utils import exceptions
+from ..utils.certificateread import CertificateRead
+from ..utils.offline_storage import OfflineStorage
+from ..utils.offline_storage import OfflineStorageFiles
 
 
 # #############################################################################
 #                        Status Observer Setup
 # #############################################################################
 
-from WappstoIoT.utils import observer 
-from WappstoIoT.connections import protocol as connection
-from WappstoIoT.Service import Template as service
+from ..utils import observer 
+from ..connections import protocol as connection
+from ..service import template as service
 
 
 class StatusID(str, Enum):
@@ -275,18 +275,20 @@ class Network(object):
 
         def _resend_logic(status, data):
             nonlocal offlineStorage
+            self.log.debug(f"Resend called with: {status=}")
             try:
                 self.log.debug("Resending Offline data")
                 while True:
                     data = offlineStorage.load(10)
-                    if data:
-                        s_data = [json.loads(d) for d in data]
-                        self.log.debug(f"Sending Data: {s_data}")
-                        self.connection._resend_data.send(
-                            json.dumps(s_data)
-                        )
-                    else:
+                    if not data:
                         return
+
+                    s_data = [json.loads(d) for d in data]
+                    self.log.debug(f"Sending Data: {s_data}")
+                    self.connection._resend_data(
+                        json.dumps(s_data)
+                    )
+
             except Exception:
                 self.log.exception("")
 

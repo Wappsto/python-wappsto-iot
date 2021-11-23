@@ -7,11 +7,11 @@
 
 import time
 
-import WappstoIoT
+import wappstoiot
 
 
 def main():
-    network = WappstoIoT.Wappsto(
+    network = wappstoiot.Network(
         name="echo",
         configFolder="echo"
     )
@@ -22,7 +22,7 @@ def main():
 
     value = device.createValue(
         name="Moeller",
-        value_type=WappstoIoT.ValueType.STRING
+        value_type=wappstoiot.ValueType.STRING
     )
 
     value.onControl(

@@ -2,34 +2,28 @@ import logging
 import socket
 import threading
 import time
-import ssl
-
-from pathlib import Path
 
 from typing import Any
 from typing import Callable
 from typing import Optional
 from typing import Union
 
-from WappstoIoT.connections.protocol import Status
+from .protocol import Status
 
 
-class TlsSocket:
+class RawSocket:
     def __init__(
         self,
         address: str,
         port: int,
-        ca: Path,  # ca.crt
-        crt: Path,  # client.crt
-        key: Path,  # client.key
-        observer: Optional[Callable[[str, str], None]] = None,
+        observer: Optional[Callable[[str, str], None]] = None  # FIXME: !
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
         self.observer_name = "CONNECTION"
         self.observer = observer if observer else lambda st, nd: None
-        self.observer.post(Status.DISCONNETCED, None)
+        self.observer.post(self.observer_name, Status.DISCONNETCED)
 
         self.send_ready = threading.Lock()
 
@@ -40,11 +34,6 @@ class TlsSocket:
 
         self.log.debug(f"Address: {self.address}")
         self.log.debug(f"Port: {self.port}")
-
-        self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        self.ssl_context.verify_mode = ssl.CERT_REQUIRED
-        self.ssl_context.load_cert_chain(crt, key)
-        self.ssl_context.load_verify_locations(ca)
 
         self._socket_setup()
 
@@ -59,13 +48,13 @@ class TlsSocket:
         After 5 idle minutes, start sending keepalives every 1 minutes.
         Drop connection after 2 failed keepalives
         """
-        self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.raw_socket.setsockopt(
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.setsockopt(
             socket.SOL_SOCKET,
             socket.SO_KEEPALIVE,
             1
         )
-        self.raw_socket.settimeout(2)
+        self.socket.settimeout(2)
         if (
             hasattr(socket, "TCP_KEEPIDLE")
             and hasattr(socket, "TCP_KEEPINTVL")
@@ -74,22 +63,22 @@ class TlsSocket:
             self.log.debug(
                 "Setting TCP_KEEPIDLE, TCP_KEEPINTVL & TCP_KEEPCNT."
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.SOL_TCP,
                 socket.TCP_KEEPIDLE,
                 5 * 60
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_KEEPIDLE,
                 5 * 60
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_KEEPINTVL,
                 60
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_KEEPCNT,
                 2
@@ -99,28 +88,11 @@ class TlsSocket:
             self.log.debug(
                 f"Setting TCP_USER_TIMEOUT to {self.socket_timeout}ms."
             )
-            self.raw_socket.setsockopt(
+            self.socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_USER_TIMEOUT,
                 self.socket_timeout
             )
-
-        self.socket = self._ssl_wrap()
-
-    def _ssl_wrap(self):
-        """
-        Wrap socket.
-
-        Wraps the socket using the SSL protocol as configured in the SSL
-        context, with hostname verification enabled.
-
-        Returns:
-            An SSL wrapped socket.
-        """
-        return self.ssl_context.wrap_socket(
-            self.raw_socket,
-            server_hostname=self.address
-        )
 
     def send(
         self,
@@ -151,7 +123,7 @@ class TlsSocket:
         except TimeoutError:
             msg = "Get an TimeoutError, while trying to send"
             self.log.exception(msg)
-            # UNSURE: How do we hit this?
+            # Reconnect?
             return False
         else:
             self.log.debug(f"Raw Data Send: {data}")
@@ -179,10 +151,7 @@ class TlsSocket:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
             except socket.timeout:
                 continue
-            except OSError:
-                # UNSURE:
-                self.reconnect()
-                continue
+
             if data_chunk == b'':
                 self.log.debug("Server Closed socket.")
                 self.reconnect()
@@ -211,14 +180,14 @@ class TlsSocket:
 
         try:
             self.log.info("Trying to Connect.")
-            self.observer.post(Status.CONNECTING, None)
+            self.observer.post(self.observer_name, Status.CONNECTING)
             # self.socket.settimeout(10)  # Why?
             self.socket.connect((self.address, self.port))
             # self.socket.settimeout(None)  # Why?
             self.log.info(
                 f"Connected on interface: {self.socket.getsockname()[0]}"
             )
-            self.observer.post(Status.CONNECTED, None)
+            self.observer.post(self.observer_name, Status.CONNECTED)
             # if self.sockt_thread is None:
             #     self._start()
             return True
@@ -239,9 +208,6 @@ class TlsSocket:
             'True' if the connection was successful else
             'False'
         """
-        if not self.socket:
-            return False
-
         self.log.info("Reconnection...")
 
         while retry_limit is None or retry_limit > 0:
@@ -267,12 +233,9 @@ class TlsSocket:
         Closes the socket object connection.
         """
         self.log.info("Closing connection...")
-        self.observer.post(Status.DISCONNECTING, None)
+        self.observer.post(self.observer_name, Status.DISCONNECTING)
         if self.socket:
             self.socket.close()
             self.socket = None
-        if self.raw_socket:
-            self.raw_socket.close()
-            self.raw_socket = None
-        self.observer.post(Status.DISCONNETCED, None)
+        self.observer.post(self.observer_name, Status.DISCONNETCED)
         self.log.info("Connection closed!")

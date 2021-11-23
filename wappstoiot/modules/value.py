@@ -11,20 +11,20 @@ from typing import Optional
 from typing import Union
 from pydantic import UUID4
 
-from WappstoIoT.Service.Template import ServiceClass
-from WappstoIoT.Modules.Template import dict_diff
-from WappstoIoT.Modules.Template import ValueBaseType
-# from WappstoIoT.Modules.Template import valueSettings
-from WappstoIoT.schema import base_schema as WSchema
-from WappstoIoT.schema.base_schema import PermissionType
-from WappstoIoT.schema.iot_schema import WappstoMethod
+from ..service.template import ServiceClass
+from .template import dict_diff
+from .template import ValueBaseType
+# from .template import valueSettings
+from ..schema import base_schema as WSchema
+from ..schema.base_schema import PermissionType
+from ..schema.iot_schema import WappstoMethod
 
-from WappstoIoT.utils import Timestamp
+from ..utils import Timestamp
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     # NOTE: To avoid ciclic import
-    from WappstoIoT.Modules.Device import Device
+    from .device import Device
 
 
 # #############################################################################

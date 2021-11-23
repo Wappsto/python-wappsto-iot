@@ -7,14 +7,14 @@ from typing import Union
 from abc import ABC
 from abc import abstractmethod
 
-from WappstoIoT.schema.base_schema import BlobValue
-from WappstoIoT.schema.base_schema import Device
-from WappstoIoT.schema.base_schema import Network
-from WappstoIoT.schema.base_schema import NumberValue
-from WappstoIoT.schema.base_schema import State
-from WappstoIoT.schema.base_schema import StringValue
-from WappstoIoT.schema.base_schema import XmlValue
-from WappstoIoT.schema.base_schema import WappstoMethods
+from ..schema.base_schema import BlobValue
+from ..schema.base_schema import Device
+from ..schema.base_schema import Network
+from ..schema.base_schema import NumberValue
+from ..schema.base_schema import State
+from ..schema.base_schema import StringValue
+from ..schema.base_schema import XmlValue
+from ..schema.base_schema import WappstoMethods
 
 
 class Status(str, Enum):

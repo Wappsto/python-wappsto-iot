@@ -113,3 +113,7 @@ doc/
 # Sublime Text Editor
 *.sublime-project
 *.sublime-workspace
+
+
+# Manuel Stuff
+manuel_test/
