@@ -11,7 +11,7 @@ from typing import Callable
 from typing import Optional
 from typing import Union
 
-from wappstoiot.connections.protocol import Status
+from .protocol import Status
 
 
 class TlsSocket:

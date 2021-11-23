@@ -17,8 +17,8 @@ from typing import Union
 import slxjsonrpc
 from slxjsonrpc.schema.jsonrpc import ErrorModel
 
-from .Template import Status
-from .Template import ServiceClass
+from .template import Status
+from .template import ServiceClass
 
 from ..schema.base_schema import BlobValue
 from ..schema.base_schema import Device

@@ -16,17 +16,17 @@ from pydantic import UUID4
 # from pydantic import parse_file_as
 
 
-from ..Service.Template import ServiceClass
-# from .Service.RestAPI import RestAPI
-from ..Service.IoTAPI import IoTAPI
+from ..service.template import ServiceClass
+# from .service.rest_api import RestAPI
+from ..service.iot_api import IoTAPI
 
-from .Template import dict_diff
-from .Device import Device
-# from .Value import Value
+from .template import dict_diff
+from .device import Device
+# from .value import Value
 
-# from .Template import _Config
-# from .Template import _ConfigFile
-# from .Template import _UnitsInfo
+# from .template import _Config
+# from .template import _ConfigFile
+# from .template import _UnitsInfo
 
 from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod
@@ -43,7 +43,7 @@ from ..utils.offline_storage import OfflineStorageFiles
 
 from ..utils import observer 
 from ..connections import protocol as connection
-from ..Service import Template as service
+from ..service import template as service
 
 
 class StatusID(str, Enum):

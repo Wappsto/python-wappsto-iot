@@ -11,7 +11,7 @@ from typing import Optional
 from typing import Union
 from pydantic import UUID4
 
-from ..Service.Template import ServiceClass
+from ..service.template import ServiceClass
 
 # from .schema.base_schema import Device as DeviceSchema
 from ..schema import base_schema as WSchema
@@ -19,15 +19,15 @@ from ..schema.iot_schema import WappstoMethod
 # from .schema.iot_schema import WappstoObjectType
 from ..schema.base_schema import PermissionType
 
-from .Value import Value
-from .Template import valueSettings
-from .Template import ValueType
+from .value import Value
+from .template import valueSettings
+from .template import ValueType
 # from .Template import _UnitsInfo
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     # NOTE: To avoid ciclic import
-    from .Network import Network
+    from .network import Network
 
 
 # #############################################################################

@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from pydantic import UUID4
 # from pydantic import HttpUrl
 
-from ..Service.Template import ServiceClass
+from ..service.template import ServiceClass
 
 from ..schema.base_schema import PermissionType
 from ..schema.base_schema import WappstoObject

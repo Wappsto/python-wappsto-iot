@@ -12,7 +12,7 @@ from typing import Callable
 from typing import Dict
 from typing import Union
 
-from ..Template import ServiceClass
+from ..template import ServiceClass
 
 from ..schema.base_schema import BlobValue
 from ..schema.base_schema import Device

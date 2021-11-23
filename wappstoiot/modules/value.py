@@ -11,10 +11,10 @@ from typing import Optional
 from typing import Union
 from pydantic import UUID4
 
-from ..Service.Template import ServiceClass
-from .Template import dict_diff
-from .Template import ValueBaseType
-# from .Template import valueSettings
+from ..service.template import ServiceClass
+from .template import dict_diff
+from .template import ValueBaseType
+# from .template import valueSettings
 from ..schema import base_schema as WSchema
 from ..schema.base_schema import PermissionType
 from ..schema.iot_schema import WappstoMethod
@@ -24,7 +24,7 @@ from ..utils import Timestamp
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     # NOTE: To avoid ciclic import
-    from .Device import Device
+    from .device import Device
 
 
 # #############################################################################
