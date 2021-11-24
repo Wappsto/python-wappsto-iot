@@ -4,7 +4,6 @@ import datetime
 from enum import Enum
 from itertools import zip_longest
 
-from typing import Literal
 from typing import Optional
 from typing import Union
 
@@ -76,7 +75,7 @@ class WappstoObjectType(str, Enum):
 
 
 class Success(BaseModel):
-    success: Literal[True] = True
+    success: bool = True
 
     class Config:
         extra = Extra.forbid

@@ -10,7 +10,7 @@ from pathlib import Path
 
 from enum import Enum
 
-from typing import Any, Dict, Optional, Union, Callable, Literal
+from typing import Any, Dict, Optional, Union, Callable
 
 from pydantic import UUID4
 # from pydantic import parse_file_as
@@ -57,7 +57,7 @@ ServiceStatus = service.Status.IDLE
 
 
 def __connectionStatus(
-    layer: Literal[StatusID.CONNECTION],
+    layer: StatusID,
     newStatus: connection.Status
 ):
     global ConnectionStatus
@@ -65,7 +65,7 @@ def __connectionStatus(
 
 
 def __serviceStatus(
-    layer: Literal[StatusID.SERVICE],
+    layer: StatusID,
     newStatus: service.Status
 ):
     global ServiceStatus

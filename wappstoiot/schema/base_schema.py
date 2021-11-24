@@ -2,7 +2,7 @@
 #   filename:  schema.json
 #   timestamp: 2021-07-08T11:31:02+00:00
 
-from __future__ import annotations
+# from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
