@@ -275,7 +275,7 @@ class Network(object):
 
         def _resend_logic(status, data):
             nonlocal offlineStorage
-            self.log.debug(f"Resend called with: {status=}")
+            self.log.debug(f"Resend called with: status={status}")
             try:
                 self.log.debug("Resending Offline data")
                 while True:

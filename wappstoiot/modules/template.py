@@ -56,8 +56,8 @@ class ValueType(str, Enum):
     NUMBER = "Number"
     BLOB = "Blob"
     XML = "Xml"
-    TEMPERATURE = "Temperature"
-    SPEED = "Speed"
+    TEMPERATURE = "Temperature"  # TODO: !
+    SPEED = "Speed"  # TODO: !
     BOOLEAN = "Boolean"
     LATITUDE = "Latitude"
     LONGITUDE = "Longitude"
