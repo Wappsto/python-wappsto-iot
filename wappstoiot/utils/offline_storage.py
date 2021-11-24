@@ -3,22 +3,25 @@
 import logging
 import time
 
+from abc import ABC
+from abc import abstractmethod
 from contextlib import contextmanager
 from pathlib import Path
 
 
 from typing import List
 from typing import Optional
-from typing import Protocol
 from typing import Union
 
 
-class OfflineStorage(Protocol):
+class OfflineStorage(ABC):
+    @abstractmethod
     def save(self, data: str): ...
+    @abstractmethod
     def load(self, max_count: Optional[int] = None) -> List[str]: ...
 
 
-class OfflineStorageFiles:
+class OfflineStorageFiles(OfflineStorage):
     """
     Timed over 1M runs.
 

@@ -9,9 +9,10 @@ from typing import Optional
 from typing import Union
 
 from .protocol import Status
+from .protocol import Connection
 
 
-class RawSocket:
+class RawSocket(Connection):
     def __init__(
         self,
         address: str,

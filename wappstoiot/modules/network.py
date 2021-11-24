@@ -290,7 +290,7 @@ class Network(object):
                     )
 
             except Exception:
-                self.log.exception("")
+                self.log.exception("Resend Logic")
 
         observer.subscribe(
             connection.Status.CONNECTED,
