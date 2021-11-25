@@ -160,10 +160,11 @@ class Network(object):
         self.cloud_id_mapping: Dict[int, UUID4] = {}
 
         if not isinstance(configFolder, Path):
-            if configFolder == ".":
-                configFolder = Path(__main__.__file__).absolute().parent
+            if configFolder == "." and hasattr(__main__, '__file__'):
+                configFolder = Path(__main__.__file__).absolute().parent / Path(configFolder)
             else:
                 configFolder = Path(configFolder)
+
         self.configFolder = configFolder
 
         self.connection: ServiceClass
@@ -267,6 +268,8 @@ class Network(object):
             offline_storage: OfflineStorage = OfflineStorageFiles(
                 location=self.configFolder
             )
+        else:
+            offline_storage: OfflineStorage = offlineStorage
 
         observer.subscribe(
             service.Status.SENDERROR,
@@ -274,12 +277,12 @@ class Network(object):
         )
 
         def _resend_logic(status, data):
-            nonlocal offlineStorage
+            nonlocal offline_storage
             self.log.debug(f"Resend called with: status={status}")
             try:
                 self.log.debug("Resending Offline data")
                 while True:
-                    data = offlineStorage.load(10)
+                    data = offline_storage.load(10)
                     if not data:
                         return
 
