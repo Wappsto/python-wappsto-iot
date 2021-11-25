@@ -1,7 +1,9 @@
+from abc import ABC
+from abc import abstractmethod
+
 from threading import Lock
 from enum import Enum
 
-from typing import Protocol
 from typing import Union
 from typing import Any
 from typing import Callable
@@ -15,10 +17,11 @@ class Status(str, Enum):
     DISCONNETCED = "Disconnected"
 
 
-class Connection(Protocol):
+class Connection(ABC):
 
     send_ready: Lock
 
+    @abstractmethod
     def send(
         self,
         data: Union[str, bytes]
@@ -33,6 +36,7 @@ class Connection(Protocol):
             False.
         """
 
+    @abstractmethod
     def receive(
         self,
         parser: Callable[[bytes], Any],
@@ -54,6 +58,7 @@ class Connection(Protocol):
         """
         pass
 
+    @abstractmethod
     def connect(self) -> bool:
         """
         Connect to the server.
@@ -66,6 +71,7 @@ class Connection(Protocol):
         """
         pass
 
+    @abstractmethod
     def reconnect(
         self,
         retry_limit: Optional[int] = None
@@ -86,10 +92,12 @@ class Connection(Protocol):
         """
         pass
 
+    @abstractmethod
     def disconnect(self) -> None:
         """Disconnect from the server."""
         pass
 
+    @abstractmethod
     def close(self) -> None:
         """
         Close the connection.

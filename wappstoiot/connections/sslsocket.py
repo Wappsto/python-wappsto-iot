@@ -12,9 +12,10 @@ from typing import Optional
 from typing import Union
 
 from .protocol import Status
+from .protocol import Connection
 
 
-class TlsSocket:
+class TlsSocket(Connection):
     def __init__(
         self,
         address: str,

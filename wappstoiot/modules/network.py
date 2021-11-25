@@ -10,7 +10,7 @@ from pathlib import Path
 
 from enum import Enum
 
-from typing import Any, Dict, Optional, Union, Callable, Literal
+from typing import Any, Dict, Optional, Union, Callable
 
 from pydantic import UUID4
 # from pydantic import parse_file_as
@@ -57,7 +57,7 @@ ServiceStatus = service.Status.IDLE
 
 
 def __connectionStatus(
-    layer: Literal[StatusID.CONNECTION],
+    layer: StatusID,
     newStatus: connection.Status
 ):
     global ConnectionStatus
@@ -65,7 +65,7 @@ def __connectionStatus(
 
 
 def __serviceStatus(
-    layer: Literal[StatusID.SERVICE],
+    layer: StatusID,
     newStatus: service.Status
 ):
     global ServiceStatus
@@ -160,10 +160,11 @@ class Network(object):
         self.cloud_id_mapping: Dict[int, UUID4] = {}
 
         if not isinstance(configFolder, Path):
-            if configFolder == ".":
-                configFolder = Path(__main__.__file__).absolute().parent
+            if configFolder == "." and hasattr(__main__, '__file__'):
+                configFolder = Path(__main__.__file__).absolute().parent / Path(configFolder)
             else:
                 configFolder = Path(configFolder)
+
         self.configFolder = configFolder
 
         self.connection: ServiceClass
@@ -264,22 +265,24 @@ class Network(object):
         if offlineStorage is False:
             return
         if offlineStorage is True:
-            offlineStorage = OfflineStorageFiles(
+            offline_storage: OfflineStorage = OfflineStorageFiles(
                 location=self.configFolder
             )
+        else:
+            offline_storage: OfflineStorage = offlineStorage
 
         observer.subscribe(
             service.Status.SENDERROR,
-            lambda _, data: offlineStorage.save(data.json(exclude_none=True))
+            lambda _, data: offline_storage.save(data.json(exclude_none=True))
         )
 
         def _resend_logic(status, data):
-            nonlocal offlineStorage
-            self.log.debug(f"Resend called with: {status=}")
+            nonlocal offline_storage
+            self.log.debug(f"Resend called with: status={status}")
             try:
                 self.log.debug("Resending Offline data")
                 while True:
-                    data = offlineStorage.load(10)
+                    data = offline_storage.load(10)
                     if not data:
                         return
 
@@ -290,7 +293,7 @@ class Network(object):
                     )
 
             except Exception:
-                self.log.exception("")
+                self.log.exception("Resend Logic")
 
         observer.subscribe(
             connection.Status.CONNECTED,

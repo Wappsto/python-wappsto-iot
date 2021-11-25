@@ -11,7 +11,7 @@ obs_log.addHandler(logging.NullHandler())
 
 default_subscriber = [
     lambda event_name, data: obs_log.info(
-        f"Default Observer: {event_name=}, {data=}"
+        f"Default Observer: event_name={event_name}, data={data}"
     )
 ]
 

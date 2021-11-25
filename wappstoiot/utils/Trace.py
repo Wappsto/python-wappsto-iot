@@ -39,7 +39,7 @@ def parentId(jsonrpc_elemt: Union[WappstoObject, dict]) -> Union[str, None]:
     """
     Check if a trace package should be send, if so it returns the parent ID.
     """
-    log.debug(f"{jsonrpc_elemt=}")
+    log.debug(f"jsonrpc_elemt={jsonrpc_elemt}")
     if isinstance(jsonrpc_elemt, dict):
         return jsonrpc_elemt.get('params', {}).get('meta', {}).get('trace', None)
     return jsonrpc_elemt.meta.trace
