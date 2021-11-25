@@ -264,13 +264,13 @@ class Network(object):
         if offlineStorage is False:
             return
         if offlineStorage is True:
-            offlineStorage = OfflineStorageFiles(
+            offline_storage: OfflineStorage = OfflineStorageFiles(
                 location=self.configFolder
             )
 
         observer.subscribe(
             service.Status.SENDERROR,
-            lambda _, data: offlineStorage.save(data.json(exclude_none=True))
+            lambda _, data: offline_storage.save(data.json(exclude_none=True))
         )
 
         def _resend_logic(status, data):
