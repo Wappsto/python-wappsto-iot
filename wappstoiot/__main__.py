@@ -181,13 +181,6 @@ def create_certificaties_files(location, creator, args):
 
 
 if __name__ == "__main__":
-
-    """
-    Is this even needed anymore?
-
-    We can get the Network UUID & endpoint from the certificates.
-    """
-
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
