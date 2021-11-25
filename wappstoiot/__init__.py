@@ -32,4 +32,4 @@ from .modules.value import ValueBaseType
 from .modules.template import ValueType
 
 
-__version__ = "v0.5.1"
+__version__ = "v0.5.2"
