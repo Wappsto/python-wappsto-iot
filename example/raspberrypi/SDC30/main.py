@@ -14,7 +14,7 @@ import time
 
 import wappstoiot
 
-from scd30_dvr import SCD30
+from scd30_drv import SCD30
 
 
 def main():
@@ -42,7 +42,7 @@ def main():
 
     temp_value = device.createValue(
         name="Temperature",
-        value_type=wappstoiot.ValueType.TEMPERATURE,
+        value_type=wappstoiot.ValueType.NUMBER,
         permission=wappstoiot.PermissionType.READ
     )
 
@@ -72,8 +72,8 @@ def main():
 
     while True:
         try:
-            time.sleep(60*30)  # 1/2 hour sleep
             update_all_values()
+            time.sleep(60*30)  # 1/2 hour sleep
         except KeyboardInterrupt:
             break
     network.close()
