@@ -129,6 +129,18 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         namespace="",
         unit=None
     ),
+    ValueType.TEMPERATURE: ValueSettinsSchema(
+        type=ValueBaseType.NUMBER,
+        name="Temperature",
+        permission=PermissionType.READ,
+        mapping=None,  # dict,
+        ordered_mapping=None,  # Boolean
+        meaningful_zero=True,  # Boolean
+        min=-273,
+        max=1e+38,
+        step=0.01,
+        unit="°C"
+    ),
     ValueType.LATITUDE: ValueSettinsSchema(
         type=ValueBaseType.NUMBER,
         name="latitude",

@@ -95,7 +95,7 @@ class JsonReply(BaseModel):
         Network,
         State,
         ValueUnion,
-        bool
+        bool  # UNSURE: Do it really return boolean here?
     ]]
     meta: JsonMeta
 

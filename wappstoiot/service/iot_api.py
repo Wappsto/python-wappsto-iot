@@ -102,8 +102,8 @@ class IoTAPI(ServiceClass):
             # WappstoMethod.HEAD: self._head,
         }
 
-        if not self.connection.connect():
-            raise
+        self.connection.connect()
+
         self.jsonrpc = slxjsonrpc.SlxJsonRpc(
             methods=WappstoMethod,
             method_cb=method_cb,

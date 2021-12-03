@@ -255,7 +255,7 @@ class Device:
     def request(self):
         raise NotImplementedError("Method: 'request' is not Implemented.")
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Request a delete of the Device, & all it's Children.
         """

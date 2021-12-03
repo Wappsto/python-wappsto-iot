@@ -474,7 +474,7 @@ class Network(object):
 
     def onRefresh(
         self,
-        callback: Callable[[None], None]
+        callback: Callable[['Network'], None]
     ):
         """
         Configure an action when a refresh Network have been Requested.
@@ -506,7 +506,7 @@ class Network(object):
         """
         def _cb(obj, method):
             if method == WappstoMethod.DELETE:
-                callback()
+                callback(self)
 
         self.connection.subscribe_network_event(
             uuid=self.uuid,

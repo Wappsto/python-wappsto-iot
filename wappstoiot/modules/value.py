@@ -324,7 +324,7 @@ class Value:
     #   Value 'on-' methods
     # -------------------------------------------------------------------------
 
-    def onChange(
+    def onChange(  # ???
         self,
         callback: Callable[['Value', ChangeType], None],
     ) -> None:
@@ -374,7 +374,7 @@ class Value:
             callback=_cb
         )
 
-    def onRequest(
+    def onRequest(  # ???
         self,
         callback: Callable[['Value', RequestType, str, Any], None],
     ) -> None:
@@ -465,6 +465,12 @@ class Value:
     # -------------------------------------------------------------------------
     #   Value methods
     # -------------------------------------------------------------------------
+
+    def refresh(self):
+        pass
+
+    def request(self):
+        pass
 
     def change(self, name: str, value: Any) -> None:
         """
