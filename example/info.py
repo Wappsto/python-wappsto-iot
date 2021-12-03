@@ -13,13 +13,14 @@ def main():
         configFolder="info"
     )
 
-    network.onStatusChange(
-        StatusID=wappstoiot.StatusID.CONNECTION,
-        callback=lambda StatusID, newStatus: print(f"New status: {newStatus}")
-    )
-    network.onDelete(
-        callback=lambda obj: print("Network received a: Delete")
-    )
+    # network.onStatusChange(
+    #     StatusID=wappstoiot.StatusID.CONNECTION,
+    #     callback=lambda StatusID, newStatus: print(f"New status: {newStatus}")
+    # )
+
+    # network.onDelete(
+    #     callback=lambda obj: print("Network received a: Delete")
+    # )
 
     device = network.createDevice()
 
@@ -28,7 +29,7 @@ def main():
         value_type=wappstoiot.ValueType.STRING
     )
 
-    def valueRefresh(obj: wappstoiot.Value) -> None:
+    def valueRefresh(obj):
         newValue = f"{obj.data} Refreshed!"
         print(f"Refreshing the {obj.name} to: '{newValue}'")
         obj.report(newValue)
