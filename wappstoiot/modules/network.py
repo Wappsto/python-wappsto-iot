@@ -1,112 +1,22 @@
-import __main__
-import netrc
 import logging
-import atexit
-import json
 
-from pathlib import Path
-
-# from urllib.parse import ParseResult
-
-from enum import Enum
-
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Dict, Optional, Callable
 
 from pydantic import UUID4
-# from pydantic import parse_file_as
 
 
 from ..service.template import ServiceClass
 # from .service.rest_api import RestAPI
-from ..service.iot_api import IoTAPI
 
-from .template import dict_diff
 from .device import Device
-# from .value import Value
-
-# from .template import _Config
-# from .template import _ConfigFile
-# from .template import _UnitsInfo
 
 from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod
-
-# from .utils import exceptions
-from ..utils.certificateread import CertificateRead
-from ..utils.offline_storage import OfflineStorage
-from ..utils.offline_storage import OfflineStorageFiles
-
-
-# #############################################################################
-#                        Status Observer Setup
-# #############################################################################
-
-from ..utils import observer 
-from ..connections import protocol as connection
-from ..service import template as service
-
-
-class StatusID(str, Enum):
-    CONNECTION = "CONNECTION"
-    SERVICE = "SERVICE"
-
-
-# TODO: TEST the Status thingy.
-ConnectionStatus = connection.Status.DISCONNETCED
-ServiceStatus = service.Status.IDLE
-
-
-def __connectionStatus(
-    layer: StatusID,
-    newStatus: connection.Status
-):
-    global ConnectionStatus
-    ConnectionStatus = newStatus
-
-
-def __serviceStatus(
-    layer: StatusID,
-    newStatus: service.Status
-):
-    global ServiceStatus
-    ServiceStatus = newStatus
-
-
-def subscribe_all_status():    
-    observer.subscribe(
-        event_name=StatusID.CONNECTION,
-        callback=__connectionStatus
-    )
-    observer.subscribe(
-        event_name=StatusID.SERVICE,
-        callback=__serviceStatus
-    )
 
 
 # #############################################################################
 #                                 Network Setup
 # #############################################################################
-
-class NetworkChangeType(str, Enum):
-    description = "description"
-    device = "device"
-    info = "info"
-    name = "name"
-
-
-class NetworkRequestType(str, Enum):
-    refresh = "refresh"
-    delete = "delete"
-
-
-class ConnectionTypes(str, Enum):
-    IOTAPI = "jsonrpc"
-    RESTAPI = "HTTPS"
-
-# class status:
-#     Connection -> *REf
-#
-
 
 class Network(object):
 
@@ -114,43 +24,21 @@ class Network(object):
 
     def __init__(
         self,
-        configFolder: Union[Path, str] = ".",  # Relative to the main.py-file.
-        name: str = "TheNetwork",
+        name: str,
+        connection: ServiceClass,
+        network_uuid: UUID4,
         description: str = "",
-        connection: ConnectionTypes = ConnectionTypes.IOTAPI,
-        mixMaxEnforce="warning",  # "ignore", "enforce"
-        stepEnforce="warning",  # "ignore", "enforce"
-        deltaHandling="",
-        period_handling="",
-        connectSync: bool = True,  # Start with a Network GET to sync.  # TODO:
-        pingPongPeriod: Optional[int] = None,  # Period between a RPC ping-pong.
-        offlineStorage: Union[OfflineStorage, bool] = False,
-        # none_blocking=True,  # Whether the post should wait for reply or not.
     ) -> None:
         """
         Configure the WappstoIoT settings.
-
-        This function call is optional.
-        If it is not called, the default settings will be used for WappstoIoT.
-        This function will also connect to the WappstoIoT API on call.
-        In the cases that this function is not called, the connection will be
-        make when an action is make that requests the connection.
-
-        The 'minMaxEnforce' is default set to "Warning" where a warning is
-        reading to log, when the value range is outside the minimum & maximum
-        range.
-        The 'ignore' is where it do nothing when it is outside range.
-        The 'enforce' is where the range are enforced to fit the minimum &
-        maximum range. Meaning if it is above the maximum it is changed to
-        the maximum, if it is below the minimum, it is set to the minimum value.
         """
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
-        self.closed = False
+        # self.closed = False
 
         kwargs = locals()
-        self.__uuid: UUID4
+        self.__uuid: UUID4 = network_uuid
         self.element: WSchema.Network = self.schema()
 
         self.children_uuid_mapping: Dict[UUID4, Device] = {}
@@ -159,29 +47,7 @@ class Network(object):
 
         self.cloud_id_mapping: Dict[int, UUID4] = {}
 
-        if not isinstance(configFolder, Path):
-            if configFolder == "." and hasattr(__main__, '__file__'):
-                configFolder = Path(__main__.__file__).absolute().parent / Path(configFolder)
-            else:
-                configFolder = Path(configFolder)
-
-        self.configFolder = configFolder
-
-        self.connection: ServiceClass
-
-        self._setup_offline_storage(offlineStorage)
-
-        if connection == ConnectionTypes.IOTAPI:
-            self._setup_IoTAPI(configFolder)
-            cer = CertificateRead(crt=self.configFolder / "client.crt")
-            self.__uuid = cer.network
-
-        elif connection == ConnectionTypes.RESTAPI:
-            # TODO: Find & load configs.
-            configs: Dict[Any, Any] = {}
-            self._setup_RestAPI(self.configFolder, configs)  # FIXME:
-
-        subscribe_all_status()
+        self.connection: ServiceClass = connection
 
         self.element = self.schema(
             name=name,
@@ -215,8 +81,6 @@ class Network(object):
         else:
             self.connection.post_network(self.element)
 
-        atexit.register(self.close)
-
     def clean(self) -> None:
         """
         Remove local storage, and references to the Wappsto data-model.
@@ -224,7 +88,7 @@ class Network(object):
         pass
 
     @property
-    def name(self) -> str:
+    def name(self) -> Optional[str]:
         """Returns the name of the value."""
         return self.element.name
 
@@ -237,82 +101,12 @@ class Network(object):
     #   Helper methods
     # -------------------------------------------------------------------------
 
-    def _setup_IoTAPI(self, configFolder, configs=None):
-        # TODO: Setup the Connection.
-        kwargs = self._certificate_check(configFolder)
-        self.connection = IoTAPI(**kwargs)
-
-    def _setup_RestAPI(self, configFolder, configs):
-        # TODO: Setup the Connection.
-        token = configs.get("token")
-        login = netrc.netrc().authenticators(configs.end_point)
-        if token:
-            kwargs = {"token": token}
-        elif login:
-            kwargs = {"username": login[0], "password": login[1]}
-        else:
-            raise ValueError("No login was found.")
-        self.connection = RestAPI(**kwargs, url=configs.end_point)
-
     def _device_name_gen(self, device_id):
         return f"device_{device_id}"
-
-    def _setup_offline_storage(
-        self,
-        offlineStorage: Union[OfflineStorage, bool]
-    ) -> None:
-        # TODO: Test me!!
-        if offlineStorage is False:
-            return
-        if offlineStorage is True:
-            offline_storage: OfflineStorage = OfflineStorageFiles(
-                location=self.configFolder
-            )
-        else:
-            offline_storage: OfflineStorage = offlineStorage
-
-        observer.subscribe(
-            service.Status.SENDERROR,
-            lambda _, data: offline_storage.save(data.json(exclude_none=True))
-        )
-
-        def _resend_logic(status, data):
-            nonlocal offline_storage
-            self.log.debug(f"Resend called with: status={status}")
-            try:
-                self.log.debug("Resending Offline data")
-                while True:
-                    data = offline_storage.load(10)
-                    if not data:
-                        return
-
-                    s_data = [json.loads(d) for d in data]
-                    self.log.debug(f"Sending Data: {s_data}")
-                    self.connection._resend_data(
-                        json.dumps(s_data)
-                    )
-
-            except Exception:
-                self.log.exception("Resend Logic")
-
-        observer.subscribe(
-            connection.Status.CONNECTED,
-            _resend_logic
-        )
 
     # -------------------------------------------------------------------------
     #   Save/Load helper methods
     # -------------------------------------------------------------------------
-
-    # def __restore_from_save_file(self, configs, kwargs):
-    #     # TODO(MBK): Create the self.element & All the Children.
-
-    #     # the kwargs weigh higher then the loaded settings.
-    #     for key, value in configs.dict().items():
-    #         if kwargs[key] is None:
-    #             kwargs[key] = value
-    #     # self.__init_devices(self.uuid, configs)
-    #     pass
 
     def __update_self(self, element: WSchema.Network):
         # TODO(MBK): Check if new devices was added! & Check diff.
@@ -321,110 +115,6 @@ class Network(object):
         self.element.meta = element.meta.copy(update=self.element.meta)
         for nr, device in enumerate(self.element.device):
             self.cloud_id_mapping[nr] = device
-
-    def _certificate_check(self, path) -> Dict[str, Path]:
-        """
-        Check if the right certificates are at the given path.
-        """
-        self.certi_path = {
-            "ca": "ca.crt",
-            "crt": "client.crt",
-            "key": "client.key",
-        }
-        r_paths: Dict[str, Path] = {}
-        for k, f in self.certi_path.items():
-            r_paths[k] = path / f
-            if not r_paths[k].exists():
-                raise FileNotFoundError(f"'{f}' was not found in at: {path}")
-
-        return r_paths
-
-    # def _load_config(self) -> _ConfigFile:
-    #     try:
-    #         return parse_file_as(_ConfigFile, self.__config_file)
-    #     except FileNotFoundError:
-    #         exceptions.ConfigFileNotFoundError(
-    #             "Could not find the config file."
-    #         )
-    #     except Exception:  # JSONDecodeError
-    #         exceptions.ConfigFileError(
-    #             "Could not parse config file."
-    #         )
-
-    # def _get_json(self) -> _UnitsInfo:
-    #     """Generate the json-object ready for to be saved in the configfile."""
-    #     unit_list = []
-    #     for unit in self.children_uuid_mapping.values():
-    #         unit_list.extend(unit._get_json())
-    #     unit_list.append(_UnitsInfo(
-    #         self_type=WSchema.WappstoObjectType.NETWORK,
-    #         parent=None,
-    #         children=list(self.children_uuid_mapping.keys()),
-    #         children_id_mapping=self.children_id_mapping,
-    #         children_name_mapping=self.children_name_mapping
-    #     ))
-    #     return unit_list
-
-    # def _save_config(self):
-    #     cofigdata = _ConfigFile(
-    #         units=self._get_json(),
-    #         configs=_Config(
-    #             network_uuid=self.uuid,
-    #             # network_name=self.name,
-    #             port=self.port,
-    #             end_point=self.end_point,
-    #             # connectSync=self.connectSync,
-    #             # storeQueue=self.storeQueue,
-    #             # mixMaxEnforce=self.mixMaxEnforce,
-    #             # stepEnforce=self.stepEnforce,
-    #             # deltaHandling=self.deltaHandling,
-    #             # period_handling=self.period_handling,
-    #         )
-    #     )
-    #     with open(self.__config_file, "w") as file:
-    #         file.write(cofigdata.json())
-
-    # def __init_devices(self, uuid, configs):
-    #     for device_uuid in configs.unit[uuid].children:
-    #         device_settings = configs.units[device_uuid]
-    #         # TODO(MBK): 'self.connection.get_device' ?
-    #         theDevice = self.connection.get_device(device_uuid)
-    #         temp = Device(
-    #             device_id=device_settings.self_id,
-    #             device_uuid=device_uuid,
-    #             name=device_settings.name if device_settings.name else self._device_name_gen(device_settings.self_id),
-    #             post_self=(not theDevice)
-    #         )
-    #         self.__add_device(device=temp, id=device_settings.self_id, name=device_settings.name)
-
-    # def __init_values(self, uuid, parent, configs):
-    #     # TODO(MBK): 'self.connection.get_value' ?    
-    #     theValue = configs.units[uuid]
-    #     temp = Value(
-    #         name=theValue.name,
-    #         value_id=theValue.self_id,
-    #         value_uuid=uuid,
-    #     )
-
-    # -------------------------------------------------------------------------
-    #   Status methods
-    # -------------------------------------------------------------------------
-
-    def onStatusChange(
-        self,
-        layer: StatusID,
-        callback: Callable[[StatusID, str], None]
-    ):
-        """
-        Configure an action when the Status have changed.
-
-        def callback(layer: LayerEnum, newStatus: str):
-
-        """
-        observer.subscribe(
-            event_name=layer,
-            callback=callback
-        )
 
     # -------------------------------------------------------------------------
     #   Network 'on-' methods
@@ -599,20 +289,5 @@ class Network(object):
         self.children_id_mapping[id] = device.uuid
         self.children_name_mapping[name] = device.uuid
 
-    # -------------------------------------------------------------------------
-    #   Connection methods
-    # -------------------------------------------------------------------------
-
-    def connect(self):
-        pass
-
-    def disconnect(self):
-        pass
-
     def close(self):
-        """."""
-        if not self.closed:
-            self.connection.close()
-            self.closed = True
-        # Disconnect
         pass
