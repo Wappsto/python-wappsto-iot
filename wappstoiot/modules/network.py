@@ -1,4 +1,5 @@
 import logging
+import uuid
 
 from typing import Dict, Optional, Callable
 
@@ -42,7 +43,7 @@ class Network(object):
         self.element: WSchema.Network = self.schema()
 
         self.children_uuid_mapping: Dict[UUID4, Device] = {}
-        self.children_id_mapping: Dict[int, UUID4] = {}
+        # self.children_id_mapping: Dict[int, UUID4] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
 
         self.cloud_id_mapping: Dict[int, UUID4] = {}
@@ -220,7 +221,6 @@ class Network(object):
         """Helper function for Delete, to only localy delete."""
         for c_uuid, c_obj in self.children_uuid_mapping.items():
             c_obj._delete()
-        self.children_id_mapping.clear()
         self.children_name_mapping.clear()
         self.children_uuid_mapping.clear()
 
@@ -230,8 +230,7 @@ class Network(object):
 
     def createDevice(
         self,
-        name: Optional[str] = None,
-        device_id: Optional[int] = None, 
+        name: str,
         manufacturer: Optional[str] = None,
         product: Optional[str] = None,
         version: Optional[str] = None,
@@ -250,32 +249,23 @@ class Network(object):
         kwargs = locals()
         kwargs.pop('self')
 
-        if not device_id:
-            if self.children_id_mapping:
-                device_id = max(self.children_id_mapping.keys()) + 1
-            else:
-                device_id = 0
-        elif device_id in self.children_id_mapping:
-            return self.children_uuid_mapping[self.children_id_mapping[device_id]]
+        device_uuid = self.connection.get_device_where(
+            network_uuid=self.uuid,
+            name=name
+        )
 
-        kwargs['device_uuid'] = self.cloud_id_mapping.get(device_id)
-        # if kwargs['device_uuid']:
-        #     kwargs['name'] = self._configs.units[self.uuid].children_name_mapping.get(kwargs['device_uuid'])
-
-        if not kwargs['name']:
-            kwargs['name'] = self._device_name_gen(device_id)
-        elif kwargs['name'] in self.children_name_mapping.keys():
-            # The Device have already been created.
-            return self.children_uuid_mapping[self.children_name_mapping[kwargs['name']]]
+        if not device_uuid:
+            kwargs['device_uuid'] = uuid.uuid4()
+        else:
+            kwargs['device_uuid'] = device_uuid[0]
 
         device_obj = Device(parent=self, **kwargs)
-        self.__add_device(device_obj, device_id, kwargs['name'])
+        self.__add_device(device_obj, kwargs['name'])
         return device_obj
 
-    def __add_device(self, device: Device, id: int, name: str):
+    def __add_device(self, device: Device, name: str):
         """Helper function for Create, to only localy create it."""
         self.children_uuid_mapping[device.uuid] = device
-        self.children_id_mapping[id] = device.uuid
         self.children_name_mapping[name] = device.uuid
 
     def close(self):

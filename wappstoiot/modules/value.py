@@ -76,9 +76,8 @@ class Value:
         self,
         parent: 'Device',
         type: ValueBaseType,
-        value_id: int,
-        value_uuid: Optional[UUID4] = None,  # Only used on loading.
-        name: Optional[str] = None,
+        name: str,
+        value_uuid: UUID4,  # Only used on loading.
         permission: PermissionType = PermissionType.READWRITE,
         min: Optional[Union[int, float]] = None,
         max: Optional[Union[int, float]] = None,
@@ -108,11 +107,10 @@ class Value:
             WSchema.BlobValue,
             WSchema.XmlValue
         ] = self.schema()
-        self.__id: int = value_id
-        self.__uuid: UUID4 = value_uuid if value_uuid else uuid.uuid4()
+
+        self.__uuid: UUID4 = value_uuid
 
         # self.children_uuid_mapping: Dict[UUID4, Value] = {}
-        # self.children_id_mapping: Dict[int, UUID4] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
 
         self.connection: ServiceClass = parent.connection
@@ -227,10 +225,6 @@ class Value:
         """Returns the uuid of the value."""
         return self.__uuid
 
-    @property
-    def id(self) -> int:
-        return self.__id
-
     # -------------------------------------------------------------------------
     #   Helper methods
     # -------------------------------------------------------------------------
@@ -287,22 +281,6 @@ class Value:
             }
 
         return subValue
-
-    # def _get_json(self) -> _UnitsInfo:
-    #     """Generate the json-object ready for to be saved in the configfile."""
-    #     unit_list = []
-    #     for unit in self.children_uuid_mapping.values():
-    #         unit_list.extend(unit._get_json())
-    #     unit_list.append(_UnitsInfo(
-    #         self_type=WappstoObjectType.VALUE,
-    #         self_id=self.id,
-    #         parent=self.parent.uuid,
-    #         permission=self.element.permission,
-    #         children=list(self.children_uuid_mapping.keys()),
-    #         children_id_mapping=self.children_id_mapping,
-    #         children_name_mapping=self.children_name_mapping
-    #     ))
-    #     return unit_list
 
     def __update_self(self, element):
         new_dict = element.copy(update=self.element.dict(exclude_none=True))
@@ -501,15 +479,6 @@ class Value:
         """
 
         self.connection.delete_value(uuid=self.uuid)
-        # self._delete()
-
-    # def _delete(self):
-    #     # TODO: REDO!
-    #     for c_uuid, c_obj in self.children_uuid_mapping.items():
-    #         c_obj._delete()
-    #     self.children_id_mapping.clear()
-    #     self.children_name_mapping.clear()
-    #     self.children_uuid_mapping.clear()
 
     def report(
         self,
@@ -523,6 +492,7 @@ class Value:
         whether it is a GPIO pin, a analog temperature sensor or a
         device over a I2C bus.
         """
+        # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
         data = WSchema.State(
             data=value,

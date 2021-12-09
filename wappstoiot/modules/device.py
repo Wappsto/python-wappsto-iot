@@ -56,8 +56,7 @@ class Device:
     def __init__(
         self,
         parent: 'Network',
-        device_id: int,
-        device_uuid: Optional[UUID4] = None,  # Only used on loading.
+        device_uuid: UUID4,
         name: Optional[str] = None,
         manufacturer: Optional[str] = None,
         product: Optional[str] = None,
@@ -73,11 +72,9 @@ class Device:
 
         self.parent = parent
         self.element: WSchema.Device
-        self.__id: int = device_id
-        self.__uuid: UUID4 = device_uuid if device_uuid else uuid.uuid4()
+        self.__uuid: UUID4 = device_uuid
 
         self.children_uuid_mapping: Dict[UUID4, Value] = {}
-        self.children_id_mapping: Dict[int, UUID4] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
 
         self.cloud_id_mapping: Dict[int, UUID4] = {}
@@ -129,29 +126,6 @@ class Device:
     def uuid(self) -> UUID4:
         """Returns the name of the value."""
         return self.__uuid
-
-    @property
-    def id(self) -> int:
-        return self.__id
-
-    # -------------------------------------------------------------------------
-    #   Helper methods
-    # -------------------------------------------------------------------------
-
-    # def _get_json(self) -> _UnitsInfo:
-    #     """Generate the json-object ready for to be saved in the configfile."""
-    #     unit_list = []
-    #     for unit in self.children_uuid_mapping.values():
-    #         unit_list.extend(unit._get_json())
-    #     unit_list.append(_UnitsInfo(
-    #         self_type=WappstoObjectType.DEVICE,
-    #         self_id=self.id,
-    #         parent=self.parent.uuid,
-    #         children=list(self.children_uuid_mapping.keys()),
-    #         children_id_mapping=self.children_id_mapping,
-    #         children_name_mapping=self.children_name_mapping
-    #     ))
-    #     return unit_list
 
     def __update_self(self, element: WSchema.Device):
         # TODO(MBK): Check if new devices was added! & Check diff.
@@ -276,7 +250,6 @@ class Device:
     def _delete(self):
         for c_uuid, c_obj in self.children_uuid_mapping.items():
             c_obj._delete()
-        self.children_id_mapping.clear()
         self.children_name_mapping.clear()
         self.children_uuid_mapping.clear()
 
@@ -286,8 +259,7 @@ class Device:
 
     def createValue(
         self,
-        name: Optional[str] = None,
-        value_id: Optional[int] = None,
+        name: str,
         value_type: ValueType = ValueType.DEFAULT,
         permission: Optional[PermissionType] = None,  # PermissionType.READWRITE,
         min: Optional[Union[int, float]] = None,
@@ -321,29 +293,20 @@ class Device:
 
         thisSetting = valueSettings[value_type]
 
-        if not value_id:
-            if self.children_id_mapping:
-                value_id = self._name_gen()
-            else:
-                value_id = 0
-        # Should we use create re-get a value?
-        elif value_id in self.children_id_mapping:
-            return self.children_uuid_mapping[self.children_id_mapping[value_id]]
+        value_uuid = self.connection.get_value_where(
+            device_uuid=self.uuid,
+            name=name
+        )
+
+        if not value_uuid:
+            kwargs['value_uuid'] = uuid.uuid4()
+        else:
+            kwargs['value_uuid'] = value_uuid[0]
 
         # the kwargs weigh higher then the default settings. 
         for key, value in thisSetting.dict().items():
             if key in kwargs and kwargs[key] is None:
                 kwargs[key] = value
-
-        kwargs['value_uuid'] = self.cloud_id_mapping.get(value_id)
-
-        # kwargs['value_uuid'] = self.parent._configs.units[self.uuid].children_id_mapping.get(value_id)
-        # if kwargs['value_uuid']:
-        #     kwargs['name'] = self.parent._configs.units[self.uuid].children_name_mapping.get(kwargs['value_uuid'])
-
-        if kwargs['name'] in self.children_name_mapping:
-            # If Default value name is in use, gen new!
-            kwargs['name'] = self._device_name_gen(thisSetting.name, value_id)
 
         value_obj = Value(
             parent=self,
@@ -351,16 +314,12 @@ class Device:
             **kwargs
         )
 
-        self.__add_value(value_obj, value_id, kwargs['name'])
+        self.__add_value(value_obj, kwargs['name'])
         return value_obj
 
-    def _name_gen(self) -> int:
-        return max(self.children_id_mapping.keys()) + 1
-
-    def __add_value(self, value: Value, id: int, name: str):
+    def __add_value(self, value: Value, name: str):
         """Helper function for Create, to only localy create it."""
         self.children_uuid_mapping[value.uuid] = value
-        self.children_id_mapping[id] = value.uuid
         self.children_name_mapping[name] = value.uuid
 
     def close(self):
