@@ -33,11 +33,22 @@ def find_version(*file_paths):
         raise RuntimeError("Unable to find version string.")
 
 
+def find_auther(*file_paths):
+    path = os.path.join(here, *file_paths)
+    with codecs.open(path, 'r') as fp:
+        auther_file = fp.read()
+        auther_match = re.search(r"__auther__ = ['\"]([^'\"]*)['\"]",
+                                 auther_file, re.M)
+        if auther_match:
+            return auther_match.group(1)
+        raise RuntimeError("Unable to find auther string.")
+
+
 setup(
     name="wappstoiot",
-    python_requires='>3.6.0',
+    python_requires='>=3.6.0',
     version=find_version("wappstoiot", "__init__.py"),
-    author="Seluxit A/S",
+    author=find_auther("wappstoiot", "__init__.py"),
     author_email="support@seluxit.com",
     license="Apache-2.0",
     description="Simple Wappsto Python user-interface to Wappsto IoT",
@@ -63,7 +74,6 @@ setup(
     # extras_require={  # TODO: fix __main__.py to be optional.
     #     "cli": [
     #         'requests',
-    #         'rich'
     #     ]
     # },
 )

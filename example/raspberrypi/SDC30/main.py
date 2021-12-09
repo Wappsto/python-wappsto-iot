@@ -25,9 +25,12 @@ def main():
             time.sleep(0.01)
         return sensor.get_scd30_measurements()
 
-    network = wappstoiot.Network(
+    wappstoiot.config(
+        config_folder="./config"
+    )
+
+    network = wappstoiot.createNetwork(
         name="Co2 Unit",
-        configFolder="./config"
     )
 
     device = network.createDevice(
@@ -76,7 +79,7 @@ def main():
             time.sleep(60*30)  # 1/2 hour sleep
         except KeyboardInterrupt:
             break
-    network.close()
+    wappstoiot.close()
 
 
 if __name__ == "__main__":

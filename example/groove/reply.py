@@ -26,9 +26,12 @@ def main():
         "1": relay.on,
     }
 
-    network = wappstoiot.Network(
+    wappstoiot.config(
+        config_folder="config"
+    )
+
+    network = wappstoiot.createNetwork(
         name="ControlPi",
-        configFolder="config"
     )
 
     device = network.createDevice(
@@ -49,7 +52,7 @@ def main():
     )
 
     value.onRefresh(
-        callback=lambda obj: obj.report(obj.data)
+        callback=lambda obj: obj.report(obj.getReportData())
     )
 
     try:
@@ -58,7 +61,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        network.close()
+        wappstoiot.close()
 
 
 if __name__ == "__main__":

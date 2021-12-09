@@ -27,7 +27,7 @@ from .modules.template import ValueType
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.5.2"
+__version__ = "v0.5.3"
 __auther__ = "Seluxit A/S"
 
 __all__ = [

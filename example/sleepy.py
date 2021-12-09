@@ -36,24 +36,31 @@ def main():
 
     period_ns = 400000
 
-    network = wappstoiot.Network(
-        configFolder="sensors",
-        offlineStorage=True,
-        connectSync=True,
+    wappstoiot.config(
+        config_folder="sensors",
+        offline_storage=True,
+        connect_sync=True,  # TODO: !
+    )
+
+    network = wappstoiot.createNetwork(
+        "MyNetwork"
     )
 
     gps = network.createDevice("GPS")
 
     latitude = gps.createValue(
+        "latitude",
         value_type=wappstoiot.ValueType.LATITUDE,
     )
 
     longitude = gps.createValue(
+        "longitude",
         value_type=wappstoiot.ValueType.LONGITUDE,
     )
 
     sensors = network.createDevice("sensors")
     temperature = sensors.createValue(
+        "temperature",
         value_type=wappstoiot.ValueType.TEMPERATURE,
         permission=wappstoiot.PermissionType.READWRITE,
         # UNSURE: Should we be able to set the init value for Control & Report?
@@ -74,7 +81,7 @@ def main():
             network.connect()
             temperature.report(IioControl.read_raw(0))
             tempPWM.write(temp2pwm(
-                temperature.state.control.data
+                temperature.getControlData()
             ))
             lati, longi = requestGPS()
             latitude.report(lati)
@@ -82,7 +89,7 @@ def main():
             network.disconnect()
             sleep(temperature.period)
     finally:
-        network.close()
+        wappstoiot.close()
 
 
 if __name__ == "__main__":
