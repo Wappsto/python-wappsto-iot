@@ -122,15 +122,12 @@ class Network(object):
 
     def onChange(
         self,
-        callback: Callable[[str, NetworkChangeType], None],
+        callback: Callable[['Network'], None],
     ) -> None:
         """
         Configure a callback for when a change to the Network have occurred.
 
         # UNSURE(MBK): How should it get the data back?
-
-        # def Networkcallback(name: str, event: NetworkChangeType, /) -> None:
-        #     pass
         """
         def _cb(obj, method):
             if method == WappstoMethod.PUT:
@@ -141,21 +138,16 @@ class Network(object):
             callback=_cb
         )
 
-    def onRequest(
+    def onCreate(
         self,
-        callback: Callable[[str, NetworkRequestType], None],
+        callback: Callable[['Network'], None],
     ) -> None:
         """
-        Configure a callback for when a request of the Network have been requested.
-
-        # UNSURE(MBK): Name & Event, is the Same! o.0
-
-        # def Networkcallback(name: str, event: NetworkRequestType, /) -> None:
-        #     pass
+        Configure a callback for when a create have been make for the Device.
         """
         def _cb(obj, method):
-            if method in [WappstoMethod.DELETE, WappstoMethod.GET]:
-                callback(...)
+            if method == WappstoMethod.POST:
+                callback()
 
         self.connection.subscribe_network_event(
             uuid=self.uuid,
@@ -184,7 +176,7 @@ class Network(object):
 
     def onDelete(
         self,
-        callback: Callable[[None], None]
+        callback: Callable[['Network'], None]
     ):
         """
         Configure an action when a Delete Network have been Requested.
@@ -208,13 +200,10 @@ class Network(object):
     # -------------------------------------------------------------------------
 
     def change(self):
-        pass
+        raise NotImplementedError("Method: 'change' is not Implemented.")
 
     def refresh(self):
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
-
-    def request(self):
-        raise NotImplementedError("Method: 'request' is not Implemented.")
 
     def delete(self):
         """

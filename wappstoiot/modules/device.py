@@ -214,23 +214,37 @@ class Device:
 
     def onChange(
         self,
-        callback: Callable[['Device', str, Any], None],
-        change_type: Optional[Union[List[ChangeType], ChangeType]] = None
+        callback: Callable[['Device'], None],
     ) -> None:
         """
         Configure a callback for when a change to the Device have occurred.
         """
-        pass
+        def _cb(obj, method):
+            if method in WappstoMethod.PUT:
+                callback(self)
 
-    def onRequest(
+        # UNSURE (MBK): on all state & value?
+        self.connection.subscribe_device_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
+
+    def onCreate(
         self,
-        callback: Callable[['Device', str, Any], None],
-        request_type: Optional[RequestType] = None
+        callback: Callable[['Device'], None],
     ) -> None:
         """
-        Configure a callback for when a request have been make for the Device.
+        Configure a callback for when a request have been make for the Value.
         """
-        pass
+        def _cb(obj, method):
+            if method in WappstoMethod.POST:
+                callback(self)
+
+        # UNSURE (MBK): on all state & value?
+        self.connection.subscribe_device_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
 
     # -------------------------------------------------------------------------
     #   Device methods
@@ -247,13 +261,10 @@ class Device:
          - serial
          - description
         """
-        pass
+        raise NotImplementedError("Method: 'change' is not Implemented.")
 
     def refresh(self):
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
-
-    def request(self):
-        raise NotImplementedError("Method: 'request' is not Implemented.")
 
     def delete(self) -> None:
         """

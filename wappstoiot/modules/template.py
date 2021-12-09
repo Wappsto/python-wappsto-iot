@@ -56,7 +56,7 @@ class ValueType(str, Enum):
     NUMBER = "Number"
     BLOB = "Blob"
     XML = "Xml"
-    TEMPERATURE = "Temperature"  # TODO: !
+    TEMPERATURECELCIUS = "TemperatureCelcius"  # TODO: !
     SPEED = "Speed"  # TODO: !
     BOOLEAN = "Boolean"
     LATITUDE = "Latitude"
@@ -129,7 +129,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         namespace="",
         unit=None
     ),
-    ValueType.TEMPERATURE: ValueSettinsSchema(
+    ValueType.TEMPERATURECELCIUS: ValueSettinsSchema(
         type=ValueBaseType.NUMBER,
         name="Temperature",
         permission=PermissionType.READ,
