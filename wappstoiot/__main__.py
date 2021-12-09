@@ -3,18 +3,10 @@
 import json
 import pathlib
 import uuid
+import getpass
 
-import requests
+import requests  # TODO: Remove dependencies.
 
-# from WappstoIoT.Modules.Template import _ConfigFile, _Config, _UnitsInfo
-# from WappstoIoT.schema.iot_schema import WappstoObjectType
-
-
-from rich import traceback
-from rich.console import Console
-
-console = Console()
-traceback.install(show_locals=True)
 
 debug = False
 
@@ -43,29 +35,29 @@ wappstoUrl = {
 
 def _log_request_error(rq):
     if debug:
-        console.print("Sendt data    :")
-        console.print(" - URL         : {}".format(rq.request.url))
-        console.print(" - Headers     : {}".format(rq.request.headers))
-        console.print(" - Request Body: {}".format(
+        print("Sendt data    :")
+        print(" - URL         : {}".format(rq.request.url))
+        print(" - Headers     : {}".format(rq.request.headers))
+        print(" - Request Body: {}".format(
             json.dumps(rq.request.body, indent=4, sort_keys=True))
         )
 
-        console.print("")
-        console.print("")
+        print("")
+        print("")
 
-        console.print("Received data :")
-        console.print(" - URL         : {}".format(rq.url))
-        console.print(" - Headers     : {}".format(rq.headers))
-        console.print(" - Status code : {}".format(rq.status_code))
+        print("Received data :")
+        print(" - URL         : {}".format(rq.url))
+        print(" - Headers     : {}".format(rq.headers))
+        print(" - Status code : {}".format(rq.status_code))
         try:
-            console.print(" - Request Body: {}".format(
+            print(" - Request Body: {}".format(
                 json.dumps(json.loads(rq.text), indent=4, sort_keys=True))
             )
         except (AttributeError, json.JSONDecodeError):
 
-            console.print(" - Request Body: {}".format(rq.text))
+            print(" - Request Body: {}".format(rq.text))
     rjson = json.loads(rq.text)
-    console.print(f"[bold red]{rjson['message']}")
+    print(f"[bold red]{rjson['message']}")
     exit(-2)
 
 
@@ -154,7 +146,7 @@ def get_network(session, base_url, network_uuid):
         _log_request_error(fdata)
 
     if len(data['id']) == 0:
-        console.print(f"[bold red]{data['message']}")
+        print(f"{data['message']}")
         exit(-3)
     creator_id = data['id'][0]
     url = f"{base_url}/services/2.1/creator/{creator_id}"
@@ -181,13 +173,6 @@ def create_certificaties_files(location, creator, args):
 
 
 if __name__ == "__main__":
-
-    """
-    Is this even needed anymore?
-
-    We can get the Network UUID & endpoint from the certificates.
-    """
-
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -226,8 +211,8 @@ if __name__ == "__main__":
     if not args.token:
         session = start_session(
             base_url=wappstoUrl[args.env],
-            username=console.input("Wappsto Username:"),
-            password=console.input(prompt="Wappsto Password:", password=True),
+            username=input("Wappsto Username: "),
+            password=getpass.getpass(prompt="Wappsto Password: "),
         )
     else:
         session = args.token
@@ -244,5 +229,5 @@ if __name__ == "__main__":
 
     create_certificaties_files(args.path, creator, args)
 
-    console.print(f"[bold green]New network: {creator['network']['id']}")
-    console.print(f"Settings saved at: {args.path}")
+    print(f"\nNew network: {creator['network']['id']}")
+    print(f"Settings saved at: {args.path}")

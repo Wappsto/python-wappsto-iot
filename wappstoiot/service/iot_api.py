@@ -1,6 +1,7 @@
+import copy
+import json
 import logging
 import re
-import json
 import threading
 
 from uuid import UUID
@@ -28,6 +29,7 @@ from ..schema.base_schema import State
 from ..schema.base_schema import StringValue
 from ..schema.base_schema import XmlValue
 from ..schema.base_schema import WappstoObject
+from ..schema.base_schema import IdList
 
 from ..schema.iot_schema import JsonData
 from ..schema.iot_schema import JsonReply
@@ -43,6 +45,17 @@ from ..connections.sslsocket import TlsSocket
 
 
 ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
+
+
+# POST   -> onCreate
+# GET    -> onRefresh
+# PUT    -> onChange
+# DELETE -> onDelete
+
+# create  -> POST
+# refresh -> GET
+# change  -> PUT
+# delete  -> DELETE
 
 
 class IoTAPI(ServiceClass):
@@ -101,8 +114,8 @@ class IoTAPI(ServiceClass):
             # WappstoMethod.HEAD: self._head,
         }
 
-        if not self.connection.connect():
-            raise
+        self.connection.connect()
+
         self.jsonrpc = slxjsonrpc.SlxJsonRpc(
             methods=WappstoMethod,
             method_cb=method_cb,
@@ -191,25 +204,56 @@ class IoTAPI(ServiceClass):
             with self.jsonrpc.batch():
                 batch_size = self.jsonrpc.batch_size()
                 if batch_size:
-                    data = self.jsonrpc.get_batch_data(data)
+                    send_data = self.jsonrpc.get_batch_data(data)
                     self.log.debug(f"Batching: {batch_size}")
+                else:
+                    send_data = copy.copy(data)
 
-                if isinstance(data, slxjsonrpc.RpcBatch):
-                    _id = "; ".join(x.id for x in data.__root__)
-                elif data:
-                    _id = data.id
+                if isinstance(send_data, slxjsonrpc.RpcBatch):
+                    _id = "; ".join(x.id for x in send_data.__root__)
+                elif send_data:
+                    _id = send_data.id
 
                 if _id:
                     self.log.debug(f"Package ID: {_id};")
 
-                if data:
-                    observer.post(Status.SENDING, data)
-                    self.connection.send(data.json(exclude_none=True))
+                if send_data:
+                    observer.post(Status.SENDING, send_data)
+                    self.connection.send(send_data.json(exclude_none=True))
 
     def _resend_data(self, data):
         # TODO: add the jsonrpc ID to the JsonRpc receive list.
         with self.connection.send_ready:
             self.connection.send(data)
+
+        # j_data = json.loads(data)
+        # _cb_event = threading.Event()
+
+        # if j_data.get('params'):
+        #     reply = self.jsonrpc.create_request(
+        #         callback=lambda data: _cb_event(),
+        #         error_callback=lambda err_data: _cb_event(),
+        #         method=j_data.get('method'),
+        #         params=j_data
+        #     )
+        # elif j_data.get('result'):
+        #     # self.jsonrpc.
+        #     pass
+
+        # self._send_logic(reply.json(exclude_none=True))
+
+        # self.log.debug(f"--CALLBACK Ready! {rpc_id}")
+        # if _cb_event.wait(timeout=self.timeout):
+        #     if _data:
+        #         self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
+        #         observer.post(Status.SEND, rpc_data)
+        #         return _data.value
+        #     if _err_data:
+        #         self.log.warning(f"--CALLBACK Error! {_err_data}")
+        #         # raise ConnectionError(_err_data.message)
+        # self.log.debug(f"--CALLBACK None! {rpc_id}")
+        # observer.post(Status.SENDERROR, rpc_data)
+        # return None
 
     # -------------------------------------------------------------------------
     #                               API Helpers
@@ -238,18 +282,21 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
+
+        rpc_id = getattr(rpc_data, 'id', None)
+
         self._send_logic(rpc_data)
 
-        self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
+        self.log.debug(f"--CALLBACK Ready! {rpc_id}")
         if _cb_event.wait(timeout=self.timeout):
             if _err_data:
                 self.log.debug(f"--CALLBACK Error! {_err_data}")
                 # raise ConnectionError(_err_data.message)
-            self.log.debug(f"--CALLBACK EVENT! {rpc_data.id}")
+            self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
             observer.post(Status.SEND, rpc_data)
             return True
         observer.post(Status.SENDERROR, rpc_data)
-        self.log.debug(f"--CALLBACK None! {rpc_data.id}")
+        self.log.debug(f"--CALLBACK None! {rpc_id}")
         return False
 
     def _reply_send(
@@ -257,7 +304,7 @@ class IoTAPI(ServiceClass):
         data,
         url,
         method
-    ) -> Optional[Union[Device, Network, ValueUnion, State]]:
+    ) -> Optional[Union[Device, Network, ValueUnion, State, IdList]]:
         j_data = JsonData(
             data=data,
             url=url
@@ -274,9 +321,9 @@ class IoTAPI(ServiceClass):
             _err_data = err_data
             _cb_event.set()
 
-        _data: Optional[JsonData] = None
-        
-        def _data_callback(data: JsonData):
+        _data: Optional[JsonReply] = None
+
+        def _data_callback(data: JsonReply):
             nonlocal _data
             nonlocal _cb_event
             _data = data
@@ -288,18 +335,21 @@ class IoTAPI(ServiceClass):
             error_callback=_err_callback,
             params=j_data
         )
+
+        rpc_id = getattr(rpc_data, 'id', None)
+
         self._send_logic(rpc_data)
 
-        self.log.debug(f"--CALLBACK Ready! {rpc_data.id}")
+        self.log.debug(f"--CALLBACK Ready! {rpc_id}")
         if _cb_event.wait(timeout=self.timeout):
             if _data:
-                self.log.debug(f"--CALLBACK EVENT! {rpc_data.id}")
+                self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
                 observer.post(Status.SEND, rpc_data)
                 return _data.value
             if _err_data:
                 self.log.warning(f"--CALLBACK Error! {_err_data}")
                 # raise ConnectionError(_err_data.message)
-        self.log.debug(f"--CALLBACK None! {rpc_data.id}")
+        self.log.debug(f"--CALLBACK None! {rpc_id}")
         observer.post(Status.SENDERROR, rpc_data)
         return None
 
@@ -429,6 +479,19 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
+    def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+        # /network/{uuid}/device?this_name==X
+        key, value = list(kwargs.items())[0]
+        self.log.debug(f"{locals()}")
+        url = f"/network/{network_uuid}/device?this_{key}=={value}"
+        data: IdList = self._reply_send(
+            data=None,
+            url=url,
+            method=WappstoMethod.GET
+        )
+
+        return getattr(data, "id", None)
+
     def get_device(self, uuid: UUID) -> Union[Device, None]:
         # url=f"/services/2.0/device/{uuid}",
         return self._reply_send(
@@ -471,6 +534,18 @@ class IoTAPI(ServiceClass):
             url=f"/value/{uuid}",
             method=WappstoMethod.PUT
         )
+
+    def get_value_where(self, device_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+        # /network/{uuid}/device?this_name==X
+        key, value = list(kwargs.items())[0]
+        url = f"/device/{device_uuid}/value?this_{key}=={value}"
+        data: IdList = self._reply_send(
+            data=None,
+            url=url,
+            method=WappstoMethod.GET
+        )
+
+        return getattr(data, "id", None)
 
     def get_value(self, uuid: UUID) -> Union[ValueUnion, None]:
         # url=f"/services/2.0/value/{uuid}",

@@ -156,6 +156,9 @@ class WappstoMetaType(str, Enum):
     DEVICE = "device"
     VALUE = "value"
     STATE = "state"
+    CREATOR = "creator"
+    IDLIST = "idlist"
+    DELETELIST = "deletelist"
 
 
 class Connection(BaseModel):
@@ -422,6 +425,40 @@ class Network(BaseModel):
         extra = Extra.forbid
 
 
+class ApiMetaTypes(str, Enum):
+    idlist = "idlist"
+    deletelist = "deletelist"
+
+
+class ApiMetaInfo(BaseModel):
+    type: ApiMetaTypes  # Merge with MetaAPIData?
+    version: WappstoVersion
+
+
+class childInfo(BaseModel):
+    type: WappstoMetaType
+    version: WappstoVersion
+
+
+class IdList(BaseModel):
+    child: List[childInfo]
+    id: List[UUID4]
+    more: bool
+    limit: int
+    count: int
+    meta: ApiMetaInfo
+
+    class Config:
+        extra = Extra.forbid
+
+
+class DeleteList(BaseModel):
+    deleted: List[UUID4]
+    code: int
+    message: str = "Deleted"
+    meta: ApiMetaInfo
+
+
 WappstoObject = Union[
     Network,
     Device,
@@ -429,5 +466,7 @@ WappstoObject = Union[
     NumberValue,
     BlobValue,
     XmlValue,
-    State
+    State,
+    IdList,
+    DeleteList,
 ]

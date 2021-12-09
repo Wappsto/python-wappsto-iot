@@ -59,7 +59,7 @@ class Connection(ABC):
         pass
 
     @abstractmethod
-    def connect(self) -> bool:
+    def connect(self) -> None:
         """
         Connect to the server.
 

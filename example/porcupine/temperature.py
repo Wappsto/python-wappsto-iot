@@ -23,9 +23,13 @@ def main():
 
     period_ns = 400000
 
-    network = wappstoiot.Network(
-        configFolder="sensors",
-        offlineStorage=True
+    wappstoiot.config(
+        config_folder="sensors",
+        offline_storage=True
+    )
+
+    network = wappstoiot.createNetwork(
+        "RadiatorController"
     )
 
     rediator = network.createDevice("radiator")
@@ -40,7 +44,7 @@ def main():
         return period_ns*(temp/100)  # TODO: This should be rewriten!
 
     tempPWM = PWM(chip=0, pwm=0)
-    tempPWM.start(period_ns, temp2pwm(temperature.state.control.data))
+    tempPWM.start(period_ns, temp2pwm(temperature.getControlData()))
 
     temperature.onControl(
         lambda obj, value: tempPWM.write(temp2pwm(value))
@@ -63,7 +67,7 @@ def main():
                 temperature.report(value)
     finally:
         tempPWM.close()
-        network.close()
+        wappstoiot.close()
 
 
 if __name__ == "__main__":

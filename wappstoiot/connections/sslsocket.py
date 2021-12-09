@@ -199,7 +199,7 @@ class TlsSocket(Connection):
                 self.log.debug(f"Raw Data Received: {data}")
                 return parsed_data
 
-    def connect(self) -> bool:
+    def connect(self) -> None:
         """
         Connect to the server.
 
@@ -222,11 +222,11 @@ class TlsSocket(Connection):
             self.observer.post(Status.CONNECTED, None)
             # if self.sockt_thread is None:
             #     self._start()
-            return True
+            # return True
 
         except Exception as e:
             self.log.error("Failed to connect: {}".format(e))
-            return False
+            raise
 
     def reconnect(self, retry_limit: Optional[int] = None) -> bool:
         """

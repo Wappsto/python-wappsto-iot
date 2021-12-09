@@ -7,7 +7,7 @@
 
 import wappstoiot
 
-network = wappstoiot.Network()
-device = network.createDevice()
-value = device.createValue()
+network = wappstoiot.createNetwork("TheNetwork")
+device = network.createDevice("TheDevice")
+value = device.createValue("TheValue")
 value.report(5)

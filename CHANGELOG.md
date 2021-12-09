@@ -1,0 +1,60 @@
+
+v0.5.3 (Dec 9, 2021)
+===============================================================================
+
+## Added
+
+ * Groove Examples for Raspberry Pi.
+ * Checks of naming, so it reuses the object based on the name. (Naming are mandatory now.)
+ * `wappstoiot.config` have been added to handle all the configs.
+ * `wappstoiot.createNetwork` have been added to streamline the flow.
+ * `value.getReportTimestamp()`, `value.getControlTimestamp()` have been added to make the timestamp for the last given value accessible.
+ * `value.getControlData()` have been added to make the control data accessible.
+
+## Removed
+
+ * Remove the Module ids. (The Names are now the unique identifier.)
+ * Remove `Rich` dependency.
+
+## Changed
+
+ * The names & naming convention to fix the other Wappsto Libraries.
+ * All the connections & general configs are moved from the Network, to wappstoiot.
+ * `value.data` have been changed to `value.getReportData()`
+
+## Fixed
+
+ * Fix the naming to fit the naming convention.
+
+
+v0.5.2 (Nov 25, 2021)
+===============================================================================
+
+## Added
+
+ * HTTP Proxy support. (Pulls #259, #353)
+
+## Fixed
+
+ * Make WappstoIoT python3.6 compatible.
+ * Fix a Path issue that make the code not able to find the certificates in ipython.
+
+
+v0.5.1 (Nov 23, 2021)
+===============================================================================
+
+## Added
+
+ * Pip release.
+
+## Fixed
+
+ * Fix the name to fit the naming convention.
+
+
+v0.5.0 (September 20, 2021)
+===============================================================================
+
+## Added
+
+ * First Release.

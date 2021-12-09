@@ -11,9 +11,12 @@ import wappstoiot
 
 
 def main():
-    network = wappstoiot.Network(
+    wappstoiot.config(
+        config_folder="echo"
+    )
+
+    network = wappstoiot.createNetwork(
         name="echo",
-        configFolder="echo"
     )
 
     device = network.createDevice(
@@ -30,7 +33,7 @@ def main():
     )
 
     value.onRefresh(
-        callback=lambda obj: obj.report(f"{obj.data} Refreshed!")
+        callback=lambda obj: obj.report(f"{obj.getReportData()} Refreshed!")
     )
     try:
         while True:
@@ -38,7 +41,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        network.close()
+        wappstoiot.close()
 
 
 if __name__ == "__main__":

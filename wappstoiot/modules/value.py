@@ -1,8 +1,8 @@
 import uuid
-import datetime
 import logging
 
 from enum import Enum
+from datetime import datetime
 
 from typing import Any
 from typing import Callable
@@ -12,7 +12,7 @@ from typing import Union
 from pydantic import UUID4
 
 from ..service.template import ServiceClass
-from .template import dict_diff
+# from .template import dict_diff
 from .template import ValueBaseType
 # from .template import valueSettings
 from ..schema import base_schema as WSchema
@@ -76,9 +76,8 @@ class Value:
         self,
         parent: 'Device',
         type: ValueBaseType,
-        value_id: int,
-        value_uuid: Optional[UUID4] = None,  # Only used on loading.
-        name: Optional[str] = None,
+        name: str,
+        value_uuid: UUID4,  # Only used on loading.
         permission: PermissionType = PermissionType.READWRITE,
         min: Optional[Union[int, float]] = None,
         max: Optional[Union[int, float]] = None,
@@ -108,11 +107,10 @@ class Value:
             WSchema.BlobValue,
             WSchema.XmlValue
         ] = self.schema()
-        self.__id: int = value_id
-        self.__uuid: UUID4 = value_uuid if value_uuid else uuid.uuid4()
+
+        self.__uuid: UUID4 = value_uuid
 
         # self.children_uuid_mapping: Dict[UUID4, Value] = {}
-        # self.children_id_mapping: Dict[int, UUID4] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
 
         self.connection: ServiceClass = parent.connection
@@ -181,25 +179,41 @@ class Value:
             element
         )
 
-    @property
-    def data(self) -> Optional[Union[str, int, float]]:
+    def getControlData(self) -> Optional[Union[int, float, str]]:
         """
-        Returns the last data value.
+        Returns the last Control value.
+
+        The returned value will be the last Control value,
+        unless there isn't one, then it will return None.
+        """
+        return self.control_state.data
+
+    def getControlTimestamp(self) -> Optional[datetime]:
+        """
+        Returns the timestamp for when last Control value was updated.
+
+        The returned timestamp will be the last time Control value was updated,
+        unless there isn't one, then it will return None.
+        """
+        return self.control_state.timestamp
+
+    def getReportData(self) -> Optional[Union[int, float, str]]:
+        """
+        Returns the last Report value.
 
         The returned value will be the last Report value.
         unless there isn't one, then it will return None.
         """
         return self.report_state.data
 
-    @property
-    def target(self) -> Optional[Union[str, int, float]]:
+    def getReportTimestamp(self) -> Optional[datetime]:
         """
-        Returns the last target value.
+        Returns the timestamp for when last Report value was updated.
 
-        The returned value will be the last Control value,
+        The returned timestamp will be the last time Control value was updated,
         unless there isn't one, then it will return None.
         """
-        return self.control_state.data
+        return self.report_state.timestamp
 
     @property
     def name(self) -> str:
@@ -210,10 +224,6 @@ class Value:
     def uuid(self) -> UUID4:
         """Returns the uuid of the value."""
         return self.__uuid
-
-    @property
-    def id(self) -> int:
-        return self.__id
 
     # -------------------------------------------------------------------------
     #   Helper methods
@@ -272,22 +282,6 @@ class Value:
 
         return subValue
 
-    # def _get_json(self) -> _UnitsInfo:
-    #     """Generate the json-object ready for to be saved in the configfile."""
-    #     unit_list = []
-    #     for unit in self.children_uuid_mapping.values():
-    #         unit_list.extend(unit._get_json())
-    #     unit_list.append(_UnitsInfo(
-    #         self_type=WappstoObjectType.VALUE,
-    #         self_id=self.id,
-    #         parent=self.parent.uuid,
-    #         permission=self.element.permission,
-    #         children=list(self.children_uuid_mapping.keys()),
-    #         children_id_mapping=self.children_id_mapping,
-    #         children_name_mapping=self.children_name_mapping
-    #     ))
-    #     return unit_list
-
     def __update_self(self, element):
         new_dict = element.copy(update=self.element.dict(exclude_none=True))
         new_dict.meta = element.meta.copy(update=new_dict.meta)
@@ -326,7 +320,7 @@ class Value:
 
     def onChange(
         self,
-        callback: Callable[['Value', ChangeType], None],
+        callback: Callable[['Value'], None],
     ) -> None:
         """
         Add a trigger on when change have been make.
@@ -341,8 +335,7 @@ class Value:
         """
         def _cb(obj, method):
             if method in WappstoMethod.PUT:
-                for key in dict_diff(self.schema.dict(), obj.dict()).keys():
-                    callback(self, key)
+                callback(self)
 
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_value_event(
@@ -374,31 +367,6 @@ class Value:
             callback=_cb
         )
 
-    def onRequest(
-        self,
-        callback: Callable[['Value', RequestType, str, Any], None],
-    ) -> None:
-        """
-        For Refresh & Control. When We are asked to be something
-
-        # UNSURE(MBK): Name & Event, is the Same! o.0
-
-        Callback:
-            ValueObj: the Object that have had a request for.
-            Event: Which type of Request have happened.
-            str: Name of what to do something with.
-            any: The Data.
-        """
-        def _cb(obj, method):
-            if method in [WappstoMethod.DELETE, WappstoMethod.GET]:
-                callback(...)
-
-        # UNSURE (MBK): on all state & value?
-        self.connection.subscribe_value_event(
-            uuid=self.uuid,
-            callback=_cb
-        )
-
     def onControl(
         self,
         callback: Callable[['Value', Union[str, int, float]], None],
@@ -423,6 +391,28 @@ class Value:
             callback=_cb
         )
 
+    def onCreate(
+        self,
+        callback: Callable[['Value'], None],
+    ) -> None:
+        """
+        Add trigger for when a state was created.
+
+        A Create is typical use to create a new state.
+
+        Callback:
+            ValueObj: This object that have had a refresh request for.
+        """
+
+        def _cb(obj, method):
+            if method == WappstoMethod.POST:
+                callback(self)
+
+        self.connection.subscribe_state_event(
+            uuid=self.uuid,
+            callback=_cb
+        )
+
     def onRefresh(
         self,
         callback: Callable[['Value'], None],
@@ -442,7 +432,6 @@ class Value:
             if method == WappstoMethod.GET:
                 callback(self)
 
-        # UNSURE (MBK): on all state & value?
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=_cb
@@ -466,6 +455,9 @@ class Value:
     #   Value methods
     # -------------------------------------------------------------------------
 
+    def refresh(self):
+        raise NotImplementedError("Method: 'refresh' is not Implemented.")
+
     def change(self, name: str, value: Any) -> None:
         """
         Update a parameter in the Value structure.
@@ -473,13 +465,13 @@ class Value:
         A parameter that a device can have that can be updated could be:
          - Name
          - Description
-         - Unit
-         - min/max/step/encoding
+         # - Unit
+         # - min/max/step/encoding
          - period
          - delta
-         - meaningful_zero
+         # - meaningful_zero
         """
-        pass
+        raise NotImplementedError("Method: 'change' is not Implemented.")
 
     def delete(self):
         """
@@ -487,20 +479,11 @@ class Value:
         """
 
         self.connection.delete_value(uuid=self.uuid)
-        # self._delete()
-
-    # def _delete(self):
-    #     # TODO: REDO!
-    #     for c_uuid, c_obj in self.children_uuid_mapping.items():
-    #         c_obj._delete()
-    #     self.children_id_mapping.clear()
-    #     self.children_name_mapping.clear()
-    #     self.children_uuid_mapping.clear()
 
     def report(
         self,
         value: Union[int, float, str, None],
-        timestamp: Optional[datetime.datetime] = None
+        timestamp: Optional[datetime] = None
     ) -> None:
         """
         Report the new current value to Wappsto.
@@ -509,6 +492,7 @@ class Value:
         whether it is a GPIO pin, a analog temperature sensor or a
         device over a I2C bus.
         """
+        # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
         data = WSchema.State(
             data=value,
@@ -529,7 +513,7 @@ class Value:
     def control(
         self,
         value: Union[int, float, str, None],
-        timestamp: Optional[datetime.datetime] = None
+        timestamp: Optional[datetime] = None
     ) -> None:
         """
         Report the a new control value to Wappsto.

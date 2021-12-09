@@ -18,6 +18,8 @@ from .base_schema import NumberValue
 from .base_schema import State
 from .base_schema import StringValue
 from .base_schema import XmlValue
+from .base_schema import IdList
+from .base_schema import DeleteList
 
 
 def parwise(values):
@@ -95,7 +97,9 @@ class JsonReply(BaseModel):
         Network,
         State,
         ValueUnion,
-        bool
+        IdList,
+        DeleteList,
+        bool  # UNSURE: Do it really return boolean here?
     ]]
     meta: JsonMeta
 
@@ -108,7 +112,9 @@ class JsonData(BaseModel):
         Device,
         Network,
         State,
-        ValueUnion
+        ValueUnion,
+        IdList,
+        DeleteList,
     ]]
     url: str
     meta: Optional[Identifier]
@@ -116,14 +122,14 @@ class JsonData(BaseModel):
     class Config:
         extra = Extra.forbid
 
-    @validator('url')
-    def path_check(cls, v, values, **kwargs):
-        if v.startswith("/services/2.0/"):
-            selftype, selfid = v.replace("/services/2.0/", "").split('/')
-            WappstoObjectType(selftype)
-            uuid.UUID(selfid)
-        for selftype, selfid in parwise(v.split("/")[1:]):
-            WappstoObjectType(selftype)
-            if selfid:
-                uuid.UUID(selfid)
-        return v
+    # @validator('url')  # TODO: Make it able to handle queries.
+    # def path_check(cls, v, values, **kwargs):
+    #     if v.startswith("/services/2.0/"):
+    #         selftype, selfid = v.replace("/services/2.0/", "").split('/')
+    #         WappstoObjectType(selftype)
+    #         uuid.UUID(selfid)
+    #     for selftype, selfid in parwise(v.split("/")[1:]):
+    #         WappstoObjectType(selftype)
+    #         if selfid:
+    #             uuid.UUID(selfid)
+    #     return v
