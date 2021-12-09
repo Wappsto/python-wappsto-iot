@@ -158,7 +158,7 @@ class WappstoMetaType(str, Enum):
     STATE = "state"
     CREATOR = "creator"
     IDLIST = "idlist"
-    IDLIST = "deletelist"
+    DELETELIST = "deletelist"
 
 
 class Connection(BaseModel):

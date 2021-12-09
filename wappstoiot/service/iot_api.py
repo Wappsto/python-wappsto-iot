@@ -29,7 +29,7 @@ from ..schema.base_schema import State
 from ..schema.base_schema import StringValue
 from ..schema.base_schema import XmlValue
 from ..schema.base_schema import WappstoObject
-from ..schema.base_schema import idList
+from ..schema.base_schema import IdList
 
 from ..schema.iot_schema import JsonData
 from ..schema.iot_schema import JsonReply
@@ -304,7 +304,7 @@ class IoTAPI(ServiceClass):
         data,
         url,
         method
-    ) -> Optional[Union[Device, Network, ValueUnion, State, idList]]:
+    ) -> Optional[Union[Device, Network, ValueUnion, State, IdList]]:
         j_data = JsonData(
             data=data,
             url=url
@@ -481,15 +481,16 @@ class IoTAPI(ServiceClass):
 
     def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
         # /network/{uuid}/device?this_name==X
-        key, value = kwargs.items()
-        url = f"/network/{network_uuid}/device/this_{key}=={value}"
-        data: idList = self._reply_send(
+        key, value = list(kwargs.items())[0]
+        self.log.debug(f"{locals()}")
+        url = f"/network/{network_uuid}/device?this_{key}=={value}"
+        data: IdList = self._reply_send(
             data=None,
             url=url,
             method=WappstoMethod.GET
         )
 
-        return data.id
+        return getattr(data, "id", None)
 
     def get_device(self, uuid: UUID) -> Union[Device, None]:
         # url=f"/services/2.0/device/{uuid}",
@@ -536,15 +537,16 @@ class IoTAPI(ServiceClass):
 
     def get_value_where(self, device_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
         # /network/{uuid}/device?this_name==X
-        key, value = kwargs.items()
-        url = f"/device/{device_uuid}/value/this_{key}=={value}"
-        data: idList = self._reply_send(
+        key, value = list(kwargs.items())[0]
+        url = f"/device/{device_uuid}/value?this_{key}=={value}"
+        data: IdList = self._reply_send(
             data=None,
             url=url,
             method=WappstoMethod.GET
         )
 
-        return data.id
+        return getattr(data, "id", None)
+
     def get_value(self, uuid: UUID) -> Union[ValueUnion, None]:
         # url=f"/services/2.0/value/{uuid}",
         return self._reply_send(
