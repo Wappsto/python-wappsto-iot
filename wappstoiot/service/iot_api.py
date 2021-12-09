@@ -29,6 +29,7 @@ from ..schema.base_schema import State
 from ..schema.base_schema import StringValue
 from ..schema.base_schema import XmlValue
 from ..schema.base_schema import WappstoObject
+from ..schema.base_schema import idList
 
 from ..schema.iot_schema import JsonData
 from ..schema.iot_schema import JsonReply
@@ -44,6 +45,17 @@ from ..connections.sslsocket import TlsSocket
 
 
 ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
+
+
+# POST   -> onCreate
+# GET    -> onRefresh
+# PUT    -> onChange
+# DELETE -> onDelete
+
+# create  -> POST
+# refresh -> GET
+# change  -> PUT
+# delete  -> DELETE
 
 
 class IoTAPI(ServiceClass):
@@ -214,6 +226,35 @@ class IoTAPI(ServiceClass):
         with self.connection.send_ready:
             self.connection.send(data)
 
+        # j_data = json.loads(data)
+        # _cb_event = threading.Event()
+
+        # if j_data.get('params'):
+        #     reply = self.jsonrpc.create_request(
+        #         callback=lambda data: _cb_event(),
+        #         error_callback=lambda err_data: _cb_event(),
+        #         method=j_data.get('method'),
+        #         params=j_data
+        #     )
+        # elif j_data.get('result'):
+        #     # self.jsonrpc.
+        #     pass
+
+        # self._send_logic(reply.json(exclude_none=True))
+
+        # self.log.debug(f"--CALLBACK Ready! {rpc_id}")
+        # if _cb_event.wait(timeout=self.timeout):
+        #     if _data:
+        #         self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
+        #         observer.post(Status.SEND, rpc_data)
+        #         return _data.value
+        #     if _err_data:
+        #         self.log.warning(f"--CALLBACK Error! {_err_data}")
+        #         # raise ConnectionError(_err_data.message)
+        # self.log.debug(f"--CALLBACK None! {rpc_id}")
+        # observer.post(Status.SENDERROR, rpc_data)
+        # return None
+
     # -------------------------------------------------------------------------
     #                               API Helpers
     # -------------------------------------------------------------------------
@@ -263,7 +304,7 @@ class IoTAPI(ServiceClass):
         data,
         url,
         method
-    ) -> Optional[Union[Device, Network, ValueUnion, State]]:
+    ) -> Optional[Union[Device, Network, ValueUnion, State, idList]]:
         j_data = JsonData(
             data=data,
             url=url
@@ -281,7 +322,7 @@ class IoTAPI(ServiceClass):
             _cb_event.set()
 
         _data: Optional[JsonReply] = None
-        
+
         def _data_callback(data: JsonReply):
             nonlocal _data
             nonlocal _cb_event
@@ -438,6 +479,18 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
+    def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+        # /network/{uuid}/device?this_name==X
+        key, value = kwargs.items()
+        url = f"/network/{network_uuid}/device/this_{key}=={value}"
+        data: idList = self._reply_send(
+            data=None,
+            url=url,
+            method=WappstoMethod.GET
+        )
+
+        return data.id
+
     def get_device(self, uuid: UUID) -> Union[Device, None]:
         # url=f"/services/2.0/device/{uuid}",
         return self._reply_send(
@@ -481,6 +534,17 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
+    def get_value_where(self, device_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+        # /network/{uuid}/device?this_name==X
+        key, value = kwargs.items()
+        url = f"/device/{device_uuid}/value/this_{key}=={value}"
+        data: idList = self._reply_send(
+            data=None,
+            url=url,
+            method=WappstoMethod.GET
+        )
+
+        return data.id
     def get_value(self, uuid: UUID) -> Union[ValueUnion, None]:
         # url=f"/services/2.0/value/{uuid}",
         return self._reply_send(

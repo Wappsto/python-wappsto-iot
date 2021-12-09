@@ -10,15 +10,15 @@ from pydantic import BaseModel
 # from pydantic import validator
 from pydantic import Extra
 
-# from .base_schemas import BlobValueSchema
-# from .base_schemas import DeviceSchema
-from .base_schema import BaseMeta
-# from .base_schemas import NetworkSchema
-# from .base_schemas import NumberValueSchema
-# from .base_schemas import StateSchema
-# from .base_schemas import StringValueSchema
-# from .base_schemas import WappstoMetaType
-from .base_schema import WappstoVersion
+# from wappstoiot.schema.base_schemas import BlobValueSchema
+# from wappstoiot.schema.base_schemas import DeviceSchema
+from wappstoiot.schema.base_schema import BaseMeta
+# from wappstoiot.schema.base_schemas import NetworkSchema
+# from wappstoiot.schema.base_schemas import NumberValueSchema
+# from wappstoiot.schema.base_schemas import StateSchema
+# from wappstoiot.schema.base_schemas import StringValueSchema
+# from wappstoiot.schema.base_schemas import WappstoMetaType
+from wappstoiot.schema.base_schema import WappstoVersion
 
 
 class WappstoObjectType(str, Enum):
@@ -109,53 +109,3 @@ class SessionSchema(BaseModel):
     to_upgrade: bool
     upgrade: bool
     meta: MetaAPIData
-
-
-class ApiMetaTypes(str, Enum):
-    idlist = "idlist"
-    deletelist = "deletelist"
-
-
-class ApiMetaInfo(BaseModel):
-    type: ApiMetaTypes  # Merge with MetaAPIData?
-    version: WappstoVersion
-
-
-class childInfo(BaseModel):
-    type: WappstoObjectType
-    version: WappstoVersion
-
-
-class IdList(BaseModel):
-    child: List[childInfo]
-    id: List[uuid.UUID]
-    more: bool
-    limit: int
-    count: int
-    meta: ApiMetaInfo
-
-    class Config:
-        extra = Extra.forbid
-
-    def __str__(self):
-        pstr = [f"{self.child[0].type}-list:"]  # NOTE: Why is this a list?
-        for x in self.id:
-            pstr.append(f" - {x}")
-        return "\n".join(pstr)
-
-    def _repr_pretty_(self, p, cycle):
-        """
-        Determents how the Api Schema should be shown in IPython.
-
-        # TODO: Add color check & colors.
-        """
-        rstr = str(self)
-        if rstr:
-            print("\n" + rstr)
-
-
-class DeleteList(BaseModel):
-    deleted: List[uuid.UUID]
-    code: int
-    message: str = "Deleted"
-    meta: ApiMetaInfo

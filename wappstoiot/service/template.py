@@ -2,6 +2,8 @@ from uuid import UUID
 from enum import Enum
 
 from typing import Callable
+from typing import Dict
+from typing import List
 from typing import Union
 
 from abc import ABC
@@ -40,7 +42,7 @@ class ServiceClass(ABC):
         pass
 
     @abstractmethod
-    def post_network(self, uuid: UUID, data) -> bool:
+    def post_network(self, data) -> bool:
         # url=f"/services/2.0/network/{uuid}",
         pass
 
@@ -78,6 +80,10 @@ class ServiceClass(ABC):
         pass
 
     @abstractmethod
+    def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+        pass
+
+    @abstractmethod
     def get_device(self, uuid: UUID) -> Union[Device, None]:
         pass
 
@@ -106,6 +112,10 @@ class ServiceClass(ABC):
 
     @abstractmethod
     def put_value(self, uuid: UUID, data: ValueUnion) -> bool:
+        pass
+
+    @abstractmethod
+    def get_value_where(self, device_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
         pass
 
     @abstractmethod
