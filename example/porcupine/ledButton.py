@@ -14,10 +14,13 @@ import wappstoiot
 
 def main():
 
-    network = wappstoiot.Network(
+    wappstoiot.config(
+        config_folder="ledButton",
+        offline_storage=True
+    )
+
+    network = wappstoiot.createNetwork(
         name="ledButton",
-        configFolder="ledButton",
-        offlineStorage=True
     )
 
     # Setting up the LED and events handling.
@@ -52,7 +55,7 @@ def main():
 
     PQPI_bnt.close()
     PQPI_led.close()
-    network.close()
+    wappstoiot.close()
 
 
 if __name__ == "__main__":

@@ -8,12 +8,15 @@ import wappstoiot
 
 
 def main():
-    network = wappstoiot.Network(
-        name="info",
-        configFolder="info"
+    wappstoiot.config(
+        config_folder="info"
     )
 
-    # network.onStatusChange(
+    network = wappstoiot.createNetwork(
+        name="info",
+    )
+
+    # wappstoiot.onStatusChange(
     #     StatusID=wappstoiot.StatusID.CONNECTION,
     #     callback=lambda StatusID, newStatus: print(f"New status: {newStatus}")
     # )
@@ -30,7 +33,7 @@ def main():
     )
 
     def valueRefresh(obj):
-        newValue = f"{obj.data} Refreshed!"
+        newValue = f"{obj.getReportData()} Refreshed!"
         print(f"Refreshing the {obj.name} to: '{newValue}'")
         obj.report(newValue)
 
@@ -46,7 +49,7 @@ def main():
         data = input("Enter a Message: ")
 
         if data in ["exit", "x", "quit", "q"]:
-            network.close()
+            wappstoiot.close()
             print("Manuel closing Wappsto.")
             break
         value.report(data)

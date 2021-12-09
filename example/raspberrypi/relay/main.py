@@ -23,9 +23,12 @@ def main():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(relay_pin, GPIO.OUT)
 
-    network = wappstoiot.Network(
+    wappstoiot.config(
+        config_folder="config"
+    )
+
+    network = wappstoiot.createNetwork(
         name="ControlPi",
-        configFolder="config"
     )
 
     device = network.createDevice(
@@ -55,7 +58,7 @@ def main():
     except KeyboardInterrupt:
         pass
     finally:
-        network.close()
+        wappstoiot.close()
         GPIO.cleanup()
 
 
