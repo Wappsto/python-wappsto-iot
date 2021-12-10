@@ -75,9 +75,10 @@ class Value:
     def __init__(
         self,
         parent: 'Device',
-        type: ValueBaseType,
+        value_type: ValueBaseType,
         name: str,
         value_uuid: UUID4,  # Only used on loading.
+        type: Optional[str] = None,
         permission: PermissionType = PermissionType.READWRITE,
         min: Optional[Union[int, float]] = None,
         max: Optional[Union[int, float]] = None,
@@ -97,7 +98,7 @@ class Value:
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
-        self.schema = self.__value_type_2_Schema[type]
+        self.schema = self.__value_type_2_Schema[value_type]
         self.report_state: WSchema.State
         self.control_state: WSchema.State
         self.parent = parent
@@ -116,7 +117,7 @@ class Value:
         self.connection: ServiceClass = parent.connection
 
         subValue = self.__parseValueType(
-                ValueType=type,
+                ValueType=value_type,
                 encoding=encoding,
                 mapping=mapping,
                 max_range=max,
@@ -135,6 +136,7 @@ class Value:
             description=description,
             period=period,
             delta=delta,
+            type=type,
             permission=permission,
             **subValue,
             meta=WSchema.ValueMeta(

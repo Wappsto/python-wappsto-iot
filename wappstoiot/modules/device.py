@@ -305,12 +305,17 @@ class Device:
 
         # the kwargs weigh higher then the default settings. 
         for key, value in thisSetting.dict().items():
-            if key in kwargs and kwargs[key] is None:
+            if key in kwargs:
+                if kwargs[key] is None:
+                    kwargs[key] = value
+            else:
                 kwargs[key] = value
+
+        self.log.debug(f"{kwargs}")
 
         value_obj = Value(
             parent=self,
-            type=thisSetting.type,
+            # value_type=thisSetting.type,
             **kwargs
         )
 

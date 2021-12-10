@@ -64,8 +64,9 @@ class ValueType(str, Enum):
 
 
 class ValueSettinsSchema(BaseModel):
-    type: ValueBaseType
-    name: str
+    value_type: ValueBaseType
+    type: str
+    # name: str
     permission: PermissionType
     mapping: Optional[Dict]  # Number only
     ordered_mapping: Optional[bool]  # Number only
@@ -82,8 +83,9 @@ class ValueSettinsSchema(BaseModel):
 
 valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ValueType.DEFAULT: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="number",
+        value_type=ValueBaseType.NUMBER,
+        # name="number",
+        type="Number",
         permission=PermissionType.READWRITE,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
@@ -94,16 +96,18 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit=None
     ),
     ValueType.STRING: ValueSettinsSchema(
-        type=ValueBaseType.STRING,
-        name="string",
+        value_type=ValueBaseType.STRING,
+        # name="string",
+        type="String",
         permission=PermissionType.READWRITE,
         max=64,
         encoding="utf-8",
         unit=None
     ),
     ValueType.NUMBER: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="number",
+        value_type=ValueBaseType.NUMBER,
+        # name="number",
+        type="Number",
         permission=PermissionType.READWRITE,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
@@ -114,24 +118,27 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit=None
     ),
     ValueType.BLOB: ValueSettinsSchema(
-        type=ValueBaseType.BLOB,
-        name="Blob",
+        value_type=ValueBaseType.BLOB,
+        # name="Blob",
+        type="Blob",
         permission=PermissionType.READWRITE,
         max=64,
         encoding="base64",
         unit=None
     ),
     ValueType.XML: ValueSettinsSchema(
-        type=ValueBaseType.XML,
-        name="Xml",
+        value_type=ValueBaseType.XML,
+        # name="Xml",
+        type="Xml",
         permission=PermissionType.READWRITE,
         xsd="",
         namespace="",
         unit=None
     ),
     ValueType.TEMPERATURECELCIUS: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="Temperature",
+        value_type=ValueBaseType.NUMBER,
+        # name="Temperature",
+        type="Temperature",
         permission=PermissionType.READ,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
@@ -142,8 +149,9 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°C"
     ),
     ValueType.LATITUDE: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="latitude",
+        value_type=ValueBaseType.NUMBER,
+        # name="latitude",
+        type="latitude",
         permission=PermissionType.READ,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
@@ -154,8 +162,9 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°N"
     ),
     ValueType.LONGITUDE: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="longitude",
+        value_type=ValueBaseType.NUMBER,
+        # name="longitude",
+        type="longitude",
         permission=PermissionType.READ,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
@@ -166,8 +175,9 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°E"
     ),
     ValueType.BOOLEAN: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="boolean",
+        value_type=ValueBaseType.NUMBER,
+        # name="boolean",
+        type="boolean",
         permission=PermissionType.READWRITE,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
