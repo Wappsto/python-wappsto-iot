@@ -18,7 +18,7 @@ from typing import Union
 import slxjsonrpc
 from slxjsonrpc.schema.jsonrpc import ErrorModel
 
-from .template import Status
+from .template import StatusID
 from .template import ServiceClass
 
 from ..schema.base_schema import BlobValue
@@ -179,7 +179,7 @@ class IoTAPI(ServiceClass):
 
                 self._send_logic(reply)
                 # UNSURE: How do we check if it was send?
-                observer.post(Status.SEND, reply)
+                observer.post(StatusID.SEND, reply)
 
                 self._trace_send_logic(trace, reply)
 
@@ -218,42 +218,48 @@ class IoTAPI(ServiceClass):
                     self.log.debug(f"Package ID: {_id};")
 
                 if send_data:
-                    observer.post(Status.SENDING, send_data)
+                    observer.post(StatusID.SENDING, send_data)
                     self.connection.send(send_data.json(exclude_none=True))
 
     def _resend_data(self, data):
-        # TODO: add the jsonrpc ID to the JsonRpc receive list.
-        with self.connection.send_ready:
-            self.connection.send(data)
+        j_data = json.loads(data)
+        _cb_event = threading.Event()
 
-        # j_data = json.loads(data)
-        # _cb_event = threading.Event()
+        rpc_id = j_data.get('id')
 
-        # if j_data.get('params'):
-        #     reply = self.jsonrpc.create_request(
-        #         callback=lambda data: _cb_event(),
-        #         error_callback=lambda err_data: _cb_event(),
-        #         method=j_data.get('method'),
-        #         params=j_data
-        #     )
-        # elif j_data.get('result'):
-        #     # self.jsonrpc.
-        #     pass
+        if j_data.get('params'):
+            reply = self.jsonrpc.create_request(
+                callback=lambda data: _cb_event(),
+                error_callback=lambda err_data: _cb_event(),
+                method=j_data.get('method'),
+                params=j_data
+            )
+        elif j_data.get('result'):
+            self.jsonrpc._id_cb[rpc_id] = lambda data: _cb_event()
+            self.jsonrpc._id_error_cb[rpc_id] = lambda err_data: _cb_event()
+            self.jsonrpc._id_method[rpc_id] = j_data.get('method')
+            # self.jsonrpc._add_result_handling(  # NOTE: slxJsonRpc v0.8.1.
+            #     method=j_data.get('method'),
+            #     _id=rpc_id,
+            #     callback=lambda data: _cb_event(),
+            #     error_callback=lambda err_data: _cb_event(),
+            # )
 
-        # self._send_logic(reply.json(exclude_none=True))
+        self._send_logic(reply.json(exclude_none=True))
 
-        # self.log.debug(f"--CALLBACK Ready! {rpc_id}")
-        # if _cb_event.wait(timeout=self.timeout):
-        #     if _data:
-        #         self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
-        #         observer.post(Status.SEND, rpc_data)
-        #         return _data.value
-        #     if _err_data:
-        #         self.log.warning(f"--CALLBACK Error! {_err_data}")
-        #         # raise ConnectionError(_err_data.message)
-        # self.log.debug(f"--CALLBACK None! {rpc_id}")
-        # observer.post(Status.SENDERROR, rpc_data)
-        # return None
+        self.log.debug(f"--CALLBACK Ready! {rpc_id}")
+        if _cb_event.wait(timeout=self.timeout):
+            if _data:
+                self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
+                observer.post(StatusID.SEND, j_data)
+                return _data.value
+            if _err_data:
+                self.log.warning(f"--CALLBACK Error! {_err_data}")
+                observer.post(StatusID.ERROR, _err_data)
+                return None
+        self.log.debug(f"--CALLBACK None! {rpc_id}")
+        observer.post(StatusID.SENDERROR, j_data)
+        return None
 
     # -------------------------------------------------------------------------
     #                               API Helpers
@@ -291,11 +297,13 @@ class IoTAPI(ServiceClass):
         if _cb_event.wait(timeout=self.timeout):
             if _err_data:
                 self.log.debug(f"--CALLBACK Error! {_err_data}")
+                observer.post(StatusID.ERROR, _err_data)
                 # raise ConnectionError(_err_data.message)
+                return False
             self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
-            observer.post(Status.SEND, rpc_data)
+            observer.post(StatusID.SEND, rpc_data)
             return True
-        observer.post(Status.SENDERROR, rpc_data)
+        observer.post(StatusID.SENDERROR, rpc_data)
         self.log.debug(f"--CALLBACK None! {rpc_id}")
         return False
 
@@ -344,13 +352,15 @@ class IoTAPI(ServiceClass):
         if _cb_event.wait(timeout=self.timeout):
             if _data:
                 self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
-                observer.post(Status.SEND, rpc_data)
+                observer.post(StatusID.SEND, rpc_data)
                 return _data.value
             if _err_data:
                 self.log.warning(f"--CALLBACK Error! {_err_data}")
+                observer.post(StatusID.ERROR, _err_data)
                 # raise ConnectionError(_err_data.message)
+                return None
         self.log.debug(f"--CALLBACK None! {rpc_id}")
-        observer.post(Status.SENDERROR, rpc_data)
+        observer.post(StatusID.SENDERROR, rpc_data)
         return None
 
     # -------------------------------------------------------------------------
@@ -482,7 +492,6 @@ class IoTAPI(ServiceClass):
     def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
-        self.log.debug(f"{locals()}")
         url = f"/network/{network_uuid}/device?this_{key}=={value}"
         data: IdList = self._reply_send(
             data=None,

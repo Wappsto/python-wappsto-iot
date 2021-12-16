@@ -19,12 +19,13 @@ from ..schema.base_schema import XmlValue
 from ..schema.base_schema import WappstoMethods
 
 
-class Status(str, Enum):
+class StatusID(str, Enum):
     IDLE = "idle"
     # BATCHING = "batching"
     SENDING = "sending"
     SENDERROR = "send Error"
     SEND = "send"
+    ERROR = "Error Reply"
 
 
 class ServiceClass(ABC):
