@@ -65,8 +65,9 @@ setup(
     #     'tox'
     # ],
     install_requires=[
-       'slxjsonrpc>=0.0.2',
-       'requests',
+        'slxjsonrpc>=0.8.1',
+        'pydantic>=1.6.1'
+
     ],
     # entry_points={  # TODO: fix __main__.py to be optional.
     #     "console_scripts": "wappstoiot=wappstoiot:__main__"
