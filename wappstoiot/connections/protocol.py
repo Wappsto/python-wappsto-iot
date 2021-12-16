@@ -10,7 +10,7 @@ from typing import Callable
 from typing import Optional
 
 
-class Status(str, Enum):
+class StatusID(str, Enum):
     CONNECTING = "Connecting"
     CONNECTED = "Connected"
     DISCONNECTING = "Disconnecting"

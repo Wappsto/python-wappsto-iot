@@ -7,7 +7,7 @@ from typing import Callable
 from typing import Optional
 
 
-class Status(str, enum.Enum):
+class StatusID(str, enum.Enum):
     CONNECTING = "Connecting"
     CONNECTED = "Connected"
     DISCONNECTING = "Disconnecting"
@@ -27,7 +27,7 @@ class Debug:
 
         self.observer_name = "CONNECTION"
         self.observer = observer if observer else lambda st, nd: None
-        self.observer(self.observer_name, Status.DISCONNETCED)
+        self.observer(StatusID.DISCONNETCED, None)
 
     def send(
         self,
@@ -74,9 +74,9 @@ class Debug:
             'True' if the connection was successful else
             'False'
         """
-        self.observer(self.observer_name, Status.CONNECTING)
+        self.observer(StatusID.CONNECTING, None)
 
-        self.observer(self.observer_name, Status.CONNECTED)
+        self.observer(StatusID.CONNECTED, None)
         return True
 
     def reconnect(
@@ -105,5 +105,5 @@ class Debug:
 
     def close(self) -> None:
         self.log.info("Closing connection...")
-        self.observer(self.observer_name, Status.DISCONNECTING)
-        self.observer(self.observer_name, Status.DISCONNETCED)
+        self.observer(StatusID.DISCONNECTING, None)
+        self.observer(StatusID.DISCONNETCED, None)

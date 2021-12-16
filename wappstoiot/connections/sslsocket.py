@@ -11,7 +11,7 @@ from typing import Callable
 from typing import Optional
 from typing import Union
 
-from .protocol import Status
+from .protocol import StatusID
 from .protocol import Connection
 
 
@@ -30,7 +30,7 @@ class TlsSocket(Connection):
 
         self.observer_name = "CONNECTION"
         self.observer = observer if observer else lambda st, nd: None
-        self.observer.post(Status.DISCONNETCED, None)
+        self.observer.post(StatusID.DISCONNETCED, None)
 
         self.send_ready = threading.Lock()
 
@@ -212,14 +212,14 @@ class TlsSocket(Connection):
 
         try:
             self.log.info("Trying to Connect.")
-            self.observer.post(Status.CONNECTING, None)
+            self.observer.post(StatusID.CONNECTING, None)
             # self.socket.settimeout(10)  # Why?
             self.socket.connect((self.address, self.port))
             # self.socket.settimeout(None)  # Why?
             self.log.info(
                 f"Connected on interface: {self.socket.getsockname()[0]}"
             )
-            self.observer.post(Status.CONNECTED, None)
+            self.observer.post(StatusID.CONNECTED, None)
             # if self.sockt_thread is None:
             #     self._start()
             # return True
@@ -268,12 +268,12 @@ class TlsSocket(Connection):
         Closes the socket object connection.
         """
         self.log.info("Closing connection...")
-        self.observer.post(Status.DISCONNECTING, None)
+        self.observer.post(StatusID.DISCONNECTING, None)
         if self.socket:
             self.socket.close()
             self.socket = None
         if self.raw_socket:
             self.raw_socket.close()
             self.raw_socket = None
-        self.observer.post(Status.DISCONNETCED, None)
+        self.observer.post(StatusID.DISCONNETCED, None)
         self.log.info("Connection closed!")
