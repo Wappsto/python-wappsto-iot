@@ -22,6 +22,12 @@ from .modules.value import PermissionType
 from .modules.value import ValueBaseType
 from .modules.template import ValueType
 
+from .service import template as service
+
+from .connections import protocol as connection
+
+from .utils.offline_storage import OfflineStorage
+
 
 # #############################################################################
 #                             __init__ Setup Stuff
@@ -40,7 +46,9 @@ __all__ = [
     'connect',
     'disconnect',
     'close',
-    'StatusID',
+    'OfflineStorage',
+    'service',
+    'connection',
 ]
 
 
@@ -78,60 +86,22 @@ __log.addHandler(logging.NullHandler())
 # #############################################################################
 
 
-from .utils import observer 
-from .connections import protocol as connection
+from .utils import observer
 from .service import template as service
 
 
-class StatusID(str, Enum):
-    CONNECTION = "CONNECTION"
-    SERVICE = "SERVICE"
-
-
-# TODO: TEST the Status thingy.
-ConnectionStatus = connection.Status.DISCONNETCED
-ServiceStatus = service.Status.IDLE
-
-
-def __connectionStatus(
-    layer: StatusID,
-    newStatus: connection.Status
-):
-    global ConnectionStatus
-    ConnectionStatus = newStatus
-
-
-def __serviceStatus(
-    layer: StatusID,
-    newStatus: service.Status
-):
-    global ServiceStatus
-    ServiceStatus = newStatus
-
-
-def subscribe_all_status():
-    observer.subscribe(
-        event_name=StatusID.CONNECTION,
-        callback=__connectionStatus
-    )
-    observer.subscribe(
-        event_name=StatusID.SERVICE,
-        callback=__serviceStatus
-    )
-
-
 def onStatusChange(
-    layer: StatusID,
-    callback: Callable[[StatusID, str], None]
+    StatusID: Union[service.StatusID, connection.StatusID],
+    callback: Callable[[Union[service.StatusID, connection.StatusID], Any], None]
 ):
     """
     Configure an action when the Status have changed.
 
-    def callback(layer: LayerEnum, newStatus: str):
+    def callback(StatusID: StatusID, newStatus: Any):
 
     """
     observer.subscribe(
-        event_name=layer,
+        event_name=StatusID,
         callback=callback
     )
 
@@ -152,12 +122,15 @@ class ConnectionTypes(str, Enum):
 def config(
     config_folder: Union[Path, str] = ".",  # Relative to the main.py-file.
     connection: ConnectionTypes = ConnectionTypes.IOTAPI,
-    mix_max_enforce="warning",  # "ignore", "enforce"
-    step_enforce="warning",  # "ignore", "enforce"
-    delta_handling="",
-    period_handling="",
-    connect_sync: bool = True,  # Start with a Network GET to sync.  # TODO:
-    ping_pong_period: Optional[int] = None,  # Period between a RPC ping-pong.
+    # mix_max_enforce="warning",  # "ignore", "enforce"
+    # step_enforce="warning",  # "ignore", "enforce"
+    # fast_send: bool = True,  # TODO: state.meta.fast=true
+    # delta_handling="",
+    # period_handling="",
+    # connect_sync: bool = True,  # Start with a Network GET to sync.  # TODO:
+    # ping_pong_period: Optional[int] = None,  # Period between a RPC ping-pong.
+    # # Send: {"jsonrpc":"2.0","method":"HEAD","id":"PING-15","params":{"url":"/services/2.0/network"}}
+    # # receive: {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
     offline_storage: Union[OfflineStorage, bool] = False,
     # none_blocking=True,  # Whether the post should wait for reply or not.
 ) -> None:
@@ -195,8 +168,6 @@ def config(
         # TODO: Find & load configs.
         configs: Dict[Any, Any] = {}
         _setup_RestAPI(__config_folder, configs)  # FIXME:
-
-    subscribe_all_status()
 
 
 def _setup_IoTAPI(__config_folder, configs=None):
@@ -253,7 +224,7 @@ def _setup_offline_storage(
         offline_storage: OfflineStorage = offlineStorage
 
     observer.subscribe(
-        service.Status.SENDERROR,
+        service.StatusID.SENDERROR,
         lambda _, data: offline_storage.save(data.json(exclude_none=True))
     )
 
@@ -277,7 +248,7 @@ def _setup_offline_storage(
             __log.exception("Resend Logic")
 
     observer.subscribe(
-        connection.Status.CONNECTED,
+        connection.StatusID.CONNECTED,
         _resend_logic
     )
 

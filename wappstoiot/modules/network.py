@@ -200,11 +200,11 @@ class Network(object):
     #   Network methods
     # -------------------------------------------------------------------------
 
-    def change(self):
-        raise NotImplementedError("Method: 'change' is not Implemented.")
-
     def refresh(self):
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
+
+    def change(self):
+        pass
 
     def delete(self):
         """

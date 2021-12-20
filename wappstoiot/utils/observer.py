@@ -10,7 +10,7 @@ obs_log = logging.getLogger(__name__)
 obs_log.addHandler(logging.NullHandler())
 
 default_subscriber = [
-    lambda event_name, data: obs_log.info(
+    lambda event_name, data: obs_log.debug(
         f"Default Observer: event_name={event_name}, data={data}"
     )
 ]
