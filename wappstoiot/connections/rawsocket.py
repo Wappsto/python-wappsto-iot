@@ -168,7 +168,7 @@ class RawSocket(Connection):
                 self.log.debug(f"Raw Data Received: {data}")
                 return parsed_data
 
-    def connect(self) -> None:
+    def connect(self) -> Optional[bool]:
         """
         Connect to the server.
 
@@ -191,7 +191,7 @@ class RawSocket(Connection):
             self.observer.post(StatusID.CONNECTED, None)
             # if self.sockt_thread is None:
             #     self._start()
-            # return True
+            return True
 
         except Exception as e:
             self.log.error("Failed to connect: {}".format(e))

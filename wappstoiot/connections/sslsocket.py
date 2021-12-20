@@ -154,6 +154,8 @@ class TlsSocket(Connection):
             self.log.exception(msg)
             # UNSURE: How do we hit this?
             return False
+        except AttributeError:
+            return False
         else:
             self.log.debug(f"Raw Data Send: {data}")
             return True
@@ -178,7 +180,7 @@ class TlsSocket(Connection):
         while self.socket:
             try:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
-            except socket.timeout:
+            except (socket.timeout, TimeoutError):
                 continue
             except OSError:
                 # UNSURE:
@@ -199,15 +201,14 @@ class TlsSocket(Connection):
                 self.log.debug(f"Raw Data Received: {data}")
                 return parsed_data
 
-    def connect(self) -> None:
+    def connect(self) -> Optional[bool]:
         """
         Connect to the server.
 
         Attempts a connection to the server on the provided addres and port.
 
         Returns:
-            'True' if the connection was successful else
-            'False'
+            'True' if the connection was successful.
         """
 
         try:
@@ -222,7 +223,7 @@ class TlsSocket(Connection):
             self.observer.post(StatusID.CONNECTED, None)
             # if self.sockt_thread is None:
             #     self._start()
-            # return True
+            return True
 
         except Exception as e:
             self.log.error("Failed to connect: {}".format(e))
@@ -250,8 +251,11 @@ class TlsSocket(Connection):
                 retry_limit -= 1
             self.disconnect()
             self._socket_setup()
-            if self.connect():
-                return True
+            try:
+                if self.connect():
+                    return True
+            except OSError:
+                pass  # NOTE: Happens if it have forgotten the IP for the url.
             self.log.info("Trying to reconnect in 5 seconds")
             time.sleep(5)
         return False

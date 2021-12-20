@@ -122,6 +122,7 @@ class ConnectionTypes(str, Enum):
 def config(
     config_folder: Union[Path, str] = ".",  # Relative to the main.py-file.
     connection: ConnectionTypes = ConnectionTypes.IOTAPI,
+    # JPC_timeout=3
     # mix_max_enforce="warning",  # "ignore", "enforce"
     # step_enforce="warning",  # "ignore", "enforce"
     # fast_send: bool = True,  # TODO: state.meta.fast=true
@@ -228,7 +229,7 @@ def _setup_offline_storage(
         lambda _, data: offline_storage.save(data.json(exclude_none=True))
     )
 
-    def _resend_logic(status, data):
+    def _resend_logic(status, status_data):
         nonlocal offline_storage
         __log.debug(f"Resend called with: status={status}")
         try:
