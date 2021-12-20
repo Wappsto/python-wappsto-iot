@@ -74,7 +74,7 @@ class IoTAPI(ServiceClass):
         self.crt = crt
         self.key = key
 
-        self.timeout = 10
+        self.timeout = 3
 
         self.addr, self.port = self._url_gen(self.crt)
 
@@ -225,40 +225,40 @@ class IoTAPI(ServiceClass):
         j_data = json.loads(data)
         _cb_event = threading.Event()
 
-        rpc_id = j_data.get('id')
+        if not isinstance(j_data, list):
+            j_data = [j_data]
 
-        if j_data.get('params'):
-            reply = self.jsonrpc.create_request(
-                callback=lambda data: _cb_event(),
-                error_callback=lambda err_data: _cb_event(),
-                method=j_data.get('method'),
-                params=j_data
-            )
-        elif j_data.get('result'):
-            self.jsonrpc._id_cb[rpc_id] = lambda data: _cb_event()
-            self.jsonrpc._id_error_cb[rpc_id] = lambda err_data: _cb_event()
-            self.jsonrpc._id_method[rpc_id] = j_data.get('method')
-            # self.jsonrpc._add_result_handling(  # NOTE: slxJsonRpc v0.8.1.
-            #     method=j_data.get('method'),
-            #     _id=rpc_id,
-            #     callback=lambda data: _cb_event(),
-            #     error_callback=lambda err_data: _cb_event(),
-            # )
+        for l_data in j_data:
+            rpc_id = l_data.get('id')
 
-        self._send_logic(reply.json(exclude_none=True))
+            if l_data.get('params'):
+                s_data = self.jsonrpc.create_request(
+                    callback=lambda data: _cb_event.set(),
+                    error_callback=lambda err_data: _cb_event.set(),
+                    method=l_data.get('method'),
+                    params=l_data.get('params')
+                )
+                self._send_logic(s_data)
+            elif l_data.get('result'):
+                self.jsonrpc._id_cb[rpc_id] = lambda data: _cb_event.set()
+                self.jsonrpc._id_error_cb[rpc_id] = lambda err_data: _cb_event.set()
+                self.jsonrpc._id_method[rpc_id] = l_data.get('method')
+                # self.jsonrpc._add_result_handling(  # NOTE: slxJsonRpc v0.8.1.
+                #     method=l_data.get('method'),
+                #     _id=rpc_id,
+                #     callback=lambda data: _cb_event(),
+                #     error_callback=lambda err_data: _cb_event(),
+                # )
+                s_data = self.jsonrpc._parse_data(l_data)
+                self._send_logic(s_data)
 
-        self.log.debug(f"--CALLBACK Ready! {rpc_id}")
-        if _cb_event.wait(timeout=self.timeout):
-            if _data:
+            self.log.debug(f"--CALLBACK Ready! {rpc_id}")
+            if _cb_event.wait(timeout=self.timeout):
                 self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
-                observer.post(StatusID.SEND, j_data)
-                return _data.value
-            if _err_data:
-                self.log.warning(f"--CALLBACK Error! {_err_data}")
-                observer.post(StatusID.ERROR, _err_data)
-                return None
-        self.log.debug(f"--CALLBACK None! {rpc_id}")
-        observer.post(StatusID.SENDERROR, j_data)
+                observer.post(StatusID.SEND, s_data)
+            else:
+                self.log.debug(f"--CALLBACK None! {rpc_id}")
+                observer.post(StatusID.SENDERROR, s_data)
         return None
 
     # -------------------------------------------------------------------------
