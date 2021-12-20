@@ -8,28 +8,38 @@ import wappstoiot
 
 
 def main():
+
+    def statusChange(StatusID, data):
+        print(f"New status: {StatusID}")
+
+    wappstoiot.onStatusChange(
+        StatusID=wappstoiot.connection.StatusID.CONNECTED,
+        callback=statusChange
+    )
+ 
+    wappstoiot.onStatusChange(
+        StatusID=wappstoiot.service.StatusID.ERROR,
+        callback=statusChange
+    )
+
     wappstoiot.config(
-        config_folder="info"
+        config_folder="info",
     )
 
     network = wappstoiot.createNetwork(
         name="info",
     )
 
-    # wappstoiot.onStatusChange(
-    #     StatusID=wappstoiot.StatusID.CONNECTION,
-    #     callback=lambda StatusID, newStatus: print(f"New status: {newStatus}")
-    # )
+    network.onDelete(
+        callback=lambda obj: print("Network received a: Delete")
+    )
 
-    # network.onDelete(
-    #     callback=lambda obj: print("Network received a: Delete")
-    # )
-
-    device = network.createDevice()
+    device = network.createDevice("Human")
 
     value = device.createValue(
         "StringInfo",
-        value_type=wappstoiot.ValueType.STRING
+        permission=wappstoiot.PermissionType.READWRITE,
+        value_type=wappstoiot.ValueType.STRING,
     )
 
     def valueRefresh(obj):

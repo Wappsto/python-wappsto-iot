@@ -50,11 +50,13 @@ def main():
 
     latitude = gps.createValue(
         "latitude",
+        permission=wappstoiot.PermissionType.READ,
         value_type=wappstoiot.ValueType.LATITUDE,
     )
 
     longitude = gps.createValue(
         "longitude",
+        permission=wappstoiot.PermissionType.READ,
         value_type=wappstoiot.ValueType.LONGITUDE,
     )
 
