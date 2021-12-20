@@ -261,7 +261,7 @@ class Device:
     def createNumberValue(
         self,
         name: str,
-        permission: PermissionType,  # PermissionType.READWRITE,
+        permission: PermissionType,
         description: str,
         type: str,
         period: int,  # in Sec
@@ -299,7 +299,7 @@ class Device:
     def createStringValue(
         self,
         name: str,
-        permission: PermissionType,  # PermissionType.READWRITE,
+        permission: PermissionType,
         type: str,
         description: str,
         period: int,  # in Sec
@@ -331,7 +331,7 @@ class Device:
     def createBlobValue(
         self,
         name: str,
-        permission: PermissionType,  # PermissionType.READWRITE,
+        permission: PermissionType,
         type: str,
         description: str,
         period: int,  # in Sec
@@ -363,7 +363,7 @@ class Device:
     def createXmlValue(
         self,
         name: str,
-        permission: PermissionType,  # PermissionType.READWRITE,
+        permission: PermissionType,
         type: str,
         description: str,
         period: int,  # in Sec
@@ -418,6 +418,7 @@ class Device:
 
         value_obj = Value(
             parent=self,
+            name=name,
             value_uuid=value_uuid,
             permission=permission,
             **valueSettings[value_type].dict()

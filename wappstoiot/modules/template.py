@@ -65,7 +65,6 @@ class ValueType(str, Enum):
 class ValueSettinsSchema(BaseModel):
     value_type: ValueBaseType
     type: str
-    permission: PermissionType
     mapping: Optional[Dict]  # Number only
     ordered_mapping: Optional[bool]  # Number only
     meaningful_zero: Optional[bool]  # Number only
