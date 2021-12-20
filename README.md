@@ -38,10 +38,16 @@ Working examples of usage can be found in the [example folder](./example).
 
 The following explains the example code found in [info.py](./example/echo.py).
 
+
 ```python
-network = wappstoiot.Network(
+network = wappstoiot.config(
+    config_Folder="echo"
+)
+```
+
+```python
+network = wappstoiot.createNetwork(
     name="echo",
-    configFolder="echo"
 )
 ```
 
@@ -54,6 +60,7 @@ device = network.createDevice(
 ```python
 value = device.createValue(
     name="Moeller",
+    permission=wappstoiot.PermissionType.READWRITE,
     value_type=wappstoiot.ValueType.STRING
 )
 ```
@@ -77,7 +84,7 @@ try:
 except KeyboardInterrupt:
     pass
 finally:
-    network.close()
+    wappstoiot.close()
 ```
 
 

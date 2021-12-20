@@ -45,7 +45,7 @@ def main():
 
     temp_value = device.createValue(
         name="Temperature",
-        value_type=wappstoiot.ValueType.NUMBER,
+        value_type=wappstoiot.ValueType.TEMPERATURECELCIUS,
         permission=wappstoiot.PermissionType.READ
     )
 
