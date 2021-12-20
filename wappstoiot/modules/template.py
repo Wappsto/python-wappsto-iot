@@ -56,8 +56,7 @@ class ValueType(str, Enum):
     NUMBER = "Number"
     BLOB = "Blob"
     XML = "Xml"
-    TEMPERATURECELCIUS = "TemperatureCelcius"  # TODO: !
-    SPEED = "Speed"  # TODO: !
+    TEMPERATURECELCIUS = "TemperatureCelcius"
     BOOLEAN = "Boolean"
     LATITUDE = "Latitude"
     LONGITUDE = "Longitude"
@@ -66,15 +65,14 @@ class ValueType(str, Enum):
 class ValueSettinsSchema(BaseModel):
     value_type: ValueBaseType
     type: str
-    # name: str
     permission: PermissionType
     mapping: Optional[Dict]  # Number only
     ordered_mapping: Optional[bool]  # Number only
     meaningful_zero: Optional[bool]  # Number only
     si_conversion: Optional[str]  # Number only
-    min: Optional[int]  # Number only
-    max: Optional[int]  # Blob, number, str only.
-    step: Optional[int]  # Number only
+    min: Optional[float]  # Number only
+    max: Optional[float]  # Blob, number, str only.
+    step: Optional[float]  # Number only
     encoding: Optional[str]  # Blob, str only.
     xsd: Optional[str]  # XML only
     namespace: Optional[str]  # XML only
@@ -84,9 +82,7 @@ class ValueSettinsSchema(BaseModel):
 valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ValueType.DEFAULT: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        # name="number",
         type="Number",
-        permission=PermissionType.READWRITE,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=None,  # Boolean
@@ -97,49 +93,39 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ),
     ValueType.STRING: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
-        # name="string",
         type="String",
-        permission=PermissionType.READWRITE,
         max=64,
         encoding="utf-8",
         unit=None
     ),
     ValueType.NUMBER: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        # name="number",
         type="Number",
-        permission=PermissionType.READWRITE,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=None,  # Boolean
         min=-1e+38,  # UNSURE(MBK): !!
         max=1e+38,
-        step=1e-038,
+        step=0.01,
         unit=None
     ),
     ValueType.BLOB: ValueSettinsSchema(
         value_type=ValueBaseType.BLOB,
-        # name="Blob",
         type="Blob",
-        permission=PermissionType.READWRITE,
         max=64,
         encoding="base64",
         unit=None
     ),
     ValueType.XML: ValueSettinsSchema(
         value_type=ValueBaseType.XML,
-        # name="Xml",
         type="Xml",
-        permission=PermissionType.READWRITE,
         xsd="",
         namespace="",
         unit=None
     ),
     ValueType.TEMPERATURECELCIUS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        # name="Temperature",
         type="Temperature",
-        permission=PermissionType.READ,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean
@@ -150,9 +136,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ),
     ValueType.LATITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        # name="latitude",
         type="latitude",
-        permission=PermissionType.READ,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean
@@ -163,9 +147,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ),
     ValueType.LONGITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        # name="longitude",
         type="longitude",
-        permission=PermissionType.READ,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean
@@ -176,9 +158,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ),
     ValueType.BOOLEAN: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        # name="boolean",
         type="boolean",
-        permission=PermissionType.READWRITE,
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean

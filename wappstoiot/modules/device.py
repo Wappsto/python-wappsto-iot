@@ -22,6 +22,7 @@ from ..schema.base_schema import PermissionType
 from .value import Value
 from .template import valueSettings
 from .template import ValueType
+from .template import ValueBaseType
 # from .Template import _UnitsInfo
 
 from typing import TYPE_CHECKING
@@ -224,6 +225,9 @@ class Device:
     #   Device methods
     # -------------------------------------------------------------------------
 
+    def refresh(self):
+        raise NotImplementedError("Method: 'refresh' is not Implemented.")
+
     def change(self, change_type: ChangeType) -> None:
         """
         Update a parameter in the Device structure.
@@ -235,10 +239,7 @@ class Device:
          - serial
          - description
         """
-        raise NotImplementedError("Method: 'change' is not Implemented.")
-
-    def refresh(self):
-        raise NotImplementedError("Method: 'refresh' is not Implemented.")
+        pass
 
     def delete(self) -> None:
         """
@@ -257,25 +258,145 @@ class Device:
     #   Other methods
     # -------------------------------------------------------------------------
 
+    def createNumberValue(
+        self,
+        name: str,
+        permission: PermissionType,  # PermissionType.READWRITE,
+        description: str,
+        type: str,
+        period: int,  # in Sec
+        delta: Union[int, float],
+        min: Union[int, float],
+        max: Union[int, float],
+        step: Union[int, float],
+        mapping: bool,
+        meaningful_zero: str,
+        ordered_mapping: bool,
+        si_conversion: str,
+        unit: str,
+    ) -> Value:
+        kwargs = locals()
+        kwargs.pop('self')
+
+        value_uuid = self.connection.get_value_where(
+            device_uuid=self.uuid,
+            name=name
+        )[0]
+
+        if not value_uuid:
+            value_uuid = uuid.uuid4()
+
+        value_obj = Value(
+            parent=self,
+            value_uuid=value_uuid,
+            value_type=ValueBaseType.NUMBER,
+            **kwargs
+        )
+
+        self.__add_value(value_obj, kwargs['name'])
+        return value_obj
+
+    def createStringValue(
+        self,
+        name: str,
+        permission: PermissionType,  # PermissionType.READWRITE,
+        type: str,
+        description: str,
+        period: int,  # in Sec
+        delta: Union[int, float],
+        max: Union[int, float],
+        encoding: str,
+    ) -> Value:
+        kwargs = locals()
+        kwargs.pop('self')
+
+        value_uuid = self.connection.get_value_where(
+            device_uuid=self.uuid,
+            name=name
+        )[0]
+
+        if not value_uuid:
+            value_uuid = uuid.uuid4()
+
+        value_obj = Value(
+            parent=self,
+            value_uuid=value_uuid,
+            value_type=ValueBaseType.STRING,
+            **kwargs
+        )
+
+        self.__add_value(value_obj, kwargs['name'])
+        return value_obj
+
+    def createBlobValue(
+        self,
+        name: str,
+        permission: PermissionType,  # PermissionType.READWRITE,
+        type: str,
+        description: str,
+        period: int,  # in Sec
+        delta: Union[int, float],
+        max: Union[int, float],
+        encoding: str,
+    ) -> Value:
+        kwargs = locals()
+        kwargs.pop('self')
+
+        value_uuid = self.connection.get_value_where(
+            device_uuid=self.uuid,
+            name=name
+        )[0]
+
+        if not value_uuid:
+            value_uuid = uuid.uuid4()
+
+        value_obj = Value(
+            parent=self,
+            value_uuid=value_uuid,
+            value_type=ValueBaseType.BLOB,
+            **kwargs
+        )
+
+        self.__add_value(value_obj, kwargs['name'])
+        return value_obj
+
+    def createXmlValue(
+        self,
+        name: str,
+        permission: PermissionType,  # PermissionType.READWRITE,
+        type: str,
+        description: str,
+        period: int,  # in Sec
+        delta: Union[int, float],
+        xsd: str,
+        namespace: str,
+    ) -> Value:
+        kwargs = locals()
+        kwargs.pop('self')
+
+        value_uuid = self.connection.get_value_where(
+            device_uuid=self.uuid,
+            name=name
+        )[0]
+
+        if not value_uuid:
+            value_uuid = uuid.uuid4()
+
+        value_obj = Value(
+            parent=self,
+            value_uuid=value_uuid,
+            value_type=ValueBaseType.XML,
+            **kwargs
+        )
+
+        self.__add_value(value_obj, kwargs['name'])
+        return value_obj
+
     def createValue(
         self,
         name: str,
         value_type: ValueType = ValueType.DEFAULT,
-        permission: Optional[PermissionType] = None,  # PermissionType.READWRITE,
-        min: Optional[Union[int, float]] = None,
-        max: Optional[Union[int, float]] = None,
-        step: Optional[Union[int, float]] = None,
-        encoding: Optional[str] = None,
-        xsd: Optional[str] = None,
-        namespace: Optional[str] = None,
-        period: Optional[int] = None,  # in Sec
-        delta: Optional[Union[int, float]] = None,
-        description: Optional[str] = None,
-        meaningful_zero: Optional[str] = None,
-        mapping: Optional[bool] = None,
-        ordered_mapping: Optional[bool] = None,
-        si_conversion: Optional[str] = None,
-        unit: Optional[str] = None,
+        permission: PermissionType = PermissionType.READWRITE,
     ) -> Value:
         """
         Create a Wappsto Value.
@@ -287,39 +408,22 @@ class Device:
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
         """
-        kwargs = locals()
-        kwargs.pop('self')
-        kwargs.pop("value_type")
-
-        thisSetting = valueSettings[value_type]
-
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
-        )
+        )[0]
 
         if not value_uuid:
-            kwargs['value_uuid'] = uuid.uuid4()
-        else:
-            kwargs['value_uuid'] = value_uuid[0]
-
-        # the kwargs weigh higher then the default settings. 
-        for key, value in thisSetting.dict().items():
-            if key in kwargs:
-                if kwargs[key] is None:
-                    kwargs[key] = value
-            else:
-                kwargs[key] = value
-
-        self.log.debug(f"{kwargs}")
+            value_uuid = uuid.uuid4()
 
         value_obj = Value(
             parent=self,
-            # value_type=thisSetting.type,
-            **kwargs
+            value_uuid=value_uuid,
+            permission=permission,
+            **valueSettings[value_type].dict()
         )
 
-        self.__add_value(value_obj, kwargs['name'])
+        self.__add_value(value_obj, name)
         return value_obj
 
     def __add_value(self, value: Value, name: str):
