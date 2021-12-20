@@ -214,7 +214,7 @@ def get_network(session, base_url, network_uuid):
     except urllib.error.HTTPError as err:
         _log_request_error(url=url, data=None, err=err, headers=headers)
 
-    data = json.loads(rdata.text)
+    data = json.loads(rdata)
 
     if not data['id']:
         print(f"{data['message']}")
