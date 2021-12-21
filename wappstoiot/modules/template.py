@@ -56,10 +56,13 @@ class ValueType(str, Enum):
     NUMBER = "Number"
     BLOB = "Blob"
     XML = "Xml"
-    TEMPERATURECELCIUS = "TemperatureCelcius"
+    TEMPERATURE_CELCIUS = "Temperature Celcius"
     BOOLEAN = "Boolean"
     LATITUDE = "Latitude"
     LONGITUDE = "Longitude"
+    CO2 = "CO2"
+    PRESSURE_PASCAL = "Pressure Pascal"
+    HUMIDITY = "Humidity"
 
 
 class ValueSettinsSchema(BaseModel):
@@ -122,16 +125,50 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         namespace="",
         unit=None
     ),
-    ValueType.TEMPERATURECELCIUS: ValueSettinsSchema(
+    ValueType.TEMPERATURE_CELCIUS: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="temperature",
+        mapping=None,  # dict,
+        ordered_mapping=None,  # Boolean
+        meaningful_zero=False,  # Boolean
+        min=-273,
+        max=1e+38,
+        step=0.01,
+        unit="°C",
+    ),
+    ValueType.CO2: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="co2",
+        mapping=None,  # dict,
+        ordered_mapping=None,  # Boolean
+        meaningful_zero=True,  # Boolean
+        min=0,
+        max=1e+38,
+        step=0.01,
+        unit="ppm",
+        si_conversion="1000000*[ppm]"
+    ),
+    ValueType.PRESSURE_PASCAL: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="pressure",
+        mapping=None,  # dict,
+        ordered_mapping=None,  # Boolean
+        meaningful_zero=True,  # Boolean
+        min=0,
+        max=1e+38,
+        step=0.01,
+        unit="Pa",
+    ),
+    ValueType.HUMIDITY: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="Temperature",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean
-        min=-273,
+        min=0,
         max=1e+38,
         step=0.01,
-        unit="°C"
+        unit="%"
     ),
     ValueType.LATITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
