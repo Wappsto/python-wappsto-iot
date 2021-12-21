@@ -262,18 +262,18 @@ class Device:
         self,
         name: str,
         permission: PermissionType,
-        description: str,
         type: str,
-        period: int,  # in Sec
-        delta: Union[int, float],
         min: Union[int, float],
         max: Union[int, float],
         step: Union[int, float],
-        mapping: bool,
-        meaningful_zero: str,
-        ordered_mapping: bool,
-        si_conversion: str,
         unit: str,
+        description: Optional[str],
+        si_conversion: Optional[str],
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
+        mapping: Optional[bool] = None,
+        meaningful_zero: Optional[bool] = None,
+        ordered_mapping: Optional[bool] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
@@ -301,11 +301,11 @@ class Device:
         name: str,
         permission: PermissionType,
         type: str,
-        description: str,
-        period: int,  # in Sec
-        delta: Union[int, float],
         max: Union[int, float],
-        encoding: str,
+        encoding: Optional[str],
+        description: Optional[str],
+        period: Optional[int],  # in Sec
+        delta: Optional[Union[int, float]],
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
@@ -333,11 +333,11 @@ class Device:
         name: str,
         permission: PermissionType,
         type: str,
-        description: str,
-        period: int,  # in Sec
-        delta: Union[int, float],
         max: Union[int, float],
-        encoding: str,
+        encoding: Optional[str],
+        description: Optional[str],
+        period: Optional[int],  # in Sec
+        delta: Optional[Union[int, float]],
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
@@ -365,11 +365,11 @@ class Device:
         name: str,
         permission: PermissionType,
         type: str,
-        description: str,
-        period: int,  # in Sec
-        delta: Union[int, float],
-        xsd: str,
-        namespace: str,
+        xsd: Optional[str],
+        namespace: Optional[str],
+        description: Optional[str],
+        period: Optional[int],  # in Sec
+        delta: Optional[Union[int, float]],
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
