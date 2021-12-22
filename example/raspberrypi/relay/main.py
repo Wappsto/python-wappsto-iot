@@ -37,6 +37,7 @@ def main():
 
     value = device.createValue(
         name="State",
+        permission=wappstoiot.PermissionType.READWRITE,
         value_type=wappstoiot.ValueType.BOOLEAN
     )
 

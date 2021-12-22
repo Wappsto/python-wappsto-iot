@@ -1,4 +1,5 @@
 import logging
+import threading
 
 from typing import Any
 from typing import Dict
@@ -10,7 +11,7 @@ obs_log = logging.getLogger(__name__)
 obs_log.addHandler(logging.NullHandler())
 
 default_subscriber = [
-    lambda event_name, data: obs_log.info(
+    lambda event_name, data: obs_log.debug(
         f"Default Observer: event_name={event_name}, data={data}"
     )
 ]
@@ -46,8 +47,13 @@ def post(event_name: str, data: Any) -> None:
         event_name: An unique name for the given event.
         data: The given event subscriber might want.
     """
-    for fn in subscriber.get(event_name, default_subscriber):
-        fn(event_name, data)
+    def executer():
+        for fn in subscriber.get(event_name, default_subscriber):
+            fn(event_name, data)
+
+    # NOTE: Needed for ensure that the receive thread do not get blocked.
+    th = threading.Thread(target=executer)
+    th.start()
 
 
 def unsubscribe(event_name: str, callback: Callable[[str, Any], None]) -> bool:

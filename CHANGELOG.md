@@ -1,3 +1,25 @@
+v0.5.4 (Dec 21 2021)
+===============================================================================
+
+## Added
+
+ * New Default Value-Types. (CO2, Humidity & Pressure Pascal).
+
+
+## Changed
+
+ * The createValue, are now split into 5. `createValue` that uses the predefined ValueType given, and 1 for each base value types, for when a custom is needed. 
+ * `permission` is now required.
+ * `onControl`, `onReport`, `getControlData` & `getReportData` provides a float if the value was set to be a number.
+
+
+## Fixed
+
+ * offline_Storage warnings now fixed.
+ * A issue where the `type`-value inside value where not set.
+ * A issue where the step was set to a int, not a float.
+ * `wappstoiot.onStatus` should not be working correctly.
+
 
 v0.5.3 (Dec 9, 2021)
 ===============================================================================

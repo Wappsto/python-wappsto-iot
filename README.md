@@ -14,7 +14,7 @@ A [wappsto.com](https://wappsto.com/) Account, that the unit can connect to.
 The wappsto module requires a set of certificates for authentication. The certificates can be downloaded from [wappsto.com](https://wappsto.com/), or with the build-in CLI tool: `python3 -m wappstoiot`.
 The certificates provides the unit with the secure connection to wappsto.com.
 
-To read more about how the Wappsto IoT work behind the screen go [here](https://documentation.wappsto.com).
+To read more about how the Wappsto IoT inner workings, go [here](https://documentation.wappsto.com).
 
 ## The Basics
 
@@ -34,14 +34,23 @@ To understand how to use Wappsto IoT, there is some terms that need to be known.
 
 Working examples of usage can be found in the [example folder](./example).
 
+The needed certificates can be downloaded with: `python -m wappstoiot --path echo`
+Where path is the path to the config-folder, given in the following code example.
+
 ### Echo example
 
-The following explains the example code found in [info.py](./example/echo.py).
+The following explains the example code found in [echo.py](./example/echo.py).
+
 
 ```python
-network = wappstoiot.Network(
+network = wappstoiot.config(
+    config_Folder="echo"
+)
+```
+
+```python
+network = wappstoiot.createNetwork(
     name="echo",
-    configFolder="echo"
 )
 ```
 
@@ -54,6 +63,7 @@ device = network.createDevice(
 ```python
 value = device.createValue(
     name="Moeller",
+    permission=wappstoiot.PermissionType.READWRITE,
     value_type=wappstoiot.ValueType.STRING
 )
 ```
@@ -77,7 +87,7 @@ try:
 except KeyboardInterrupt:
     pass
 finally:
-    network.close()
+    wappstoiot.close()
 ```
 
 

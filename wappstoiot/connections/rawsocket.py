@@ -8,7 +8,7 @@ from typing import Callable
 from typing import Optional
 from typing import Union
 
-from .protocol import Status
+from .protocol import StatusID
 from .protocol import Connection
 
 
@@ -24,7 +24,7 @@ class RawSocket(Connection):
 
         self.observer_name = "CONNECTION"
         self.observer = observer if observer else lambda st, nd: None
-        self.observer.post(self.observer_name, Status.DISCONNETCED)
+        self.observer.post(StatusID.DISCONNETCED, None)
 
         self.send_ready = threading.Lock()
 
@@ -168,7 +168,7 @@ class RawSocket(Connection):
                 self.log.debug(f"Raw Data Received: {data}")
                 return parsed_data
 
-    def connect(self) -> None:
+    def connect(self) -> Optional[bool]:
         """
         Connect to the server.
 
@@ -181,17 +181,17 @@ class RawSocket(Connection):
 
         try:
             self.log.info("Trying to Connect.")
-            self.observer.post(self.observer_name, Status.CONNECTING)
+            self.observer.post(StatusID.CONNECTING, None)
             # self.socket.settimeout(10)  # Why?
             self.socket.connect((self.address, self.port))
             # self.socket.settimeout(None)  # Why?
             self.log.info(
                 f"Connected on interface: {self.socket.getsockname()[0]}"
             )
-            self.observer.post(self.observer_name, Status.CONNECTED)
+            self.observer.post(StatusID.CONNECTED, None)
             # if self.sockt_thread is None:
             #     self._start()
-            # return True
+            return True
 
         except Exception as e:
             self.log.error("Failed to connect: {}".format(e))
@@ -234,9 +234,9 @@ class RawSocket(Connection):
         Closes the socket object connection.
         """
         self.log.info("Closing connection...")
-        self.observer.post(self.observer_name, Status.DISCONNECTING)
+        self.observer.post(StatusID.DISCONNECTING, None)
         if self.socket:
             self.socket.close()
             self.socket = None
-        self.observer.post(self.observer_name, Status.DISCONNETCED)
+        self.observer.post(StatusID.DISCONNETCED, None)
         self.log.info("Connection closed!")

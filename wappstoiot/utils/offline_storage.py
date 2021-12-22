@@ -16,7 +16,7 @@ from typing import Union
 
 class OfflineStorage(ABC):
     @abstractmethod
-    def save(self, data: str): ...
+    def save(self, data: str) -> None: ...
     @abstractmethod
     def load(self, max_count: Optional[int] = None) -> List[str]: ...
 
@@ -67,7 +67,7 @@ class OfflineStorageFiles(OfflineStorage):
             self.save(data=data)
             raise
 
-    def save(self, data: str):
+    def save(self, data: str) -> None:
         self.log.debug(f"Saving data: {data}")
         datafile = self.loc / (str(time.perf_counter_ns()) + self.suffix)
         self.log.debug(f"Save to file: {datafile}")

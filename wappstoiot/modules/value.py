@@ -75,9 +75,10 @@ class Value:
     def __init__(
         self,
         parent: 'Device',
-        type: ValueBaseType,
+        value_type: ValueBaseType,
         name: str,
         value_uuid: UUID4,  # Only used on loading.
+        type: Optional[str] = None,
         permission: PermissionType = PermissionType.READWRITE,
         min: Optional[Union[int, float]] = None,
         max: Optional[Union[int, float]] = None,
@@ -97,7 +98,9 @@ class Value:
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
-        self.schema = self.__value_type_2_Schema[type]
+        self.value_type = value_type
+
+        self.schema = self.__value_type_2_Schema[value_type]
         self.report_state: WSchema.State
         self.control_state: WSchema.State
         self.parent = parent
@@ -110,13 +113,12 @@ class Value:
 
         self.__uuid: UUID4 = value_uuid
 
-        # self.children_uuid_mapping: Dict[UUID4, Value] = {}
         self.children_name_mapping: Dict[str, UUID4] = {}
 
         self.connection: ServiceClass = parent.connection
 
         subValue = self.__parseValueType(
-                ValueType=type,
+                ValueType=value_type,
                 encoding=encoding,
                 mapping=mapping,
                 max_range=max,
@@ -135,6 +137,7 @@ class Value:
             description=description,
             period=period,
             delta=delta,
+            type=type,
             permission=permission,
             **subValue,
             meta=WSchema.ValueMeta(
@@ -163,7 +166,7 @@ class Value:
                 data=self.element
             )
 
-        self._createStates(permission)
+            self._createStates(permission)
 
     def __print(self, element):
         self.log.debug(
@@ -179,13 +182,15 @@ class Value:
             element
         )
 
-    def getControlData(self) -> Optional[Union[int, float, str]]:
+    def getControlData(self) -> Optional[Union[float, str]]:
         """
         Returns the last Control value.
 
         The returned value will be the last Control value,
         unless there isn't one, then it will return None.
         """
+        if self.value_type == ValueBaseType.NUMBER:
+            return float(self.control_state.data)
         return self.control_state.data
 
     def getControlTimestamp(self) -> Optional[datetime]:
@@ -197,13 +202,15 @@ class Value:
         """
         return self.control_state.timestamp
 
-    def getReportData(self) -> Optional[Union[int, float, str]]:
+    def getReportData(self) -> Optional[Union[float, str]]:
         """
         Returns the last Report value.
 
         The returned value will be the last Report value.
         unless there isn't one, then it will return None.
         """
+        if self.value_type == ValueBaseType.NUMBER:
+            return float(self.control_state.data)
         return self.report_state.data
 
     def getReportTimestamp(self) -> Optional[datetime]:
@@ -345,7 +352,7 @@ class Value:
 
     def onReport(
         self,
-        callback: Callable[['Value', Union[str, int, float]], None],
+        callback: Callable[['Value', Union[str, float]], None],
     ) -> None:
         """
         Add a trigger on when Report data change have been make.
@@ -356,11 +363,15 @@ class Value:
             Value: the Object that have had a Report for.
             Union[str, int, float]: The Value of the Report change.
         """
-        raise NotImplementedError("Method: 'onReport' is not Implemented.")
+        def _cb_float(obj, method):
+            if method == WappstoMethod.PUT:
+                callback(self, float(obj.data))
 
-        def _cb(obj, method):
+        def _cb_str(obj, method):
             if method == WappstoMethod.PUT:
                 callback(self, obj.data)
+
+        _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
@@ -369,7 +380,7 @@ class Value:
 
     def onControl(
         self,
-        callback: Callable[['Value', Union[str, int, float]], None],
+        callback: Callable[['Value', Union[str, float]], None],
     ) -> None:
         """
         Add trigger for when a Control request have been make.
@@ -381,10 +392,15 @@ class Value:
             ValueObj: This object that have had a request for.
             any: The Data.
         """
+        def _cb_float(obj, method):
+            if method == WappstoMethod.PUT:
+                callback(self, float(obj.data))
 
-        def _cb(obj, method):
+        def _cb_str(obj, method):
             if method == WappstoMethod.PUT:
                 callback(self, obj.data)
+
+        _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
@@ -471,7 +487,8 @@ class Value:
          - delta
          # - meaningful_zero
         """
-        raise NotImplementedError("Method: 'change' is not Implemented.")
+        # raise NotImplementedError("Method: 'change' is not Implemented.")
+        pass
 
     def delete(self):
         """
@@ -522,8 +539,6 @@ class Value:
         have changed, whether it is because of an on device user controller,
         or the target was outside a given range.
         """
-        raise NotImplementedError("Method: 'control' is not Implemented.")
-
         self.log.info(f"Sending Control for: {self.control_state.meta.id}")
 
         data = WSchema.State(
@@ -547,15 +562,9 @@ class Value:
     # -------------------------------------------------------------------------
 
     def _createStates(self, permission: PermissionType):
-        if (
-            permission == PermissionType.READ or
-            permission == PermissionType.READWRITE
-        ):
+        if permission in [PermissionType.READ, PermissionType.READWRITE]:
             self._CreateReport()
-        if (
-            permission == PermissionType.WRITE or
-            permission == PermissionType.READWRITE
-        ):
+        if permission in [PermissionType.WRITE, PermissionType.READWRITE]:
             self._CreateControl()
 
     def _CreateReport(self):
@@ -563,7 +572,7 @@ class Value:
             self.children_name_mapping[WSchema.StateType.REPORT.name] = uuid.uuid4()
 
             self.report_state = WSchema.State(
-                data=float("NaN"),
+                data=float("NaN") if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.REPORT,
                 meta=WSchema.BaseMeta(
                     id=self.children_name_mapping.get(WSchema.StateType.REPORT.name)
@@ -577,7 +586,7 @@ class Value:
             self.children_name_mapping[WSchema.StateType.CONTROL.name] = uuid.uuid4()
 
             self.control_state = WSchema.State(
-                data=float("NaN"),
+                data=float("NaN") if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.CONTROL,
                 meta=WSchema.BaseMeta(
                     id=self.children_name_mapping[WSchema.StateType.CONTROL.name]

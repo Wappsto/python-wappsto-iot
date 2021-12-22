@@ -22,8 +22,8 @@ def main():
 
     relay = GroveRelay(relay_pin)
     relay_state = {
-        "0": relay.off,
-        "1": relay.on,
+        0: relay.off,
+        1: relay.on,
     }
 
     wappstoiot.config(
@@ -40,6 +40,7 @@ def main():
 
     value = device.createValue(
         name="State",
+        permission=wappstoiot.PermissionType.READWRITE,
         value_type=wappstoiot.ValueType.BOOLEAN
     )
 

@@ -192,17 +192,19 @@ Future Ideas:
 Known Bugs {icon bug color=red}
 ===============================================================================
 * [ ] Wrong format for all datetime's.
+* [ ] Windows do not always like Certificates. (Windows problem not WappstoIoT)
 
 
 Unsure {icon question-circle color=blue}
 ===============================================================================
-* [ ] Still Everything!!!!
+* [ ] What should be send back on a JsonRpc Success, with trace?
+* [ ] How should a trace throung the system, (->control->reply) be handled?
 
 
 TODO List {icon cog spin}
 ===============================================================================
-* [ ] Batch the packages.
-* [ ] Save Offline data.
-* [ ] Writing the System.
+* [x] Batch the packages.
+* [x] Save Offline data.
+* [x] Writing the System.
 * [ ] Documentation.
 * [ ] System Test.

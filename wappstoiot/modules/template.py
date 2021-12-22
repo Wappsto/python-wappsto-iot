@@ -56,24 +56,25 @@ class ValueType(str, Enum):
     NUMBER = "Number"
     BLOB = "Blob"
     XML = "Xml"
-    TEMPERATURECELCIUS = "TemperatureCelcius"  # TODO: !
-    SPEED = "Speed"  # TODO: !
+    TEMPERATURE_CELCIUS = "Temperature Celcius"
     BOOLEAN = "Boolean"
     LATITUDE = "Latitude"
     LONGITUDE = "Longitude"
+    CO2 = "CO2"
+    PRESSURE_PASCAL = "Pressure Pascal"
+    HUMIDITY = "Humidity"
 
 
 class ValueSettinsSchema(BaseModel):
-    type: ValueBaseType
-    name: str
-    permission: PermissionType
+    value_type: ValueBaseType
+    type: str
     mapping: Optional[Dict]  # Number only
     ordered_mapping: Optional[bool]  # Number only
     meaningful_zero: Optional[bool]  # Number only
     si_conversion: Optional[str]  # Number only
-    min: Optional[int]  # Number only
-    max: Optional[int]  # Blob, number, str only.
-    step: Optional[int]  # Number only
+    min: Optional[float]  # Number only
+    max: Optional[float]  # Blob, number, str only.
+    step: Optional[float]  # Number only
     encoding: Optional[str]  # Blob, str only.
     xsd: Optional[str]  # XML only
     namespace: Optional[str]  # XML only
@@ -82,9 +83,8 @@ class ValueSettinsSchema(BaseModel):
 
 valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ValueType.DEFAULT: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="number",
-        permission=PermissionType.READWRITE,
+        value_type=ValueBaseType.NUMBER,
+        type="Number",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=None,  # Boolean
@@ -94,57 +94,85 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit=None
     ),
     ValueType.STRING: ValueSettinsSchema(
-        type=ValueBaseType.STRING,
-        name="string",
-        permission=PermissionType.READWRITE,
+        value_type=ValueBaseType.STRING,
+        type="String",
         max=64,
         encoding="utf-8",
         unit=None
     ),
     ValueType.NUMBER: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="number",
-        permission=PermissionType.READWRITE,
+        value_type=ValueBaseType.NUMBER,
+        type="Number",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=None,  # Boolean
         min=-1e+38,  # UNSURE(MBK): !!
         max=1e+38,
-        step=1e-038,
+        step=0.01,
         unit=None
     ),
     ValueType.BLOB: ValueSettinsSchema(
-        type=ValueBaseType.BLOB,
-        name="Blob",
-        permission=PermissionType.READWRITE,
+        value_type=ValueBaseType.BLOB,
+        type="Blob",
         max=64,
         encoding="base64",
         unit=None
     ),
     ValueType.XML: ValueSettinsSchema(
-        type=ValueBaseType.XML,
-        name="Xml",
-        permission=PermissionType.READWRITE,
+        value_type=ValueBaseType.XML,
+        type="Xml",
         xsd="",
         namespace="",
         unit=None
     ),
-    ValueType.TEMPERATURECELCIUS: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="Temperature",
-        permission=PermissionType.READ,
+    ValueType.TEMPERATURE_CELCIUS: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="temperature",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
-        meaningful_zero=True,  # Boolean
+        meaningful_zero=False,  # Boolean
         min=-273,
         max=1e+38,
         step=0.01,
-        unit="°C"
+        unit="°C",
+    ),
+    ValueType.CO2: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="co2",
+        mapping=None,  # dict,
+        ordered_mapping=None,  # Boolean
+        meaningful_zero=True,  # Boolean
+        min=0,
+        max=1e+38,
+        step=0.01,
+        unit="ppm",
+        si_conversion="1000000*[ppm]"
+    ),
+    ValueType.PRESSURE_PASCAL: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="pressure",
+        mapping=None,  # dict,
+        ordered_mapping=None,  # Boolean
+        meaningful_zero=True,  # Boolean
+        min=0,
+        max=1e+38,
+        step=0.01,
+        unit="Pa",
+    ),
+    ValueType.HUMIDITY: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="Temperature",
+        mapping=None,  # dict,
+        ordered_mapping=None,  # Boolean
+        meaningful_zero=True,  # Boolean
+        min=0,
+        max=1e+38,
+        step=0.01,
+        unit="%"
     ),
     ValueType.LATITUDE: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="latitude",
-        permission=PermissionType.READ,
+        value_type=ValueBaseType.NUMBER,
+        type="latitude",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean
@@ -154,9 +182,8 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°N"
     ),
     ValueType.LONGITUDE: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="longitude",
-        permission=PermissionType.READ,
+        value_type=ValueBaseType.NUMBER,
+        type="longitude",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean
@@ -166,9 +193,8 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°E"
     ),
     ValueType.BOOLEAN: ValueSettinsSchema(
-        type=ValueBaseType.NUMBER,
-        name="boolean",
-        permission=PermissionType.READWRITE,
+        value_type=ValueBaseType.NUMBER,
+        type="boolean",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean

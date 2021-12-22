@@ -5,8 +5,9 @@ import pathlib
 import uuid
 import getpass
 
-import requests  # TODO: Remove dependencies.
-
+import urllib.parse
+import urllib.request
+import urllib
 
 debug = False
 
@@ -33,31 +34,97 @@ wappstoUrl = {
 }
 
 
-def _log_request_error(rq):
+def post(*, url, data, **kwargs):
+    """
+    URL-POST to the given Link.
+
+    To change info.
+
+    Args:
+        url: The url to send POST request to.
+        data: The Data, that are sent.
+
+    Returns:
+        The response from the POST request.
+
+    Raises:
+        HTTP Error, from urllib.error import HTTPError
+    """
+    return _send(url=url, data=data, method="POST", **kwargs)
+
+
+def get(*, url, **kwargs):
+    """
+    URL-GET to the give URL.
+
+    Receive Info.
+
+    Args:
+        url: The url to send GET request to.
+
+    Returns:
+        The response from the GET request.
+
+    Raises:
+        HTTP Error, from urllib.error import HTTPError
+    """
+    return _send(url=url, **kwargs)
+
+
+def _send(url, data=None, header={}, **kwargs):
+    """
+    Standardize URL-open request.
+
+    Args:
+        data: (Optional) The Data to be sent.
+        method: (Optional) The HTTP method. (default: GET)
+        **Kwargs: sent on to urllib.request.Request
+
+    Returns:
+        The response from the PUT request.
+
+    Raises:
+        HTTP Error, from urllib.error import HTTPError
+    """
+    kwargs["data"] = convert_data(data)
+    req = urllib.request.Request(url=url, **kwargs)
+    for keys in header.keys():
+        req.add_header(key=keys, val=header[keys])
+    with urllib.request.urlopen(req) as conn:
+        return conn.read().decode()
+
+
+def convert_data(data):
+    """Convert the data, for use with the urllib library."""
+    if isinstance(data, str):
+        return str.encode(data)
+    elif data:
+        return urllib.parse.urlencode(data).encode()
+
+
+def _log_request_error(url, data, err, headers):
     if debug:
         print("Sendt data    :")
-        print(" - URL         : {}".format(rq.request.url))
-        print(" - Headers     : {}".format(rq.request.headers))
+        print(" - URL         : {}".format(url))
+        print(" - Headers     : {}".format(headers))
         print(" - Request Body: {}".format(
-            json.dumps(rq.request.body, indent=4, sort_keys=True))
+            json.dumps(data, indent=4, sort_keys=True))
         )
 
         print("")
         print("")
 
         print("Received data :")
-        print(" - URL         : {}".format(rq.url))
-        print(" - Headers     : {}".format(rq.headers))
-        print(" - Status code : {}".format(rq.status_code))
+        print(" - URL         : {}".format(url))
+        print(" - Headers     : {}".format(headers))
+        print(" - Status code : {}".format(err.code))
         try:
             print(" - Request Body: {}".format(
-                json.dumps(json.loads(rq.text), indent=4, sort_keys=True))
+                json.dumps(json.loads(err), indent=4, sort_keys=True))
             )
         except (AttributeError, json.JSONDecodeError):
-
-            print(" - Request Body: {}".format(rq.text))
-    rjson = json.loads(rq.text)
-    print(f"[bold red]{rjson['message']}")
+            pass
+    print(f"{err.msg}")
     exit(-2)
 
 
@@ -69,17 +136,19 @@ def start_session(base_url, username, password):
     }
 
     url = f"{base_url}/services/session"
+    headers = {"Content-type": "application/json"}
+    data = json.dumps(session_json)
 
-    rdata = requests.post(
-        url=url,
-        headers={"Content-type": "application/json"},
-        data=json.dumps(session_json)
-    )
+    try:
+        rdata = post(
+            url=url,
+            headers=headers,
+            data=data
+        )
+    except urllib.error.HTTPError as err:
+        _log_request_error(url=url, data=data, err=err, headers=headers)
 
-    rjson = json.loads(rdata.text)
-
-    if not rdata.ok:
-        _log_request_error(rdata)
+    rjson = json.loads(rdata)
 
     return rjson["meta"]["id"]
 
@@ -110,56 +179,58 @@ def create_network(
     request['manufacturer_as_owner'] = manufacturer_as_owner
 
     url = f"{base_url}/services/2.1/creator"
-    header = {
+    headers = {
         "Content-type": "application/json",
         "X-session": str(session)
     }
 
-    rdata = requests.post(
-        url=url,
-        headers=header,
-        data=json.dumps(request)
-    )
+    data = json.dumps(request)
 
-    rjson = json.loads(rdata.text)
+    try:
+        rdata = post(
+            url=url,
+            headers=headers,
+            data=data
+        )
+    except urllib.error.HTTPError as err:
+        _log_request_error(url=url, data=data, err=err, headers=headers)
 
-    if not rdata.ok:
-        _log_request_error(rdata)
+    rjson = json.loads(rdata)
+
     return rjson
 
 
 def get_network(session, base_url, network_uuid):
-    f_url = f"{base_url}/services/2.1/creator?this_network.id={network_uuid}"
-    header = {
+    url = f"{base_url}/services/2.1/creator?this_network.id={network_uuid}"
+    headers = {
         "Content-type": "application/json",
         "X-session": str(session)
     }
+    try:
+        rdata = get(
+            url=url,
+            headers=headers
+        )
+    except urllib.error.HTTPError as err:
+        _log_request_error(url=url, data=None, err=err, headers=headers)
 
-    fdata = requests.get(
-        url=f_url,
-        headers=header,
-    )
+    data = json.loads(rdata)
 
-    data = json.loads(fdata.text)
-
-    if not fdata.ok:
-        _log_request_error(fdata)
-
-    if len(data['id']) == 0:
+    if not data['id']:
         print(f"{data['message']}")
         exit(-3)
     creator_id = data['id'][0]
     url = f"{base_url}/services/2.1/creator/{creator_id}"
 
-    rdata = requests.get(
-        url=url,
-        headers=header
-    )
+    try:
+        rdata = get(
+            url=url,
+            headers=headers
+        )
+    except urllib.error.HTTPError as err:
+        _log_request_error(url=url, data=None, err=err, headers=headers)
 
-    if not rdata.ok:
-        _log_request_error(rdata)
-
-    return json.loads(rdata.text)
+    return json.loads(rdata)
 
 
 def create_certificaties_files(location, creator, args):

@@ -10,7 +10,7 @@ from typing import Callable
 from typing import Optional
 
 
-class Status(str, Enum):
+class StatusID(str, Enum):
     CONNECTING = "Connecting"
     CONNECTED = "Connected"
     DISCONNECTING = "Disconnecting"
@@ -59,7 +59,7 @@ class Connection(ABC):
         pass
 
     @abstractmethod
-    def connect(self) -> None:
+    def connect(self) -> Optional[bool]:
         """
         Connect to the server.
 
