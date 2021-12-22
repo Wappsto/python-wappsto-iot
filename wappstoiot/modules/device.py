@@ -278,13 +278,12 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        value_uuid = self.connection.get_value_where(
+        v_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
-        )[0]
+        )
 
-        if not value_uuid:
-            value_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -310,13 +309,12 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        value_uuid = self.connection.get_value_where(
+        v_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
-        )[0]
+        )
 
-        if not value_uuid:
-            value_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -342,13 +340,12 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        value_uuid = self.connection.get_value_where(
+        v_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
-        )[0]
+        )
 
-        if not value_uuid:
-            value_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -374,13 +371,12 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        value_uuid = self.connection.get_value_where(
+        v_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
-        )[0]
+        )
 
-        if not value_uuid:
-            value_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -408,13 +404,12 @@ class Device:
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
         """
-        value_uuid = self.connection.get_value_where(
+        v_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
-        )[0]
+        )
 
-        if not value_uuid:
-            value_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,

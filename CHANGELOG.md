@@ -1,6 +1,14 @@
 v0.5.4 (Dec 21 2021)
 ===============================================================================
 
+## Fixed
+
+ * Fix a issue that prevented wappstoiot in creating a new value.
+
+
+v0.5.4 (Dec 21 2021)
+===============================================================================
+
 ## Added
 
  * New Default Value-Types. (CO2, Humidity & Pressure Pascal).
