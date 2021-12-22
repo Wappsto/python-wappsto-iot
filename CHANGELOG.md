@@ -1,11 +1,17 @@
-v0.5.4 (Dec --, 2021)
+v0.5.4 (Dec 21 2021)
 ===============================================================================
+
+## Added
+
+ * New Default Value-Types. (CO2, Humidity & Pressure Pascal).
+
 
 ## Changed
 
  * The createValue, are now split into 5. `createValue` that uses the predefined ValueType given, and 1 for each base value types, for when a custom is needed. 
  * `permission` is now required.
  * `onControl`, `onReport`, `getControlData` & `getReportData` provides a float if the value was set to be a number.
+
 
 ## Fixed
 
