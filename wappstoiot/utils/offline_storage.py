@@ -49,7 +49,7 @@ class OfflineStorageFiles(OfflineStorage):
         self.log.info(f"Location created: {self.loc}")
         self._files = sorted(
             x for x in self.loc.iterdir()
-            if x.is_file() and x.suffixes[-1] == self.suffix
+            if x.is_file() and x.suffixes and x.suffixes[-1] == self.suffix
         )
 
     def _sort_files(self, count) -> List[Path]:
