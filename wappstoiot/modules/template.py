@@ -161,7 +161,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
     ),
     ValueType.HUMIDITY: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="Temperature",
+        type="humidity",
         mapping=None,  # dict,
         ordered_mapping=None,  # Boolean
         meaningful_zero=True,  # Boolean
