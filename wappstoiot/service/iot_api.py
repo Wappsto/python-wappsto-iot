@@ -489,7 +489,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
-    def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+    def get_device_where(self, network_uuid: UUID, **kwargs: str) -> Optional[UUID]:
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/network/{network_uuid}/device?this_{key}=={value}"
@@ -499,7 +499,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        return getattr(data, "id", None)
+        return getattr(data, "id", [None])[0]
 
     def get_device(self, uuid: UUID) -> Union[Device, None]:
         # url=f"/services/2.0/device/{uuid}",
@@ -544,7 +544,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
-    def get_value_where(self, device_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+    def get_value_where(self, device_uuid: UUID, **kwargs: str) -> Optional[UUID]:
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/device/{device_uuid}/value?this_{key}=={value}"
@@ -554,7 +554,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        return getattr(data, "id", None)
+        return getattr(data, "id", [None])[0]
 
     def get_value(self, uuid: UUID) -> Union[ValueUnion, None]:
         # url=f"/services/2.0/value/{uuid}",

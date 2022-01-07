@@ -9,7 +9,6 @@ from typing import Callable
 from typing import Dict
 from typing import Optional
 from typing import Union
-from pydantic import UUID4
 
 from ..service.template import ServiceClass
 # from .template import dict_diff
@@ -77,7 +76,7 @@ class Value:
         parent: 'Device',
         value_type: ValueBaseType,
         name: str,
-        value_uuid: UUID4,  # Only used on loading.
+        value_uuid: Optional[uuid.UUID],  # Only used on loading.
         type: Optional[str] = None,
         permission: PermissionType = PermissionType.READWRITE,
         min: Optional[Union[int, float]] = None,
@@ -111,9 +110,7 @@ class Value:
             WSchema.XmlValue
         ] = self.schema()
 
-        self.__uuid: UUID4 = value_uuid
-
-        self.children_name_mapping: Dict[str, UUID4] = {}
+        self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
         self.connection: ServiceClass = parent.connection
 
@@ -132,6 +129,10 @@ class Value:
                 xsd=xsd,
         )
 
+        element = self.connection.get_value(value_uuid) if value_uuid else None
+
+        self.__uuid: uuid.UUID = value_uuid if value_uuid else uuid.uuid4()
+
         self.element = self.schema(
             name=name,
             description=description,
@@ -146,8 +147,6 @@ class Value:
                 id=self.uuid
             )
         )
-
-        element = self.connection.get_value(self.uuid)
 
         if element:
             self.__update_self(element)
@@ -228,7 +227,7 @@ class Value:
         return self.element.name
 
     @property
-    def uuid(self) -> UUID4:
+    def uuid(self) -> uuid.UUID:
         """Returns the uuid of the value."""
         return self.__uuid
 

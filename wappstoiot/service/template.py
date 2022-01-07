@@ -5,6 +5,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Union
+from typing import Optional
 
 from abc import ABC
 from abc import abstractmethod
@@ -81,7 +82,7 @@ class ServiceClass(ABC):
         pass
 
     @abstractmethod
-    def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+    def get_device_where(self, network_uuid: UUID, **kwargs: str) -> Optional[UUID]:
         pass
 
     @abstractmethod
@@ -116,7 +117,7 @@ class ServiceClass(ABC):
         pass
 
     @abstractmethod
-    def get_value_where(self, device_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+    def get_value_where(self, device_uuid: UUID, **kwargs: str) -> Optional[UUID]:
         pass
 
     @abstractmethod
