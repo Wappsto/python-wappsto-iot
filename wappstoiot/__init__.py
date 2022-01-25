@@ -110,7 +110,7 @@ def onStatusChange(
 #                             Config Stuff
 # #############################################################################
 
-__config_folder: Optional[Path] = None
+__config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 
 
@@ -129,7 +129,7 @@ def config(
     # delta_handling="",
     # period_handling="",
     # connect_sync: bool = True,  # Start with a Network GET to sync.  # TODO:
-    # ping_pong_period: Optional[int] = None,  # Period between a RPC ping-pong.
+    ping_pong_period_sec: Optional[int] = None,  # Period between a RPC ping-pong.
     # # Send: {"jsonrpc":"2.0","method":"HEAD","id":"PING-15","params":{"url":"/services/2.0/network"}}
     # # receive: {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
     offline_storage: Union[OfflineStorage, bool] = False,
@@ -160,6 +160,7 @@ def config(
         else:
             __config_folder = Path(config_folder)
 
+    _setup_ping_pong(ping_pong_period_sec)
     _setup_offline_storage(offline_storage)
 
     if connection == ConnectionTypes.IOTAPI:
@@ -210,6 +211,31 @@ def _certificate_check(path) -> Dict[str, Path]:
     return r_paths
 
 
+def _setup_ping_pong(period_s: Optional[int] = None):
+    # TODO: Test me!
+    if not period_s:
+        return
+    import threading
+
+    # TODO: Need a close check so it do not hold wappstoiot open.
+    def _ping():
+        __log.debug("Ping-Pong called!")
+        nonlocal thread
+        global __connection_closed
+        if __connection_closed:
+            return
+        try:
+            thread = threading.Timer(period_s, _ping)
+            thread.start()
+            __the_connection.ping()
+        except Exception:
+            __log.exception("Ping-Pong:")
+    thread = threading.Timer(period_s, _ping)
+    thread.daemon = True
+    thread.start()
+    atexit.register(lambda: thread.cancel())
+
+
 def _setup_offline_storage(
     offlineStorage: Union[OfflineStorage, bool],
 ) -> None:
@@ -217,12 +243,12 @@ def _setup_offline_storage(
 
     if offlineStorage is False:
         return
-    if offlineStorage is True:
-        offline_storage: OfflineStorage = OfflineStorageFiles(
-            location=__config_folder
-        )
-    else:
-        offline_storage: OfflineStorage = offlineStorage
+    # if offlineStorage is True:
+    offline_storage: OfflineStorage = OfflineStorageFiles(
+        location=__config_folder
+    ) if offlineStorage is True else offlineStorage
+    # else:
+    #     offline_storage: OfflineStorage = offlineStorage
 
     observer.subscribe(
         service.StatusID.SENDERROR,
@@ -298,6 +324,8 @@ def disconnect():
 
 def close():
     """."""
+    atexit.unregister(close)
+    # atexit._run_exitfuncs()
     global __connection_closed
     global __the_connection
 

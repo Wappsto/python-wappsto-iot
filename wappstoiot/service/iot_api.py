@@ -97,7 +97,7 @@ class IoTAPI(ServiceClass):
             WappstoMethod.PUT: JsonReply,
             WappstoMethod.DELETE: JsonReply,
             # WappstoMethod.PATCH: JsonReply,
-            # WappstoMethod.HEAD: JsonReply,
+            WappstoMethod.HEAD: JsonReply,
         }
 
         self.subscribers: Dict[
@@ -176,6 +176,9 @@ class IoTAPI(ServiceClass):
 
                 reply = self.jsonrpc.parser(data)
                 self.log.debug(f"Package ID: {_ids}; Reply: {reply}")
+
+                if not reply:
+                    continue
 
                 self._send_logic(reply)
                 # UNSURE: How do we check if it was send?
@@ -420,6 +423,17 @@ class IoTAPI(ServiceClass):
     #     return Success()
 
     # #########################################################################
+    #                               Helper API
+    # #########################################################################
+
+    def ping(self):
+        return self._no_reply_send(
+            data=None,
+            url="/network",
+            method=WappstoMethod.HEAD
+        )
+
+    # #########################################################################
     #                               Network API
     # #########################################################################
 
@@ -499,7 +513,10 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        return getattr(data, "id", [None])[0]
+        temp = getattr(data, "id")
+        if not temp:
+            return None
+        return temp[0]
 
     def get_device(self, uuid: UUID) -> Union[Device, None]:
         # url=f"/services/2.0/device/{uuid}",
@@ -554,7 +571,10 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        return getattr(data, "id", [None])[0]
+        temp = getattr(data, "id")
+        if not temp:
+            return None
+        return temp[0]
 
     def get_value(self, uuid: UUID) -> Union[ValueUnion, None]:
         # url=f"/services/2.0/value/{uuid}",
