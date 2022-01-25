@@ -340,8 +340,12 @@ class Value:
             ChangeType: Name of what have change in the object.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.PUT:
-                callback(self)
+            try:
+                if method in WappstoMethod.PUT:
+                    callback(self)
+            except Exception:
+                self.log.exception("OnChange callback error.")
+                raise
 
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_value_event(
@@ -363,12 +367,20 @@ class Value:
             Union[str, int, float]: The Value of the Report change.
         """
         def _cb_float(obj, method):
-            if method == WappstoMethod.PUT:
-                callback(self, float(obj.data))
+            try:
+                if method == WappstoMethod.PUT:
+                    callback(self, float(obj.data))
+            except Exception:
+                self.log.exception("onReport callback error.")
+                raise
 
         def _cb_str(obj, method):
-            if method == WappstoMethod.PUT:
-                callback(self, obj.data)
+            try:
+                if method == WappstoMethod.PUT:
+                    callback(self, obj.data)
+            except Exception:
+                self.log.exception("onReport callback error.")
+                raise
 
         _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
@@ -392,12 +404,20 @@ class Value:
             any: The Data.
         """
         def _cb_float(obj, method):
-            if method == WappstoMethod.PUT:
-                callback(self, float(obj.data))
+            try:
+                if method == WappstoMethod.PUT:
+                    callback(self, float(obj.data))
+            except Exception:
+                self.log.exception("OnChange callback error.")
+                raise
 
         def _cb_str(obj, method):
-            if method == WappstoMethod.PUT:
-                callback(self, obj.data)
+            try:
+                if method == WappstoMethod.PUT:
+                    callback(self, obj.data)
+            except Exception:
+                self.log.exception("onControl callback error.")
+                raise
 
         _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
@@ -420,8 +440,12 @@ class Value:
         """
 
         def _cb(obj, method):
-            if method == WappstoMethod.POST:
-                callback(self)
+            try:
+                if method == WappstoMethod.POST:
+                    callback(self)
+            except Exception:
+                self.log.exception("onCreate callback error.")
+                raise
 
         self.connection.subscribe_state_event(
             uuid=self.uuid,
@@ -444,8 +468,12 @@ class Value:
         """
 
         def _cb(obj, method):
-            if method == WappstoMethod.GET:
-                callback(self)
+            try:
+                if method == WappstoMethod.GET:
+                    callback(self)
+            except Exception:
+                self.log.exception("onRefresh callback error.")
+                raise
 
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
@@ -458,8 +486,12 @@ class Value:
     ) -> None:
         """For when a 'DELETE' request have been called on this element."""
         def _cb(obj, method):
-            if method == WappstoMethod.DELETE:
-                callback(self)
+            try:
+                if method == WappstoMethod.DELETE:
+                    callback(self)
+            except Exception:
+                self.log.exception("onDelete callback error.")
+                raise
 
         self.connection.subscribe_value_event(
             uuid=self.uuid,
@@ -594,10 +626,14 @@ class Value:
             self.connection.post_state(value_uuid=self.uuid, data=self.control_state)
 
         def _cb(obj, method):
-            if method == WappstoMethod.PUT:
-                if obj.timestamp > self.report_state.timestamp:
-                    self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
-                    self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+            try:
+                if method == WappstoMethod.PUT:
+                    if obj.timestamp > self.report_state.timestamp:
+                        self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
+                        self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+            except Exception:
+                self.log.exception("onCreateControl callback error.")
+                raise
 
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],

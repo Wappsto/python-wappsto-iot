@@ -159,8 +159,12 @@ class Device:
         device was not found, it will just be removed.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.DELETE:
-                callback(self)
+            try:
+                if method in WappstoMethod.DELETE:
+                    callback(self)
+            except Exception:
+                self.log.exception("onDelete callback error.")
+                raise
 
         self.connection.subscribe_device_event(
             uuid=self.uuid,
@@ -180,8 +184,12 @@ class Device:
             ValueObj: This object that have had a refresh request for.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.GET:
-                callback(self)
+            try:
+                if method in WappstoMethod.GET:
+                    callback(self)
+            except Exception:
+                self.log.exception("onRefresh callback error.")
+                raise
 
         self.connection.subscribe_device_event(
             uuid=self.uuid,
@@ -196,8 +204,12 @@ class Device:
         Configure a callback for when a change to the Device have occurred.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.PUT:
-                callback(self)
+            try:
+                if method in WappstoMethod.PUT:
+                    callback(self)
+            except Exception:
+                self.log.exception("OnChange callback error.")
+                raise
 
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_device_event(
@@ -213,8 +225,12 @@ class Device:
         Configure a callback for when a request have been make for the Value.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.POST:
-                callback(self)
+            try:
+                if method in WappstoMethod.POST:
+                    callback(self)
+            except Exception:
+                self.log.exception("onCreate callback error.")
+                raise
 
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_device_event(

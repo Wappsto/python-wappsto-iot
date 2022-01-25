@@ -128,8 +128,12 @@ class Network(object):
         # UNSURE(MBK): How should it get the data back?
         """
         def _cb(obj, method):
-            if method == WappstoMethod.PUT:
-                callback(...)
+            try:
+                if method == WappstoMethod.PUT:
+                    callback(...)
+            except Exception:
+                self.log.exception("OnChange callback error.")
+                raise
 
         self.connection.subscribe_network_event(
             uuid=self.uuid,
@@ -144,8 +148,12 @@ class Network(object):
         Configure a callback for when a create have been make for the Device.
         """
         def _cb(obj, method):
-            if method == WappstoMethod.POST:
-                callback()
+            try:
+                if method == WappstoMethod.POST:
+                    callback()
+            except Exception:
+                self.log.exception("onCreate callback error.")
+                raise
 
         self.connection.subscribe_network_event(
             uuid=self.uuid,
@@ -164,8 +172,12 @@ class Network(object):
         # It can not! there is no '{"status":"update"}' that can be set.
         """
         def _cb(obj, method):
-            if method == WappstoMethod.GET:
-                callback()
+            try:
+                if method == WappstoMethod.GET:
+                    callback()
+            except Exception:
+                self.log.exception("onRefresh callback error.")
+                raise
 
         self.connection.subscribe_network_event(
             uuid=self.uuid,
@@ -185,8 +197,12 @@ class Network(object):
         recreated, and/or the program have to close.
         """
         def _cb(obj, method):
-            if method == WappstoMethod.DELETE:
-                callback(self)
+            try:
+                if method == WappstoMethod.DELETE:
+                    callback(self)
+            except Exception:
+                self.log.exception("onDelete callback error.")
+                raise
 
         self.connection.subscribe_network_event(
             uuid=self.uuid,
