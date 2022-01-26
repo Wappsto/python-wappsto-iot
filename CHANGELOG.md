@@ -1,3 +1,17 @@
+v0.5.6 (Jan 21 2022)
+===============================================================================
+
+## Added
+ * Ping-pong option in the config-method.
+ * fast_send option in the config-method.
+
+## Fixed
+
+ * Fix a issue that prevented wappstoiot in creating a new value.
+ * Fix a issue where config was not called, the config-folder was not set to current folder.
+ * Fix a issue where offline storage, did not allow the program to stop, if there was still data to be send.
+
+
 v0.5.5 (Dec 21 2021)
 ===============================================================================
 
