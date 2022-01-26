@@ -5,9 +5,8 @@ import pathlib
 import uuid
 import getpass
 
-import urllib.parse
-import urllib.request
-import urllib
+import requests
+
 
 debug = False
 
@@ -34,97 +33,35 @@ wappstoUrl = {
 }
 
 
-def post(*, url, data, **kwargs):
-    """
-    URL-POST to the given Link.
-
-    To change info.
-
-    Args:
-        url: The url to send POST request to.
-        data: The Data, that are sent.
-
-    Returns:
-        The response from the POST request.
-
-    Raises:
-        HTTP Error, from urllib.error import HTTPError
-    """
-    return _send(url=url, data=data, method="POST", **kwargs)
-
-
-def get(*, url, **kwargs):
-    """
-    URL-GET to the give URL.
-
-    Receive Info.
-
-    Args:
-        url: The url to send GET request to.
-
-    Returns:
-        The response from the GET request.
-
-    Raises:
-        HTTP Error, from urllib.error import HTTPError
-    """
-    return _send(url=url, **kwargs)
-
-
-def _send(url, data=None, header={}, **kwargs):
-    """
-    Standardize URL-open request.
-
-    Args:
-        data: (Optional) The Data to be sent.
-        method: (Optional) The HTTP method. (default: GET)
-        **Kwargs: sent on to urllib.request.Request
-
-    Returns:
-        The response from the PUT request.
-
-    Raises:
-        HTTP Error, from urllib.error import HTTPError
-    """
-    kwargs["data"] = convert_data(data)
-    req = urllib.request.Request(url=url, **kwargs)
-    for keys in header.keys():
-        req.add_header(key=keys, val=header[keys])
-    with urllib.request.urlopen(req) as conn:
-        return conn.read().decode()
-
-
-def convert_data(data):
-    """Convert the data, for use with the urllib library."""
-    if isinstance(data, str):
-        return str.encode(data)
-    elif data:
-        return urllib.parse.urlencode(data).encode()
-
-
-def _log_request_error(url, data, err, headers):
+def _log_request_error(data):
     if debug:
-        print("Sendt data    :")
-        print(" - URL         : {}".format(url))
-        print(" - Headers     : {}".format(headers))
+        print("Sent data     :")
+        print(" - URL         : {}".format(data.request.url))
+        print(" - Headers     : {}".format(data.request.headers))
         print(" - Request Body: {}".format(
-            json.dumps(data, indent=4, sort_keys=True))
+            json.dumps(data.request.body, indent=4, sort_keys=True))
         )
 
         print("")
         print("")
 
         print("Received data :")
-        print(" - URL         : {}".format(url))
-        print(" - Headers     : {}".format(headers))
-        print(" - Status code : {}".format(err.code))
+        print(" - URL         : {}".format(data.url))
+        print(" - Headers     : {}".format(data.headers))
+        print(" - Status code : {}".format(data.status_code))
         try:
             print(" - Request Body: {}".format(
-                json.dumps(json.loads(err), indent=4, sort_keys=True))
+                json.dumps(json.loads(data.text), indent=4, sort_keys=True))
             )
         except (AttributeError, json.JSONDecodeError):
             pass
-    print(f"{err.msg}")
+    try:
+        err = json.loads(data.text)
+    except Exception:
+        err = data.text
+    else:
+        err = err.get('message', f"Unknown Error: http error: {data.status_code}")
+    print(f"\t{err}")
     exit(-2)
 
 
@@ -135,20 +72,20 @@ def start_session(base_url, username, password):
         "remember_me": False
     }
 
-    url = f"{base_url}/services/session"
+    url = f"https://{base_url}/services/session"
     headers = {"Content-type": "application/json"}
     data = json.dumps(session_json)
 
-    try:
-        rdata = post(
-            url=url,
-            headers=headers,
-            data=data
-        )
-    except urllib.error.HTTPError as err:
-        _log_request_error(url=url, data=data, err=err, headers=headers)
+    rdata = requests.post(
+        url=url,
+        headers=headers,
+        data=data
+    )
+    if rdata.status_code >= 300:
+        print("\nAn error occurred during login:")
+        _log_request_error(rdata)
 
-    rjson = json.loads(rdata)
+    rjson = json.loads(rdata.text)
 
     return rjson["meta"]["id"]
 
@@ -160,7 +97,8 @@ def create_network(
     product=None,
     test_mode=False,
     reset_manufacturer=False,
-    manufacturer_as_owner=True
+    manufacturer_as_owner=True,
+    dry_run=False
 ):
     # Should take use of the more general functions.
     request = {
@@ -178,7 +116,7 @@ def create_network(
 
     request['manufacturer_as_owner'] = manufacturer_as_owner
 
-    url = f"{base_url}/services/2.1/creator"
+    url = f"https://{base_url}/services/2.1/creator"
     headers = {
         "Content-type": "application/json",
         "X-session": str(session)
@@ -186,66 +124,102 @@ def create_network(
 
     data = json.dumps(request)
 
-    try:
-        rdata = post(
+    if not dry_run:
+        rdata = requests.post(
             url=url,
             headers=headers,
             data=data
         )
-    except urllib.error.HTTPError as err:
-        _log_request_error(url=url, data=data, err=err, headers=headers)
 
-    rjson = json.loads(rdata)
+        if rdata.status_code >= 300:
+            print("\nAn error occurred during Certificate retrieval:")
+            _log_request_error(rdata)
+
+        rjson = json.loads(rdata.text)
+    else:
+        rjson = {
+            'network': {'id': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'},
+            'ca': "NOTHING",
+            'certificate': "NOTHING",
+            'private_key': "NOTHING",
+            'meta': {'id': 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'}
+        }
+        print("\nDry-run: Fake Certificates created!")
+
+    print(f"\nCertificate generated for new network:\t{rjson['network']['id']}")
 
     return rjson
 
 
 def get_network(session, base_url, network_uuid):
-    url = f"{base_url}/services/2.1/creator?this_network.id={network_uuid}"
+    url = f"https://{base_url}/services/2.1/creator?this_network.id={network_uuid}"
     headers = {
         "Content-type": "application/json",
         "X-session": str(session)
     }
-    try:
-        rdata = get(
-            url=url,
-            headers=headers
-        )
-    except urllib.error.HTTPError as err:
-        _log_request_error(url=url, data=None, err=err, headers=headers)
 
-    data = json.loads(rdata)
+    rdata = requests.get(
+        url=url,
+        headers=headers
+    )
+
+    if rdata.status_code >= 300:
+        print("\nAn error occurred during Certificate retrieval:")
+        _log_request_error(rdata)
+    data = json.loads(rdata.text)
 
     if not data['id']:
         print(f"{data['message']}")
         exit(-3)
     creator_id = data['id'][0]
-    url = f"{base_url}/services/2.1/creator/{creator_id}"
+    url = f"https://{base_url}/services/2.1/creator/{creator_id}"
 
-    try:
-        rdata = get(
-            url=url,
-            headers=headers
-        )
-    except urllib.error.HTTPError as err:
-        _log_request_error(url=url, data=None, err=err, headers=headers)
+    rdata = requests.get(
+        url=url,
+        headers=headers
+    )
 
-    return json.loads(rdata)
+    if rdata.status_code >= 300:
+        print("\nAn error occurred during Certificate retrieval:")
+        _log_request_error(rdata)
+
+    rjson = json.loads(rdata.text)
+
+    print(f"\nCertificate retrieved for network:\t{rjson['network']['id']}")
+
+    return rjson
 
 
 def create_certificaties_files(location, creator, args):
     creator["ca"], creator["certificate"], creator["private_key"]
-    with open(location / "ca.crt", "w") as file:
-        file.write(creator["ca"])
-    with open(location / "client.crt", "w") as file:
-        file.write(creator["certificate"])
-    with open(location / "client.key", "w") as file:
-        file.write(creator["private_key"])
+
+    if not args.dry_run:
+        location.mkdir(exist_ok=True)
+        try:
+            with open(location / "ca.crt", "w") as file:
+                file.write(creator["ca"])
+            with open(location / "client.crt", "w") as file:
+                file.write(creator["certificate"])
+            with open(location / "client.key", "w") as file:
+                file.write(creator["private_key"])
+        except Exception as err:
+            print("\nAn error occurred while saving Certificates:")
+            print(f"\t{err}")
+            print("\nWhen fixed you can recreate the certificate file with the --recreate option.")
+            exit(-3)
+    else:
+        print("\nDry-run: Fake Save done!")
+    print(f"\nLocation of generated certificates:\t{location.absolute()}")
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--dry_run",
+        action='store_true',
+        help="Run the Script, without making the files & folders.",
+    )
     parser.add_argument(
         "--env",
         type=str,
@@ -288,7 +262,11 @@ if __name__ == "__main__":
     else:
         session = args.token
     if not args.recreate:
-        creator = create_network(session=session, base_url=wappstoUrl[args.env])
+        creator = create_network(
+            session=session,
+            base_url=wappstoUrl[args.env],
+            dry_run=args.dry_run
+        )
     else:
         creator = get_network(
             session=session,
@@ -300,5 +278,4 @@ if __name__ == "__main__":
 
     create_certificaties_files(args.path, creator, args)
 
-    print(f"\nNew network: {creator['network']['id']}")
-    print(f"Settings saved at: {args.path}")
+    print("\nEnjoy...")

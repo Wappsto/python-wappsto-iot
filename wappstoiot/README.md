@@ -192,7 +192,6 @@ Future Ideas:
 Known Bugs {icon bug color=red}
 ===============================================================================
 * [ ] Wrong format for all datetime's.
-* [ ] Windows do not always like Certificates. (Windows problem not WappstoIoT)
 
 
 Unsure {icon question-circle color=blue}
