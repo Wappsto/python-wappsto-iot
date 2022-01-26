@@ -84,7 +84,8 @@ class Success(BaseModel):
 
 
 class Identifier(BaseModel):
-    identifier: str
+    identifier: Optional[str]
+    fast: Optional[bool]  # Default: False
 
 
 class JsonMeta(BaseModel):

@@ -32,6 +32,7 @@ from ..schema.base_schema import WappstoObject
 from ..schema.base_schema import IdList
 
 from ..schema.iot_schema import JsonData
+from ..schema.iot_schema import Identifier
 from ..schema.iot_schema import JsonReply
 from ..schema.iot_schema import Success
 from ..schema.iot_schema import WappstoMethod
@@ -67,7 +68,14 @@ class IoTAPI(ServiceClass):
         "prod": 443
     }
 
-    def __init__(self, ca: Path, crt: Path, key: Path, worker_count=2):
+    def __init__(
+        self,
+        ca: Path,
+        crt: Path,
+        key: Path,
+        worker_count: int = 2,
+        fast_send: bool = False
+    ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
         self.ca = ca
@@ -75,6 +83,8 @@ class IoTAPI(ServiceClass):
         self.key = key
 
         self.timeout = 3
+
+        self.fast_send = fast_send
 
         self.addr, self.port = self._url_gen(self.crt)
 
@@ -271,7 +281,8 @@ class IoTAPI(ServiceClass):
     def _no_reply_send(self, data, url, method) -> bool:
         j_data = JsonData(
             data=data,
-            url=url
+            url=url,
+            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
@@ -318,7 +329,8 @@ class IoTAPI(ServiceClass):
     ) -> Optional[Union[Device, Network, ValueUnion, State, IdList]]:
         j_data = JsonData(
             data=data,
-            url=url
+            url=url,
+            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")

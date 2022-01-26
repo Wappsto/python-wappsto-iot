@@ -125,10 +125,9 @@ def config(
     # JPC_timeout=3
     # mix_max_enforce="warning",  # "ignore", "enforce"
     # step_enforce="warning",  # "ignore", "enforce"
-    # fast_send: bool = True,  # TODO: state.meta.fast=true
+    fast_send: bool = True,  # TODO: jsonrpc.params.meta.fast=true
     # delta_handling="",
     # period_handling="",
-    # connect_sync: bool = True,  # Start with a Network GET to sync.  # TODO:
     ping_pong_period_sec: Optional[int] = None,  # Period between a RPC ping-pong.
     # # Send: {"jsonrpc":"2.0","method":"HEAD","id":"PING-15","params":{"url":"/services/2.0/network"}}
     # # receive: {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
@@ -164,7 +163,7 @@ def config(
     _setup_offline_storage(offline_storage)
 
     if connection == ConnectionTypes.IOTAPI:
-        _setup_IoTAPI(__config_folder)
+        _setup_IoTAPI(__config_folder, fast_send=fast_send)
 
     elif connection == ConnectionTypes.RESTAPI:
         # TODO: Find & load configs.
@@ -172,11 +171,11 @@ def config(
         _setup_RestAPI(__config_folder, configs)  # FIXME:
 
 
-def _setup_IoTAPI(__config_folder, configs=None):
+def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
     # TODO: Setup the Connection.
     global __the_connection
     kwargs = _certificate_check(__config_folder)
-    __the_connection = IoTAPI(**kwargs)
+    __the_connection = IoTAPI(**kwargs, fast_send=fast_send)
 
 
 def _setup_RestAPI(__config_folder, configs):
@@ -257,6 +256,7 @@ def _setup_offline_storage(
 
     def _resend_logic(status, status_data):
         nonlocal offline_storage
+        global __connection_closed
         __log.debug(f"Resend called with: status={status}")
         try:
             __log.debug("Resending Offline data")
@@ -296,6 +296,9 @@ def createNetwork(
 
     if not __the_connection:
         config()
+
+    if not __config_folder:
+        __config_folder = Path('.')
 
     cer = CertificateRead(crt=__config_folder / "client.crt")
     uuid = cer.network
