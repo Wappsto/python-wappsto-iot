@@ -43,6 +43,8 @@ from ..utils import observer
 from ..utils import tracer
 
 from ..connections.sslsocket import TlsSocket
+from ..connections.debug import debug_connection
+from ..connections.protocol import Connection
 
 
 ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
@@ -74,7 +76,7 @@ class IoTAPI(ServiceClass):
         crt: Path,
         key: Path,
         worker_count: int = 2,
-        fast_send: bool = False
+        fast_send: bool = False,
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
@@ -88,13 +90,14 @@ class IoTAPI(ServiceClass):
 
         self.addr, self.port = self._url_gen(self.crt)
 
+        self.connection: Connection
+
         self.connection = TlsSocket(
             address=self.addr,
             port=self.port,
             ca=self.ca,
             crt=self.crt,
-            key=self.key,
-            observer=observer
+            key=self.key
         )
 
         params = {
