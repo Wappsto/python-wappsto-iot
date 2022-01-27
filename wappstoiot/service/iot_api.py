@@ -77,6 +77,7 @@ class IoTAPI(ServiceClass):
         key: Path,
         worker_count: int = 2,
         fast_send: bool = False,
+        dry_run: bool = False
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
@@ -92,13 +93,16 @@ class IoTAPI(ServiceClass):
 
         self.connection: Connection
 
-        self.connection = TlsSocket(
-            address=self.addr,
-            port=self.port,
-            ca=self.ca,
-            crt=self.crt,
-            key=self.key
-        )
+        if not dry_run:
+            self.connection = TlsSocket(
+                address=self.addr,
+                port=self.port,
+                ca=self.ca,
+                crt=self.crt,
+                key=self.key
+            )
+        else:
+            self.connection = debug_connection
 
         params = {
             x: Union[Success, JsonData] for x in WappstoMethod

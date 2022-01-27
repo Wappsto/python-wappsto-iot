@@ -1,10 +1,14 @@
 import enum
 import logging
 
-from typing import Union
 from typing import Any
 from typing import Callable
+from typing import List
 from typing import Optional
+from typing import Union
+
+from .protocol import Connection
+from ..utils import observer
 
 
 class StatusID(str, enum.Enum):
@@ -14,20 +18,22 @@ class StatusID(str, enum.Enum):
     DISCONNETCED = "Disconnected"
 
 
-class Debug:
+class Debug(Connection):
     """For debuging purposes."""
-    def __init__(
-        self,
-        address: str,
-        port: int,
-        observer: Callable[[str, str], None]
-    ):
+    def __init__(self):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
         self.observer_name = "CONNECTION"
-        self.observer = observer if observer else lambda st, nd: None
-        self.observer(StatusID.DISCONNETCED, None)
+        self.observer = observer
+        self.observer.post(StatusID.DISCONNETCED, None)
+
+        self.sended_data: Union[str, bytes, None] = None
+
+        self.receive_data: List[Union[str, bytes]] = []
+
+    def add_to_receive(self, data: Union[str, bytes]) -> None:
+        self.receive_data.append(data)
 
     def send(
         self,
@@ -42,6 +48,8 @@ class Debug:
             True, if the data could be send else
             False.
         """
+        self.sended_data = data
+        return True
 
     def receive(
         self,
@@ -62,7 +70,7 @@ class Debug:
             The Parsers output.
 
         """
-        pass
+        return parser(self.receive_data.pop())
 
     def connect(self) -> bool:
         """
@@ -74,9 +82,9 @@ class Debug:
             'True' if the connection was successful else
             'False'
         """
-        self.observer(StatusID.CONNECTING, None)
+        self.observer.post(StatusID.CONNECTING, None)
 
-        self.observer(StatusID.CONNECTED, None)
+        self.observer.post(StatusID.CONNECTED, None)
         return True
 
     def reconnect(
@@ -102,8 +110,12 @@ class Debug:
 
     def disconnect(self) -> None:
         """Disconnect from the server."""
+        pass
 
     def close(self) -> None:
         self.log.info("Closing connection...")
-        self.observer(StatusID.DISCONNECTING, None)
-        self.observer(StatusID.DISCONNETCED, None)
+        self.observer.post(StatusID.DISCONNECTING, None)
+        self.observer.post(StatusID.DISCONNETCED, None)
+
+
+debug_connection = Debug()

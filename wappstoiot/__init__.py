@@ -112,6 +112,7 @@ def onStatusChange(
 
 __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
+_DEBUG: bool = False
 
 
 class ConnectionTypes(str, Enum):
@@ -152,6 +153,7 @@ def config(
     the maximum, if it is below the minimum, it is set to the minimum value.
     """
     global __config_folder
+    global _DEBUG
 
     if not isinstance(config_folder, Path):
         if config_folder == "." and hasattr(__main__, '__file__'):
@@ -163,22 +165,22 @@ def config(
     _setup_offline_storage(offline_storage)
 
     if connection == ConnectionTypes.IOTAPI:
-        _setup_IoTAPI(__config_folder, fast_send=fast_send)
+        _setup_IoTAPI(__config_folder, fast_send=fast_send, dry_run=_DEBUG)
 
     elif connection == ConnectionTypes.RESTAPI:
         # TODO: Find & load configs.
         configs: Dict[Any, Any] = {}
-        _setup_RestAPI(__config_folder, configs)  # FIXME:
+        _setup_RestAPI(__config_folder, configs, dry_run=_DEBUG)  # FIXME:
 
 
-def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
+def _setup_IoTAPI(__config_folder, configs=None, fast_send=False, dry_run=False):
     # TODO: Setup the Connection.
     global __the_connection
     kwargs = _certificate_check(__config_folder)
-    __the_connection = IoTAPI(**kwargs, fast_send=fast_send)
+    __the_connection = IoTAPI(**kwargs, fast_send=fast_send, dry_run=False)
 
 
-def _setup_RestAPI(__config_folder, configs):
+def _setup_RestAPI(__config_folder, configs, dry_run=False):
     # TODO: Setup the Connection.
     global __the_connection
     token = configs.get("token")
@@ -189,7 +191,7 @@ def _setup_RestAPI(__config_folder, configs):
         kwargs = {"username": login[0], "password": login[1]}
     else:
         raise ValueError("No login was found.")
-    __the_connection = RestAPI(**kwargs, url=configs.end_point)
+    __the_connection = RestAPI(**kwargs, url=configs.end_point, dry_run=False)
 
 
 def _certificate_check(path) -> Dict[str, Path]:
@@ -260,7 +262,7 @@ def _setup_offline_storage(
         __log.debug(f"Resend called with: status={status}")
         try:
             __log.debug("Resending Offline data")
-            while True:
+            while not __connection_closed:
                 data = offline_storage.load(10)
                 if not data:
                     return
