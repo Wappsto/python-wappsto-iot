@@ -43,7 +43,6 @@ from ..utils import observer
 from ..utils import tracer
 
 from ..connections.sslsocket import TlsSocket
-from ..connections.debug import debug_connection
 from ..connections.protocol import Connection
 
 
