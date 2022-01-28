@@ -2,7 +2,7 @@ import random
 from OpenSSL import crypto
 
 
-def _gen_openssl(name: str):
+def certifi_gen(name: str):
 
     pkey = crypto.PKey()
     pkey.generate_key(crypto.TYPE_RSA, 2048)
@@ -34,4 +34,3 @@ def _gen_openssl(name: str):
         crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey).decode(),  # key
         crypto.dump_publickey(crypto.FILETYPE_PEM, pkey).decode()  # pub
     )
-
