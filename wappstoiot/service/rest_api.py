@@ -41,7 +41,6 @@ class RestAPI(ServiceClass):
         password,
         url,
         version="2.0",
-        dry_run=False
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())

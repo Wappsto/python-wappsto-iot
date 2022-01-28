@@ -43,7 +43,6 @@ from ..utils import observer
 from ..utils import tracer
 
 from ..connections.sslsocket import TlsSocket
-from ..connections.debug import debug_connection
 from ..connections.protocol import Connection
 
 
@@ -77,7 +76,6 @@ class IoTAPI(ServiceClass):
         key: Path,
         worker_count: int = 2,
         fast_send: bool = False,
-        dry_run: bool = False
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
@@ -93,16 +91,13 @@ class IoTAPI(ServiceClass):
 
         self.connection: Connection
 
-        if not dry_run:
-            self.connection = TlsSocket(
-                address=self.addr,
-                port=self.port,
-                ca=self.ca,
-                crt=self.crt,
-                key=self.key
-            )
-        else:
-            self.connection = debug_connection
+        self.connection = TlsSocket(
+            address=self.addr,
+            port=self.port,
+            ca=self.ca,
+            crt=self.crt,
+            key=self.key
+        )
 
         params = {
             x: Union[Success, JsonData] for x in WappstoMethod
