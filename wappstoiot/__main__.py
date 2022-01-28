@@ -10,26 +10,12 @@ import requests
 
 debug = False
 
-wappstoEnv = [
-    "dev",
-    "qa",
-    "stagning",
-    "prod",
-]
-
-
-wappstoPort = {
-    "dev": 52005,
-    "qa": 53005,
-    "stagning": 54005,
-    "prod": 443
-}
 
 wappstoUrl = {
-    "dev": "https://dev.wappsto.com",
-    "qa": "https://qa.wappsto.com",
-    "staging": "https://stagning.wappsto.com",
-    "prod": "https://wappsto.com",
+    "dev": "dev.wappsto.com",
+    "qa": "qa.wappsto.com",
+    "staging": "staging.wappsto.com",
+    "prod": "wappsto.com",
 }
 
 
@@ -223,7 +209,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--env",
         type=str,
-        choices=wappstoEnv,
+        choices=list(wappstoUrl.keys()),
         default="prod",
         help="Wappsto environment."
     )
@@ -253,9 +239,11 @@ if __name__ == "__main__":
 
     debug = args.debug if args.debug else False
 
+    base_url = wappstoUrl[args.env]
+
     if not args.token:
         session = start_session(
-            base_url=wappstoUrl[args.env],
+            base_url=base_url,
             username=input("Wappsto Username: "),
             password=getpass.getpass(prompt="Wappsto Password: "),
         )
@@ -264,13 +252,13 @@ if __name__ == "__main__":
     if not args.recreate:
         creator = create_network(
             session=session,
-            base_url=wappstoUrl[args.env],
+            base_url=base_url,
             dry_run=args.dry_run
         )
     else:
         creator = get_network(
             session=session,
-            base_url=wappstoUrl[args.env],
+            base_url=base_url,
             network_uuid=args.recreate,
         )
 

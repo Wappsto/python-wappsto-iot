@@ -406,7 +406,11 @@ class Value:
         def _cb_float(obj, method):
             try:
                 if method == WappstoMethod.PUT:
-                    callback(self, float(obj.data))
+                    try:
+                        data = float(obj.data)
+                    except ValueError:
+                        data = obj.data
+                    callback(self, data)
             except Exception:
                 self.log.exception("OnChange callback error.")
                 raise
@@ -628,7 +632,11 @@ class Value:
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.PUT:
-                    if obj.timestamp > self.report_state.timestamp:
+                    if (
+                        obj.timestamp and self.report_state.timestamp and
+                        obj.timestamp > self.report_state.timestamp or
+                        not self.report_state.timestamp
+                    ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
                         self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
             except Exception:
