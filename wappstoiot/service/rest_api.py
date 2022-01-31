@@ -34,7 +34,14 @@ from ..wappsto_ws import WappstoWebSocket
 
 class RestAPI(ServiceClass):
 
-    def __init__(self, token, username, password, url, version="2.0"):
+    def __init__(
+        self,
+        token,
+        username,
+        password,
+        url,
+        version="2.0",
+    ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
         self.base_url = url

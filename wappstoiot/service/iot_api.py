@@ -32,6 +32,7 @@ from ..schema.base_schema import WappstoObject
 from ..schema.base_schema import IdList
 
 from ..schema.iot_schema import JsonData
+from ..schema.iot_schema import Identifier
 from ..schema.iot_schema import JsonReply
 from ..schema.iot_schema import Success
 from ..schema.iot_schema import WappstoMethod
@@ -42,6 +43,7 @@ from ..utils import observer
 from ..utils import tracer
 
 from ..connections.sslsocket import TlsSocket
+from ..connections.protocol import Connection
 
 
 ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
@@ -67,7 +69,14 @@ class IoTAPI(ServiceClass):
         "prod": 443
     }
 
-    def __init__(self, ca: Path, crt: Path, key: Path, worker_count=2):
+    def __init__(
+        self,
+        ca: Path,
+        crt: Path,
+        key: Path,
+        worker_count: int = 2,
+        fast_send: bool = False,
+    ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
         self.ca = ca
@@ -76,15 +85,18 @@ class IoTAPI(ServiceClass):
 
         self.timeout = 3
 
+        self.fast_send = fast_send
+
         self.addr, self.port = self._url_gen(self.crt)
+
+        self.connection: Connection
 
         self.connection = TlsSocket(
             address=self.addr,
             port=self.port,
             ca=self.ca,
             crt=self.crt,
-            key=self.key,
-            observer=observer
+            key=self.key
         )
 
         params = {
@@ -97,7 +109,7 @@ class IoTAPI(ServiceClass):
             WappstoMethod.PUT: JsonReply,
             WappstoMethod.DELETE: JsonReply,
             # WappstoMethod.PATCH: JsonReply,
-            # WappstoMethod.HEAD: JsonReply,
+            WappstoMethod.HEAD: JsonReply,
         }
 
         self.subscribers: Dict[
@@ -176,6 +188,9 @@ class IoTAPI(ServiceClass):
 
                 reply = self.jsonrpc.parser(data)
                 self.log.debug(f"Package ID: {_ids}; Reply: {reply}")
+
+                if not reply:
+                    continue
 
                 self._send_logic(reply)
                 # UNSURE: How do we check if it was send?
@@ -268,7 +283,8 @@ class IoTAPI(ServiceClass):
     def _no_reply_send(self, data, url, method) -> bool:
         j_data = JsonData(
             data=data,
-            url=url
+            url=url,
+            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
@@ -315,7 +331,8 @@ class IoTAPI(ServiceClass):
     ) -> Optional[Union[Device, Network, ValueUnion, State, IdList]]:
         j_data = JsonData(
             data=data,
-            url=url
+            url=url,
+            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
@@ -420,6 +437,17 @@ class IoTAPI(ServiceClass):
     #     return Success()
 
     # #########################################################################
+    #                               Helper API
+    # #########################################################################
+
+    def ping(self):
+        return self._no_reply_send(
+            data=None,
+            url="/network",
+            method=WappstoMethod.HEAD
+        )
+
+    # #########################################################################
     #                               Network API
     # #########################################################################
 
@@ -489,7 +517,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
-    def get_device_where(self, network_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+    def get_device_where(self, network_uuid: UUID, **kwargs: str) -> Optional[UUID]:
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/network/{network_uuid}/device?this_{key}=={value}"
@@ -499,7 +527,10 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        return getattr(data, "id", None)
+        temp = getattr(data, "id")
+        if not temp:
+            return None
+        return temp[0]
 
     def get_device(self, uuid: UUID) -> Union[Device, None]:
         # url=f"/services/2.0/device/{uuid}",
@@ -544,7 +575,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
-    def get_value_where(self, device_uuid: UUID, **kwargs: Dict[str, str]) -> List[UUID]:
+    def get_value_where(self, device_uuid: UUID, **kwargs: str) -> Optional[UUID]:
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/device/{device_uuid}/value?this_{key}=={value}"
@@ -554,7 +585,10 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        return getattr(data, "id", None)
+        temp = getattr(data, "id")
+        if not temp:
+            return None
+        return temp[0]
 
     def get_value(self, uuid: UUID) -> Union[ValueUnion, None]:
         # url=f"/services/2.0/value/{uuid}",

@@ -1,3 +1,18 @@
+v0.6.0 (Jan 31 2022)
+===============================================================================
+
+## Added
+ * Ping-pong option in the config-method.
+ * fast_send option in the config-method.
+
+## Fixed
+
+ * Fix some issues that only happen on first time run.
+ * Fix a issue where if config was not called, the config-folder was not set to current folder.
+ * Fix a issue where offline storage, did not allow the program to stop, if there was still data to be send.
+ * Fix a issue with the way the certificates was created the right way, and is also claimed.
+
+
 v0.5.5 (Dec 21 2021)
 ===============================================================================
 

@@ -14,6 +14,8 @@ from typing import Union
 from .protocol import StatusID
 from .protocol import Connection
 
+from ..utils import observer
+
 
 class TlsSocket(Connection):
     def __init__(
@@ -23,13 +25,12 @@ class TlsSocket(Connection):
         ca: Path,  # ca.crt
         crt: Path,  # client.crt
         key: Path,  # client.key
-        observer: Optional[Callable[[str, str], None]] = None,
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
         self.observer_name = "CONNECTION"
-        self.observer = observer if observer else lambda st, nd: None
+        self.observer = observer
         self.observer.post(StatusID.DISCONNETCED, None)
 
         self.send_ready = threading.Lock()
@@ -42,10 +43,13 @@ class TlsSocket(Connection):
         self.log.debug(f"Address: {self.address}")
         self.log.debug(f"Port: {self.port}")
 
-        self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        self.ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.ssl_context.check_hostname = True
+        self.ssl_context.verify_flags = ssl.OP_NO_TLSv1_1
         self.ssl_context.verify_mode = ssl.CERT_REQUIRED
-        self.ssl_context.load_cert_chain(crt, key)
-        self.ssl_context.load_verify_locations(ca)
+
+        self.ssl_context.load_cert_chain(certfile=crt, keyfile=key)
+        self.ssl_context.load_verify_locations(cafile=ca)
 
         self._socket_setup()
 
@@ -145,12 +149,23 @@ class TlsSocket(Connection):
         try:
             self.socket.sendall(data)
         except ConnectionError:
-            msg = "Get an ConnectionError, while trying to send"
+            msg = "Get a ConnectionError, while trying to send"
+            self.log.exception(msg)
+            self.reconnect()
+            return False
+        except socket.timeout:
+            msg = "Get a socket.timeout, while trying to send"
+            self.log.exception(msg)
+            # UNSURE: How do we hit this?
+            return False
+        except OSError:
+            # UNSURE:
+            msg = "Get a OSError, while trying to send"
             self.log.exception(msg)
             self.reconnect()
             return False
         except TimeoutError:
-            msg = "Get an TimeoutError, while trying to send"
+            msg = "Get a TimeoutError, while trying to send"
             self.log.exception(msg)
             # UNSURE: How do we hit this?
             return False
@@ -180,10 +195,20 @@ class TlsSocket(Connection):
         while self.socket:
             try:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
-            except (socket.timeout, TimeoutError):
+            except socket.timeout:
+                # This happens every 2 Sec as set in self._socket_setup.
                 continue
-            except OSError:
+            except OSError as err:
                 # UNSURE:
+                if not self.socket:
+                    # Socket Closed.
+                    return
+                self.log.warning(f"Receive -> OSError: {err}")
+                self.reconnect()
+                continue
+            except TimeoutError:
+                # UNSURE:
+                self.log.exception("Receive -> Timeout")
                 self.reconnect()
                 continue
             if data_chunk == b'':

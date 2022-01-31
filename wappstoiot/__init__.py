@@ -33,7 +33,7 @@ from .utils.offline_storage import OfflineStorage
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.5.5"
+__version__ = "v0.6.0"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -110,7 +110,7 @@ def onStatusChange(
 #                             Config Stuff
 # #############################################################################
 
-__config_folder: Optional[Path] = None
+__config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 
 
@@ -125,11 +125,10 @@ def config(
     # JPC_timeout=3
     # mix_max_enforce="warning",  # "ignore", "enforce"
     # step_enforce="warning",  # "ignore", "enforce"
-    # fast_send: bool = True,  # TODO: state.meta.fast=true
+    fast_send: bool = True,  # TODO: jsonrpc.params.meta.fast=true
     # delta_handling="",
     # period_handling="",
-    # connect_sync: bool = True,  # Start with a Network GET to sync.  # TODO:
-    # ping_pong_period: Optional[int] = None,  # Period between a RPC ping-pong.
+    ping_pong_period_sec: Optional[int] = None,  # Period between a RPC ping-pong.
     # # Send: {"jsonrpc":"2.0","method":"HEAD","id":"PING-15","params":{"url":"/services/2.0/network"}}
     # # receive: {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
     offline_storage: Union[OfflineStorage, bool] = False,
@@ -160,10 +159,11 @@ def config(
         else:
             __config_folder = Path(config_folder)
 
+    _setup_ping_pong(ping_pong_period_sec)
     _setup_offline_storage(offline_storage)
 
     if connection == ConnectionTypes.IOTAPI:
-        _setup_IoTAPI(__config_folder)
+        _setup_IoTAPI(__config_folder, fast_send=fast_send)
 
     elif connection == ConnectionTypes.RESTAPI:
         # TODO: Find & load configs.
@@ -171,11 +171,11 @@ def config(
         _setup_RestAPI(__config_folder, configs)  # FIXME:
 
 
-def _setup_IoTAPI(__config_folder, configs=None):
+def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
     # TODO: Setup the Connection.
     global __the_connection
     kwargs = _certificate_check(__config_folder)
-    __the_connection = IoTAPI(**kwargs)
+    __the_connection = IoTAPI(**kwargs, fast_send=fast_send)
 
 
 def _setup_RestAPI(__config_folder, configs):
@@ -210,6 +210,31 @@ def _certificate_check(path) -> Dict[str, Path]:
     return r_paths
 
 
+def _setup_ping_pong(period_s: Optional[int] = None):
+    # TODO: Test me!
+    if not period_s:
+        return
+    import threading
+
+    # TODO: Need a close check so it do not hold wappstoiot open.
+    def _ping():
+        __log.debug("Ping-Pong called!")
+        nonlocal thread
+        global __connection_closed
+        if __connection_closed:
+            return
+        try:
+            thread = threading.Timer(period_s, _ping)
+            thread.start()
+            __the_connection.ping()
+        except Exception:
+            __log.exception("Ping-Pong:")
+    thread = threading.Timer(period_s, _ping)
+    thread.daemon = True
+    thread.start()
+    atexit.register(lambda: thread.cancel())
+
+
 def _setup_offline_storage(
     offlineStorage: Union[OfflineStorage, bool],
 ) -> None:
@@ -217,12 +242,12 @@ def _setup_offline_storage(
 
     if offlineStorage is False:
         return
-    if offlineStorage is True:
-        offline_storage: OfflineStorage = OfflineStorageFiles(
-            location=__config_folder
-        )
-    else:
-        offline_storage: OfflineStorage = offlineStorage
+    # if offlineStorage is True:
+    offline_storage: OfflineStorage = OfflineStorageFiles(
+        location=__config_folder
+    ) if offlineStorage is True else offlineStorage
+    # else:
+    #     offline_storage: OfflineStorage = offlineStorage
 
     observer.subscribe(
         service.StatusID.SENDERROR,
@@ -231,6 +256,7 @@ def _setup_offline_storage(
 
     def _resend_logic(status, status_data):
         nonlocal offline_storage
+        global __connection_closed
         __log.debug(f"Resend called with: status={status}")
         try:
             __log.debug("Resending Offline data")
@@ -271,6 +297,9 @@ def createNetwork(
     if not __the_connection:
         config()
 
+    if not __config_folder:
+        __config_folder = Path('.')
+
     cer = CertificateRead(crt=__config_folder / "client.crt")
     uuid = cer.network
 
@@ -298,6 +327,8 @@ def disconnect():
 
 def close():
     """."""
+    atexit.unregister(close)
+    # atexit._run_exitfuncs()
     global __connection_closed
     global __the_connection
 

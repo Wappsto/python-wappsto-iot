@@ -1,4 +1,4 @@
-import uuid
+# import uuid
 import datetime
 
 from enum import Enum
@@ -9,7 +9,7 @@ from typing import Union
 
 from pydantic import BaseModel
 from pydantic import Extra
-from pydantic import validator
+# from pydantic import validator
 
 from .base_schema import BlobValue
 from .base_schema import Device
@@ -84,7 +84,8 @@ class Success(BaseModel):
 
 
 class Identifier(BaseModel):
-    identifier: str
+    identifier: Optional[str]
+    fast: Optional[bool]  # Default: False
 
 
 class JsonMeta(BaseModel):
@@ -99,7 +100,7 @@ class JsonReply(BaseModel):
         ValueUnion,
         IdList,
         DeleteList,
-        bool  # UNSURE: Do it really return boolean here?
+        bool
     ]]
     meta: JsonMeta
 

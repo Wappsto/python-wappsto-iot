@@ -51,7 +51,6 @@ class ValueType(str, Enum):
     permission, range, step and the unit.
     """
 
-    DEFAULT = "Default"
     STRING = "String"
     NUMBER = "Number"
     BLOB = "Blob"
@@ -82,23 +81,11 @@ class ValueSettinsSchema(BaseModel):
 
 
 valueSettings: Dict[ValueType, ValueSettinsSchema] = {
-    ValueType.DEFAULT: ValueSettinsSchema(
-        value_type=ValueBaseType.NUMBER,
-        type="Number",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=None,  # Boolean
-        min=0,
-        max=255,
-        step=1,
-        unit=None
-    ),
     ValueType.STRING: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="String",
         max=64,
         encoding="utf-8",
-        unit=None
     ),
     ValueType.NUMBER: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
@@ -115,15 +102,13 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         value_type=ValueBaseType.BLOB,
         type="Blob",
         max=64,
-        encoding="base64",
-        unit=None
+        encoding="base64"
     ),
     ValueType.XML: ValueSettinsSchema(
         value_type=ValueBaseType.XML,
         type="Xml",
         xsd="",
-        namespace="",
-        unit=None
+        namespace=""
     ),
     ValueType.TEMPERATURE_CELCIUS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,

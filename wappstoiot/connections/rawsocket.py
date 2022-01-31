@@ -11,19 +11,20 @@ from typing import Union
 from .protocol import StatusID
 from .protocol import Connection
 
+from ..utils import observer
+
 
 class RawSocket(Connection):
     def __init__(
         self,
         address: str,
-        port: int,
-        observer: Optional[Callable[[str, str], None]] = None  # FIXME: !
+        port: int
     ):
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
         self.observer_name = "CONNECTION"
-        self.observer = observer if observer else lambda st, nd: None
+        self.observer = observer
         self.observer.post(StatusID.DISCONNETCED, None)
 
         self.send_ready = threading.Lock()

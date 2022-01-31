@@ -9,7 +9,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
-from pydantic import UUID4
 
 from ..service.template import ServiceClass
 
@@ -57,7 +56,7 @@ class Device:
     def __init__(
         self,
         parent: 'Network',
-        device_uuid: UUID4,
+        device_uuid: Optional[uuid.UUID],
         name: Optional[str] = None,
         manufacturer: Optional[str] = None,
         product: Optional[str] = None,
@@ -73,14 +72,17 @@ class Device:
 
         self.parent = parent
         self.element: WSchema.Device
-        self.__uuid: UUID4 = device_uuid
 
-        self.children_uuid_mapping: Dict[UUID4, Value] = {}
-        self.children_name_mapping: Dict[str, UUID4] = {}
+        self.children_uuid_mapping: Dict[uuid.UUID, Value] = {}
+        self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
-        self.cloud_id_mapping: Dict[int, UUID4] = {}
+        self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
 
         self.connection: ServiceClass = parent.connection
+
+        element = self.connection.get_device(device_uuid) if device_uuid else None
+
+        self.__uuid: uuid.UUID = device_uuid if device_uuid else uuid.uuid4()
 
         self.element = self.schema(
             name=name,
@@ -96,7 +98,6 @@ class Device:
             )
         )
 
-        element = self.connection.get_device(self.uuid)
         if element:
             self.__update_self(element)
             # self.log.debug(
@@ -124,7 +125,7 @@ class Device:
         return self.element.name
 
     @property
-    def uuid(self) -> UUID4:
+    def uuid(self) -> uuid.UUID:
         """Returns the name of the value."""
         return self.__uuid
 
@@ -158,8 +159,12 @@ class Device:
         device was not found, it will just be removed.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.DELETE:
-                callback(self)
+            try:
+                if method in WappstoMethod.DELETE:
+                    callback(self)
+            except Exception:
+                self.log.exception("onDelete callback error.")
+                raise
 
         self.connection.subscribe_device_event(
             uuid=self.uuid,
@@ -179,8 +184,12 @@ class Device:
             ValueObj: This object that have had a refresh request for.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.GET:
-                callback(self)
+            try:
+                if method in WappstoMethod.GET:
+                    callback(self)
+            except Exception:
+                self.log.exception("onRefresh callback error.")
+                raise
 
         self.connection.subscribe_device_event(
             uuid=self.uuid,
@@ -195,8 +204,12 @@ class Device:
         Configure a callback for when a change to the Device have occurred.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.PUT:
-                callback(self)
+            try:
+                if method in WappstoMethod.PUT:
+                    callback(self)
+            except Exception:
+                self.log.exception("OnChange callback error.")
+                raise
 
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_device_event(
@@ -212,8 +225,12 @@ class Device:
         Configure a callback for when a request have been make for the Value.
         """
         def _cb(obj, method):
-            if method in WappstoMethod.POST:
-                callback(self)
+            try:
+                if method in WappstoMethod.POST:
+                    callback(self)
+            except Exception:
+                self.log.exception("onCreate callback error.")
+                raise
 
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_device_event(
@@ -278,12 +295,10 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        v_uuid = self.connection.get_value_where(
+        value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
         )
-
-        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -309,12 +324,10 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        v_uuid = self.connection.get_value_where(
+        value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
         )
-
-        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -340,12 +353,10 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        v_uuid = self.connection.get_value_where(
+        value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
         )
-
-        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -371,12 +382,10 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        v_uuid = self.connection.get_value_where(
+        value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
         )
-
-        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,
@@ -391,7 +400,7 @@ class Device:
     def createValue(
         self,
         name: str,
-        value_type: ValueType = ValueType.DEFAULT,
+        value_type: ValueType,
         permission: PermissionType = PermissionType.READWRITE,
     ) -> Value:
         """
@@ -404,12 +413,10 @@ class Device:
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
         """
-        v_uuid = self.connection.get_value_where(
+        value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
         )
-
-        value_uuid = uuid.uuid4() if not v_uuid else v_uuid[0]
 
         value_obj = Value(
             parent=self,

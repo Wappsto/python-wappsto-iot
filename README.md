@@ -32,6 +32,16 @@ To understand how to use Wappsto IoT, there is some terms that need to be known.
 
 ## Getting Started
 
+
+## Installation using pip
+
+The wappsto module can be installed using PIP (Python Package Index) as follows:
+
+```bash
+$ pip install -U wappstoiot
+```
+
+
 Working examples of usage can be found in the [example folder](./example).
 
 The needed certificates can be downloaded with: `python -m wappstoiot --path echo`
@@ -88,15 +98,6 @@ except KeyboardInterrupt:
     pass
 finally:
     wappstoiot.close()
-```
-
-
-## Installation using pip
-
-The wappsto module can be installed using PIP (Python Package Index) as follows:
-
-```bash
-$ pip install -U wappstoiot
 ```
 
 ## License
