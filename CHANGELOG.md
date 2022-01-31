@@ -1,4 +1,4 @@
-v0.5.6 (Jan 21 2022)
+v0.5.6 (Jan 31 2022)
 ===============================================================================
 
 ## Added
@@ -10,6 +10,7 @@ v0.5.6 (Jan 21 2022)
  * Fix some issues that only happen on first time run.
  * Fix a issue where config was not called, the config-folder was not set to current folder.
  * Fix a issue where offline storage, did not allow the program to stop, if there was still data to be send.
+ * Fix a issue with the way the certificates was created, it was not possible to share the network with someone.
 
 
 v0.5.5 (Dec 21 2021)

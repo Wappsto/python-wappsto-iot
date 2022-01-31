@@ -83,24 +83,10 @@ def create_network(
     product=None,
     test_mode=False,
     reset_manufacturer=False,
-    manufacturer_as_owner=True,
     dry_run=False
 ):
     # Should take use of the more general functions.
-    request = {
-    }
-    # if network_uuid:
-    #     request["network"] = {"id": uuid}
-    if product:
-        request["product"] = product
-
-    if test_mode:
-        request["test_mode"] = True
-
-    if reset_manufacturer:
-        request["factory_reset"] = {"reset_manufacturer": True}
-
-    request['manufacturer_as_owner'] = manufacturer_as_owner
+    request = {}
 
     url = f"https://{base_url}/services/2.1/creator"
     headers = {
