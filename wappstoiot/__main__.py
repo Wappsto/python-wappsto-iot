@@ -123,6 +123,40 @@ def create_network(
     return rjson
 
 
+def claim_network(session, base_url, network_uuid, dry_run=False):
+    url = f"https://{base_url}/services/2.0/network/{network_uuid}"
+
+    headers = {
+        "Content-type": "application/json",
+        "X-session": str(session)
+    }
+
+    if not dry_run:
+        rdata = requests.post(
+            url=url,
+            headers=headers,
+            data="{}"
+        )
+
+        if rdata.status_code >= 300:
+            print("\nAn error occurred during claiming the network:")
+            _log_request_error(rdata)
+        rjson = json.loads(rdata.text)
+    else:
+        rjson = {
+            'device': [],
+            'meta': {
+                'id': network_uuid,
+                'type': 'network',
+                'version': '2.0'
+            }
+        }
+        print("\nFake Claiming the Network.")
+
+    print(f"\nNetwork: {network_uuid} have been claimed.")
+    return rjson
+
+
 def get_network(session, base_url, network_uuid):
     url = f"https://{base_url}/services/2.1/creator?this_network.id={network_uuid}"
     headers = {
@@ -239,6 +273,12 @@ if __name__ == "__main__":
         creator = create_network(
             session=session,
             base_url=base_url,
+            dry_run=args.dry_run
+        )
+        claim_network(
+            session=session,
+            base_url=base_url,
+            network_uuid=creator.get('network', {}).get('id'),
             dry_run=args.dry_run
         )
     else:
