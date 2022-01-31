@@ -83,24 +83,10 @@ def create_network(
     product=None,
     test_mode=False,
     reset_manufacturer=False,
-    manufacturer_as_owner=True,
     dry_run=False
 ):
     # Should take use of the more general functions.
-    request = {
-    }
-    # if network_uuid:
-    #     request["network"] = {"id": uuid}
-    if product:
-        request["product"] = product
-
-    if test_mode:
-        request["test_mode"] = True
-
-    if reset_manufacturer:
-        request["factory_reset"] = {"reset_manufacturer": True}
-
-    request['manufacturer_as_owner'] = manufacturer_as_owner
+    request = {}
 
     url = f"https://{base_url}/services/2.1/creator"
     headers = {
@@ -134,6 +120,40 @@ def create_network(
 
     print(f"\nCertificate generated for new network:\t{rjson['network']['id']}")
 
+    return rjson
+
+
+def claim_network(session, base_url, network_uuid, dry_run=False):
+    url = f"https://{base_url}/services/2.0/network/{network_uuid}"
+
+    headers = {
+        "Content-type": "application/json",
+        "X-session": str(session)
+    }
+
+    if not dry_run:
+        rdata = requests.post(
+            url=url,
+            headers=headers,
+            data="{}"
+        )
+
+        if rdata.status_code >= 300:
+            print("\nAn error occurred during claiming the network:")
+            _log_request_error(rdata)
+        rjson = json.loads(rdata.text)
+    else:
+        rjson = {
+            'device': [],
+            'meta': {
+                'id': network_uuid,
+                'type': 'network',
+                'version': '2.0'
+            }
+        }
+        print("\nFake Claiming the Network.")
+
+    print(f"\nNetwork: {network_uuid} have been claimed.")
     return rjson
 
 
@@ -253,6 +273,12 @@ if __name__ == "__main__":
         creator = create_network(
             session=session,
             base_url=base_url,
+            dry_run=args.dry_run
+        )
+        claim_network(
+            session=session,
+            base_url=base_url,
+            network_uuid=creator.get('network', {}).get('id'),
             dry_run=args.dry_run
         )
     else:
