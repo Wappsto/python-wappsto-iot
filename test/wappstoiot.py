@@ -3,7 +3,7 @@
 import shutil
 
 from pathlib import Path
-from unittest import mock
+import mock
 
 import pytest
 
