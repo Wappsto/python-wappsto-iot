@@ -1,22 +1,23 @@
 import random
+import uuid
 from OpenSSL import crypto
 
 
-def certifi_gen(name: str):
+def root_certifi_gen(name: str):
 
-    pkey = crypto.PKey()
-    pkey.generate_key(crypto.TYPE_RSA, 2048)
+    ca_key = crypto.PKey()
+    ca_key.generate_key(crypto.TYPE_RSA, 2048)  # ca_key
 
-    x509 = crypto.X509()
-    subject = x509.get_subject()
+    ca_crt = crypto.X509()
+    subject = ca_crt.get_subject()
     subject.commonName = name
-    x509.set_issuer(subject)
-    x509.gmtime_adj_notBefore(0)
-    x509.gmtime_adj_notAfter(5*365*24*60*60)
-    x509.set_pubkey(pkey)
-    x509.set_serial_number(random.randrange(100000))
-    x509.set_version(2)
-    x509.add_extensions([
+    ca_crt.set_issuer(subject)
+    ca_crt.gmtime_adj_notBefore(0)
+    ca_crt.gmtime_adj_notAfter(5*365*24*60*60)
+    ca_crt.set_pubkey(ca_key)
+    ca_crt.set_serial_number(random.randrange(100000))
+    ca_crt.set_version(2)
+    ca_crt.add_extensions([
         crypto.X509Extension(
             b'subjectAltName',
             False,
@@ -27,10 +28,37 @@ def certifi_gen(name: str):
                 'DNS:*.localhost']).encode()),
         crypto.X509Extension(b"basicConstraints", True, b"CA:false")])
 
-    x509.sign(pkey, 'SHA256')
+    ca_crt.sign(ca_key, 'SHA256')
+
+    # crypto.dump_privatekey(crypto.FILETYPE_PEM, ca_key).decode()
+    # ca_key  # Self signed certificate!
+
+    return {
+        "ca_crt": ca_crt,
+        "ca_key": ca_key
+    }
+
+
+def client_certifi_gen(name: str, uid: uuid.UUID):
+    root = root_certifi_gen(name=name)
+    client_key = crypto.PKey()
+    client_key.generate_key(crypto.TYPE_RSA, 2048)  # client_key
+    client_cert = crypto.X509()
+    subject = client_cert.get_subject()
+    subject.commonName = str(uid)
+    client_cert.set_issuer(root.get('ca_crt').get_subject())
+    client_cert.gmtime_adj_notBefore(0)
+    client_cert.gmtime_adj_notAfter(5*365*24*60*60)
+    client_cert.set_pubkey(client_key)
+
+    client_cert.sign(root.get("ca_key"), 'SHA256')
+
+    ca_crt = crypto.dump_certificate(crypto.FILETYPE_PEM, root.get("ca_crt")).decode()
+    client_key = crypto.dump_privatekey(crypto.FILETYPE_PEM, client_key).decode()
+    client_cst = crypto.dump_certificate(crypto.FILETYPE_PEM, client_cert).decode()
 
     return (
-        crypto.dump_certificate(crypto.FILETYPE_PEM, x509).decode(),  # CA
-        crypto.dump_privatekey(crypto.FILETYPE_PEM, pkey).decode(),  # key
-        crypto.dump_publickey(crypto.FILETYPE_PEM, pkey).decode()  # pub
+        ca_crt,
+        client_key,
+        client_cst
     )
