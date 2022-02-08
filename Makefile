@@ -6,6 +6,9 @@ clean: clean-pyc clean-build
 
 clean-all: clean-pyc clean-build clean-env
 
+clean-pyc:
+	find -name __pycache__ -exec rm -rf {} +
+
 clean-build:
 	rm --force --recursive build/
 	rm --force --recursive dist/
