@@ -17,7 +17,6 @@ from pydantic import UUID4
 
 from ..service.template import ServiceClass
 
-from ..schema.base_schema import PermissionType
 from ..schema.base_schema import WappstoObject
 
 # from ..schema.iot_schema import WappstoObjectType

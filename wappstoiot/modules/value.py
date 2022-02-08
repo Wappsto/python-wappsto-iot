@@ -607,7 +607,7 @@ class Value:
             self.children_name_mapping[WSchema.StateType.REPORT.name] = uuid.uuid4()
 
             self.report_state = WSchema.State(
-                data=float("NaN") if self.value_type == ValueBaseType.NUMBER else "",
+                data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.REPORT,
                 meta=WSchema.BaseMeta(
                     id=self.children_name_mapping.get(WSchema.StateType.REPORT.name)
@@ -621,7 +621,7 @@ class Value:
             self.children_name_mapping[WSchema.StateType.CONTROL.name] = uuid.uuid4()
 
             self.control_state = WSchema.State(
-                data=float("NaN") if self.value_type == ValueBaseType.NUMBER else "",
+                data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.CONTROL,
                 meta=WSchema.BaseMeta(
                     id=self.children_name_mapping[WSchema.StateType.CONTROL.name]
