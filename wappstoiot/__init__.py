@@ -112,6 +112,7 @@ def onStatusChange(
 
 __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
+__connection_closed: bool = False
 
 
 class ConnectionTypes(str, Enum):
@@ -152,12 +153,18 @@ def config(
     the maximum, if it is below the minimum, it is set to the minimum value.
     """
     global __config_folder
+    global __connection_closed
+    global __the_connection
+    __the_connection = None
+    __connection_closed = False
 
     if not isinstance(config_folder, Path):
         if config_folder == "." and hasattr(__main__, '__file__'):
             __config_folder = Path(__main__.__file__).absolute().parent / Path(config_folder)
         else:
             __config_folder = Path(config_folder)
+    else:
+        __config_folder = config_folder
 
     _setup_ping_pong(ping_pong_period_sec)
     _setup_offline_storage(offline_storage)
@@ -284,9 +291,6 @@ def _setup_offline_storage(
 #                             Create Stuff
 # #############################################################################
 
-__connection_closed = False
-
-
 def createNetwork(
     name: str = "TheNetwork",
     description: str = "",
@@ -332,7 +336,8 @@ def close():
     global __connection_closed
     global __the_connection
 
-    if not __connection_closed:
+    if not __connection_closed and __the_connection is not None:
+        __log.info("Closing Wappsto IoT")
         __the_connection.close()
         __connection_closed = True
     # Disconnect
