@@ -66,7 +66,7 @@ setup(
     # ],
     install_requires=[
         'slxjsonrpc>=0.8.1',
-        'pydantic>=1.6.1',
+        'pydantic==1.6.1',
         'requests==2.25.1'
     ],
     # entry_points={  # TODO: fix __main__.py to be optional.

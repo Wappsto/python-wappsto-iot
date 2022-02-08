@@ -1,4 +1,5 @@
-pytest>=3.0.7
+pytest==6.2.5
 coverage==5.1
 pyOpenSSL==19.1.0
-mock
+rich==10.9.0
+pytest-mock==3.6.1
