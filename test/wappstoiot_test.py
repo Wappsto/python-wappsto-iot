@@ -12,6 +12,18 @@ from utils import package_smithing as smithing
 
 import wappstoiot
 
+# import logging
+# from rich import traceback
+# from rich.logging import RichHandler
+
+# traceback.install(show_locals=True)
+
+# logging.basicConfig(
+#     level=logging.WARNING,
+#     format="%(asctime)s - %(name)s - %(message)s",
+#     handlers=[RichHandler()],
+# )
+
 
 class TestConnection:
     """
@@ -113,11 +125,122 @@ class TestConnection:
             cycle_list=cycle
         )
 
+        wappstoiot.config(
+            config_folder=Path(self.temp),
+        )
+        network = wappstoiot.createNetwork()
+        wappstoiot.close()
+
+        smithing.fail_check()
+
+    def test_device_creation(self, mock_rw_socket, mock_ssl_socket):
+        network_uuid = uuid.uuid4()
+        device_uuid = uuid.uuid4()
+        device_name = "test"
+        url = "wappsto.com"
+        self.generate_certificates(name=url, network_uuid=network_uuid)
+
+        cycle = smithing.get_network_create_cycle(
+            network_uuid=network_uuid,
+            changed=True
+        )
+        cycle2 = smithing.get_device_create_cycle(
+            network_uuid=network_uuid,
+            empty=True,  # NOTE: parametrize options?
+            changed=True,  # NOTE: parametrize options?
+            device_uuid=device_uuid,
+            device_name=device_name
+        )
+        cycle.extend(cycle2)
+
+        smithing.socket_generator(
+            mock_rw_socket=mock_rw_socket,
+            mock_ssl_socket=mock_ssl_socket,
+            cycle_list=cycle
+        )
+
+        wappstoiot.config(
+            config_folder=Path(self.temp),
+        )
+        network = wappstoiot.createNetwork()
+
+        device = network.createDevice(name=device_name)
+
+        wappstoiot.close()
+
+        smithing.fail_check()
+
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            # wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "value_type",
+        [
+            (wappstoiot.ValueType.NUMBER),
+            (wappstoiot.ValueType.STRING),
+            # (wappstoiot.ValueType.BLOB),
+            # (wappstoiot.ValueType.XML),
+        ]
+    )
+    def test_value_creation(self, mock_rw_socket, mock_ssl_socket, value_type, permission):
+        network_uuid = uuid.uuid4()
+        device_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4()
+        device_name = "test"
+        value_name = "moeller"
+        url = "wappsto.com"
+        self.generate_certificates(name=url, network_uuid=network_uuid)
+
+        cycle = smithing.get_network_create_cycle(
+            network_uuid=network_uuid,
+            changed=True
+        )
+        cycle2 = smithing.get_device_create_cycle(
+            network_uuid=network_uuid,
+            empty=True,
+            changed=True,
+            device_uuid=device_uuid,
+            device_name=device_name,
+            value_list=[value_uuid]
+        )
+        cycle.extend(cycle2)
+
+        cycle3 = smithing.get_value_create_cycle(
+            device_uuid=device_uuid,
+            empty=True,    # NOTE: parametrize options?
+            changed=True,  # NOTE: parametrize options?
+            value_type=value_type,  # Make this needed?
+            value_uuid=value_uuid,
+            value_name=value_name,
+            permission=permission
+        )
+        cycle.extend(cycle3)
+
+        smithing.socket_generator(
+            mock_rw_socket=mock_rw_socket,
+            mock_ssl_socket=mock_ssl_socket,
+            cycle_list=cycle
+        )
+
+        wappstoiot.config(
+            config_folder=Path(self.temp),
+        )
+        network = wappstoiot.createNetwork()
+
+        device = network.createDevice(name=device_name)
+
         try:
-            wappstoiot.config(
-                config_folder=Path(self.temp),
+            device.createValue(
+                name=value_name,
+                permission=permission,
+                value_type=value_type
             )
-            network = wappstoiot.createNetwork()
         finally:
             wappstoiot.close()
 
