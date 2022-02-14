@@ -291,6 +291,7 @@ class Value:
     def __update_self(self, element):
         new_dict = element.copy(update=self.element.dict(exclude_none=True))
         new_dict.meta = element.meta.copy(update=new_dict.meta)
+        new_dict.number = element.number.copy(update=new_dict.number)
         if type(self.element) is type(element):
             self.element = new_dict
         else:
