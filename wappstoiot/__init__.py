@@ -33,7 +33,7 @@ from .utils.offline_storage import OfflineStorage
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.6.0"
+__version__ = "v0.6.1"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
