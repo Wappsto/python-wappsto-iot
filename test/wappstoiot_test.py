@@ -240,7 +240,9 @@ class TestConnection:
         extra_info: Dict[str, Any] = {
             'type': value_type.value,
             'permission': permission
-        }  # TODO: !!!!!!!
+        }
+
+        # TODO: Should just be MVP.
         if value_type == wappstoiot.ValueType.NUMBER:
             extra_info['number'] = {
                 'min': 0,
@@ -248,11 +250,20 @@ class TestConnection:
                 'step': 1
             }
         elif value_type == wappstoiot.ValueType.STRING:
-            extra_info['string'] = {}
+            extra_info['string'] = {
+                'max': 100,
+                'encoding': "utf-8"
+            }
         elif value_type == wappstoiot.ValueType.BLOB:
-            extra_info['blob'] = {}
+            extra_info['blob'] = {
+                'max': 100,
+                'encoding': "base64"
+            }
         elif value_type == wappstoiot.ValueType.XML:
-            extra_info['xlm'] = {}
+            extra_info['xlm'] = {
+                'xsd': "Something!",
+                'namespace': "test_value_creation"
+            }
 
         url = "wappsto.com"
         self.generate_certificates(name=url, network_uuid=network_uuid)
@@ -304,10 +315,17 @@ class TestConnection:
 
         # TODO: Check if of the states was created!
 
+        state_count = len(server.objects.get(device_uuid, {}).children)
+
+        if permission in [wappstoiot.PermissionType.READ, wappstoiot.PermissionType.WRITE]:
+            assert state_count == 1, "The number of states should be 1."
+        elif permission in [wappstoiot.PermissionType.READWRITE, wappstoiot.PermissionType.WRITEREAD]:
+            assert state_count == 2, "The number of states should be 2, when it is a read/write."
+
         # TODO: +everything after device
         # assert len(server.data_in) == 3+2 if value_exist else 3+2 # + state creation
 
-        assert False
+        # assert False
 
     # @pytest.mark.parametrize(
     #     "permission",
