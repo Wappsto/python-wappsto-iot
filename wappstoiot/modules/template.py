@@ -1,26 +1,12 @@
-from abc import ABC
-from abc import abstractmethod
-
-from typing import Any
-from typing import Dict
-from typing import Callable
-# from typing import Union
-# from typing import List
-# from typing import TypeVar
-from typing import Optional
-
 from enum import Enum
 
+from typing import Optional
+from typing import Dict
+
 from pydantic import BaseModel
-from pydantic import UUID4
-# from pydantic import HttpUrl
 
-from ..service.template import ServiceClass
 
-from ..schema.base_schema import PermissionType
-from ..schema.base_schema import WappstoObject
-
-# from ..schema.iot_schema import WappstoObjectType
+__version__ = "0.0.1"
 
 
 # #############################################################################
@@ -42,28 +28,6 @@ class ValueBaseType(str, Enum):
     XML = "xml"
 
 
-class ValueType(str, Enum):
-    """
-    Predefined ValueTypes.
-
-    Each of the predefined ValueTypes, have default
-    value parameters set, which include BaseType, name,
-    permission, range, step and the unit.
-    """
-
-    STRING = "String"
-    NUMBER = "Number"
-    BLOB = "Blob"
-    XML = "Xml"
-    TEMPERATURE_CELCIUS = "Temperature Celcius"
-    BOOLEAN = "Boolean"
-    LATITUDE = "Latitude"
-    LONGITUDE = "Longitude"
-    CO2 = "CO2"
-    PRESSURE_PASCAL = "Pressure Pascal"
-    HUMIDITY = "Humidity"
-
-
 class ValueSettinsSchema(BaseModel):
     value_type: ValueBaseType
     type: str
@@ -77,224 +41,377 @@ class ValueSettinsSchema(BaseModel):
     encoding: Optional[str]  # Blob, str only.
     xsd: Optional[str]  # XML only
     namespace: Optional[str]  # XML only
-    unit: Optional[str]
+    unit: Optional[str]  # Number only
+
+
+class ValueType(str, Enum):
+    """
+    Predefined ValueTypes.
+
+    Each of the predefined ValueTypes, have default
+    value parameters set, which include BaseType, name,
+    permission, range, step and the unit.
+    """
+
+    ANGLE = "ANGLE"
+    BLOB = "BLOB"
+    BOOLEAN_ONOFF = "BOOLEAN_ONOFF"
+    CITY = "CITY"
+    CO2 = "CO2"
+    COLOR_HEX = "COLOR_HEX"
+    COLOR_INT = "COLOR_INT"
+    COLOR_TEMPERATURE = "COLOR_TEMPERATURE"
+    COUNTRY = "COUNTRY"
+    COUNTRY_CODE = "COUNTRY_CODE"
+    ENERGY_KWH = "ENERGY_KWH"
+    ENERGY_WH = "ENERGY_WH"
+    HUMIDITY = "HUMIDITY"
+    IMAGE_JPG = "IMAGE_JPG"
+    LATITUDE = "LATITUDE"
+    LONGITUDE = "LONGITUDE"
+    LUMINOUSITY_LX = "LUMINOUSITY_LX"
+    NUMBER = "NUMBER"
+    PERCENTAGE = "PERCENTAGE"
+    POSTCODE = "POSTCODE"
+    POWER_KW = "POWER_KW"
+    POWER_WATT = "POWER_WATT"
+    PRECIPITATION_MM = "PRECIPITATION_MM"
+    PRESSURE_HPA = "PRESSURE_HPA"
+    SPEED_MS = "SPEED_MS"
+    STREET = "STREET"
+    STRING = "STRING"
+    TEMPERATURE_CELSIUS = "TEMPERATURE_CELSIUS"
+    TEMPERATURE_FAHRENHEIT = "TEMPERATURE_FAHRENHEIT"
+    TEMPERATURE_KELVIN = "TEMPERATURE_KELVIN"
+    TIMESTAMP = "TIMESTAMP"
+    VOLTAGE_V = "VOLTAGE_V"
+    XML = "XML"
 
 
 valueSettings: Dict[ValueType, ValueSettinsSchema] = {
-    ValueType.STRING: ValueSettinsSchema(
-        value_type=ValueBaseType.STRING,
-        type="String",
-        max=64,
-        encoding="utf-8",
-    ),
-    ValueType.NUMBER: ValueSettinsSchema(
+
+    ValueType.BOOLEAN_ONOFF: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="Number",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=None,  # Boolean
-        min=-1e+38,  # UNSURE(MBK): !!
-        max=1e+38,
-        step=0.01,
-        unit=None
+        type="boolean",
+        mapping={'0': 'off', '1': 'on'},
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="0",
+        max="1",
+        step="1",
+        unit=None,
+        si_conversion=None,
     ),
-    ValueType.BLOB: ValueSettinsSchema(
-        value_type=ValueBaseType.BLOB,
-        type="Blob",
-        max=64,
-        encoding="base64"
+    ValueType.VOLTAGE_V: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="voltage",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="250",
+        step="1",
+        unit="V",
+        si_conversion=None,
     ),
-    ValueType.XML: ValueSettinsSchema(
-        value_type=ValueBaseType.XML,
-        type="Xml",
-        xsd="",
-        namespace=""
+    ValueType.POWER_WATT: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="power",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="2500",
+        step="1",
+        unit="W",
+        si_conversion=None,
     ),
-    ValueType.TEMPERATURE_CELCIUS: ValueSettinsSchema(
+    ValueType.POWER_KW: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="power",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1000000",
+        step="1",
+        unit="kW",
+        si_conversion="[W] = 1000 * [kW]",
+    ),
+    ValueType.ENERGY_WH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="100000",
+        step="1",
+        unit="Wh",
+        si_conversion=None,
+    ),
+    ValueType.ENERGY_KWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1000000",
+        step="1",
+        unit="kWh",
+        si_conversion="[J] = 3600000 * [kWh]  ",
+    ),
+    ValueType.TEMPERATURE_CELSIUS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="temperature",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=False,  # Boolean
-        min=-273,
-        max=1e+38,
-        step=0.01,
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=False,
+        min="-30",
+        max="50",
+        step="1",
         unit="°C",
+        si_conversion="[K] = [°C] + 273.15",
     ),
-    ValueType.CO2: ValueSettinsSchema(
+    ValueType.TEMPERATURE_FAHRENHEIT: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="co2",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=True,  # Boolean
-        min=0,
-        max=1e+38,
-        step=0.01,
-        unit="ppm",
-        si_conversion="1000000*[ppm]"
+        type="temperature",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=False,
+        min="-20",
+        max="120",
+        step="1",
+        unit="°F",
+        si_conversion="[K] = ([°F] + 459.67) × 5/9 ",
     ),
-    ValueType.PRESSURE_PASCAL: ValueSettinsSchema(
+    ValueType.TEMPERATURE_KELVIN: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="pressure",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=True,  # Boolean
-        min=0,
-        max=1e+38,
-        step=0.01,
-        unit="Pa",
+        type="temperature",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="240",
+        max="320",
+        step="1",
+        unit="K",
+        si_conversion=None,
+    ),
+    ValueType.ANGLE: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="angle",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="360",
+        step="0",
+        unit="°",
+        si_conversion="[rad] = (180/pi) * [°]",
+    ),
+    ValueType.PERCENTAGE: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="percentage",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="100",
+        step="1",
+        unit="%",
+        si_conversion="[1] = 100 * [%]",
+    ),
+    ValueType.SPEED_MS: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="speed",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="100",
+        step="1",
+        unit="m/s",
+        si_conversion=None,
+    ),
+    ValueType.PRECIPITATION_MM: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="precipitation",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="100",
+        step="1",
+        unit="mm",
+        si_conversion=None,
     ),
     ValueType.HUMIDITY: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="humidity",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=True,  # Boolean
-        min=0,
-        max=1e+38,
-        step=0.01,
-        unit="%"
+        type="relative_humidity",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="0",
+        max="100",
+        step="1",
+        unit="%",
+        si_conversion="[1] = 100 * [%]",
+    ),
+    ValueType.CO2: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="concentration",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="0",
+        max="3000",
+        step="1",
+        unit="ppm",
+        si_conversion="1000000 * [ppm]",
+    ),
+    ValueType.PRESSURE_HPA: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="pressure",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="300",
+        max="1100",
+        step="1",
+        unit="hPa",
+        si_conversion="[Pa] = [hPa]/100",
+    ),
+    ValueType.TIMESTAMP: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="timestamp",
+        max="27",
+        encoding="ISO 8601",
+    ),
+    ValueType.LUMINOUSITY_LX: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="luminousity",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="25000",
+        step="1",
+        unit="lx",
+        si_conversion=None,
+    ),
+    ValueType.COLOR_HEX: ValueSettinsSchema(
+        value_type=ValueBaseType.BLOB,
+        type="color",
+        max="6",
+        encoding="hex",
+    ),
+    ValueType.COLOR_INT: ValueSettinsSchema(
+        value_type=ValueBaseType.BLOB,
+        type="color",
+        max="8",
+        encoding="integer",
+    ),
+    ValueType.COLOR_TEMPERATURE: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="color_temperature",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="1000",
+        max="12000",
+        step="1",
+        unit="K",
+        si_conversion=None,
+    ),
+    ValueType.IMAGE_JPG: ValueSettinsSchema(
+        value_type=ValueBaseType.BLOB,
+        type="image",
+        max="255",
+        encoding="base64",
     ),
     ValueType.LATITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="latitude",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=True,  # Boolean
-        min=-90,
-        max=90,
-        step=0.000001,
-        unit="°N"
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-90",
+        max="90",
+        step="0.000001",
+        unit="°N",
+        si_conversion=None,
     ),
     ValueType.LONGITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="longitude",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=True,  # Boolean
-        min=-180,
-        max=180,
-        step=0.000001,
-        unit="°E"
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-180",
+        max="180",
+        step="0.000001",
+        unit="°E",
+        si_conversion=None,
     ),
-    ValueType.BOOLEAN: ValueSettinsSchema(
+    ValueType.STREET: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="street",
+        max="100",
+        encoding="",
+    ),
+    ValueType.CITY: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="city",
+        max="100",
+        encoding="",
+    ),
+    ValueType.POSTCODE: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="postcode",
+        max="10",
+        encoding="",
+    ),
+    ValueType.COUNTRY: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="country",
+        max="20",
+        encoding="",
+    ),
+    ValueType.COUNTRY_CODE: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="country_code",
+        max="2",
+        encoding="ISO 3166-1 Alpha-2",
+    ),
+    ValueType.NUMBER: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="boolean",
-        mapping=None,  # dict,
-        ordered_mapping=None,  # Boolean
-        meaningful_zero=True,  # Boolean
-        min=0,
-        max=1,
-        step=1,
-        unit="Boolean"
+        type="number",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-128",
+        max="128",
+        step="0.1",
+        unit=None,
+        si_conversion=None,
+    ),
+    ValueType.STRING: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="string",
+        max="64",
+        encoding="utf-8",
+    ),
+    ValueType.BLOB: ValueSettinsSchema(
+        value_type=ValueBaseType.BLOB,
+        type="blob",
+        max="280",
+        encoding="base64",
+    ),
+    ValueType.XML: ValueSettinsSchema(
+        value_type=ValueBaseType.XML,
+        type="xml",
+        xsd="",
+        namespace="",
     ),
 }
-
-# #############################################################################
-#                             Config-File Schema
-# #############################################################################
-
-
-# class _UnitsInfo(BaseModel):
-#     self_type: WappstoObjectType
-#     parent: Optional[UUID4] = None
-#     name: Optional[str] = None
-#     self_id: int
-#     children: List[UUID4]
-#     children_id_mapping: Dict[int, UUID4]
-#     children_name_mapping: Dict[str, UUID4]
-
-
-# class _Config(BaseModel):
-#     network_uuid: UUID4
-#     # network_name: str  # Really needed?
-#     port: int
-#     end_point: HttpUrl
-#     # connectSync: Optional[bool]
-#     # storeQueue: Optional[bool]
-#     # mixMaxEnforce: Optional[str]
-#     # stepEnforce: Optional[str]
-#     # deltaHandling: Optional[str]
-#     # period_handling: Optional[str]
-
-
-# class _ConfigFile(BaseModel):
-#     configs: _Config
-#     # NOTE: the str, should be UUID4, but can't do to pydantic error!
-#     units: Dict[str, _UnitsInfo]
-
-
-def dict_diff(olddict: Dict[Any, Any], newdict: Dict[Any, Any]):
-    """Find & return what have updated from old to new dictionary."""
-    return dict(set(newdict.items() - set(olddict.items())))
-
-
-# #############################################################################
-#                             Wappsto-Device Template
-# #############################################################################
-
-class WappstoUnit(ABC):
-
-    schema: WappstoObject
-
-    @property
-    @abstractmethod
-    def uuid(self) -> UUID4:
-        pass
-
-    # @abstractmethod
-    # @property
-    # def name(self) -> str:
-    #     pass
-
-    @property
-    def id(self) -> int:
-        pass
-
-    @property
-    @abstractmethod
-    def children_uuid_mapping(self) -> Dict[UUID4, Callable]:
-        pass
-
-    @property
-    @abstractmethod
-    def children_id_mapping(self) -> Dict[int, UUID4]:
-        pass
-
-    @property
-    @abstractmethod
-    def children_name_mapping(self) -> Dict[str, UUID4]:
-        pass
-
-    @property
-    @abstractmethod
-    def connection(self) -> ServiceClass:
-        pass
-
-    # @abstractmethod
-    # def _get_json(self) -> List[_UnitsInfo]:
-    #     pass
-
-    @abstractmethod
-    def delete(self):
-        pass
-
-    @abstractmethod
-    def change(self):
-        pass
-
-    @abstractmethod
-    def onChange(self):
-        pass
-
-    @abstractmethod
-    def onRequest(self):
-        pass
-
-    @abstractmethod
-    def onRefresh(self):
-        pass
-
-    @abstractmethod
-    def onDelete(self):
-        pass

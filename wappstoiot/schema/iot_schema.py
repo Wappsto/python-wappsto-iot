@@ -84,7 +84,7 @@ class Success(BaseModel):
 
 
 class Identifier(BaseModel):
-    identifier: Optional[str]
+    identifier: Optional[str]  # UNSURE: Should this always be there?
     fast: Optional[bool]  # Default: False
 
 
