@@ -11,6 +11,8 @@ from .device import Device
 from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod
 
+from .utils import name_check
+
 
 # #############################################################################
 #                                 Network Setup
@@ -258,6 +260,12 @@ class Network(object):
         """
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         device_uuid = self.connection.get_device_where(
             network_uuid=self.uuid,

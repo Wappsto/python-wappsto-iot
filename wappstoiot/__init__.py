@@ -45,6 +45,7 @@ from .utils.certificateread import CertificateRead
 from .utils.offline_storage import OfflineStorageFiles
 
 from .utils import observer
+from .utils import name_check
 
 # #############################################################################
 #                             __init__ Setup Stuff
@@ -291,6 +292,12 @@ def createNetwork(
 ) -> Network:
     global __config_folder
     global __the_connection
+
+    if not name_check.legal_name(name):
+        raise ValueError(
+            "Given name contain a ilegal character."
+            f"May only contain: {name_check.wappsto_letters}"
+        )
 
     if not __the_connection:
         config()

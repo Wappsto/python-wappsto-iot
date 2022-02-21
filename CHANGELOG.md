@@ -3,7 +3,7 @@ v0.6.2 (Feb 1 2022)
 
 ## Fixed
  * Now `pathlib.Path` can also be used for the config config_folder input.
-
+ * Fixed a issue where it always where asking for the value.
 
 ## Changed
 

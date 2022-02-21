@@ -19,6 +19,8 @@ from .template import valueSettings
 from .template import ValueType
 from .template import ValueBaseType
 
+from .utils import name_check
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     # NOTE: To avoid ciclic import
@@ -290,6 +292,12 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
+
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
@@ -318,6 +326,12 @@ class Device:
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
@@ -348,6 +362,12 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
+
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
@@ -376,6 +396,12 @@ class Device:
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
@@ -409,6 +435,13 @@ class Device:
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
         """
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
+
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
