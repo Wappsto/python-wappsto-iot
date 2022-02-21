@@ -11,7 +11,7 @@ from .device import Device
 from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod
 
-from .utils import name_check
+from ..utils import name_check
 
 
 # #############################################################################

@@ -19,7 +19,7 @@ from .template import valueSettings
 from .template import ValueType
 from .template import ValueBaseType
 
-from .utils import name_check
+from ..utils import name_check
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
