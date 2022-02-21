@@ -1,8 +1,16 @@
-v0.6.1 (Feb 1 2022)
+v0.6.2 (Feb 1 2022)
 ===============================================================================
 
 ## Fixed
  * Now `pathlib.Path` can also be used for the config config_folder input.
+
+
+v0.6.1 (Feb 21 2022)
+===============================================================================
+
+## Changed
+
+ * Updated the ValueTypes to use the Default template values v0.0.1.
 
 
 v0.6.0 (Jan 31 2022)
