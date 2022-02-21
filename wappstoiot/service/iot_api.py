@@ -101,7 +101,7 @@ class IoTAPI(ServiceClass):
 
         params = {
             x: Union[Success, JsonData] for x in WappstoMethod
-        } 
+        }
 
         result = {
             WappstoMethod.GET: JsonReply,

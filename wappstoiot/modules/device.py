@@ -3,26 +3,21 @@ import logging
 
 from enum import Enum
 
-from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Union
 
 from ..service.template import ServiceClass
 
-# from .schema.base_schema import Device as DeviceSchema
 from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod
-# from .schema.iot_schema import WappstoObjectType
 from ..schema.base_schema import PermissionType
 
 from .value import Value
 from .template import valueSettings
 from .template import ValueType
 from .template import ValueBaseType
-# from .Template import _UnitsInfo
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:

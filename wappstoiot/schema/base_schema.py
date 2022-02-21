@@ -211,7 +211,7 @@ class BaseMeta(BaseModel):  # Base Meta
     redirect: Optional[  # type: ignore
         constr(regex=r'^[0-9a-zA-Z_-]+$', min_length=1, max_length=200)
     ] = None
-    
+
     error: Optional[UUID4] = None
     warning: Optional[List[WarningItem]] = None
     trace: Optional[Optional[str]] = None
@@ -236,7 +236,7 @@ class ValueMeta(BaseMeta):
         VALUE = "value"
     type: Optional[WappstoMetaType] = None
 
-    historical: Optional[bool] = None 
+    historical: Optional[bool] = None
 
 
 class StateMeta(BaseMeta):
@@ -244,7 +244,7 @@ class StateMeta(BaseMeta):
         STATE = "state"
     type: Optional[WappstoMetaType] = None
 
-    historical: Optional[bool] = None 
+    historical: Optional[bool] = None
 
 
 class DeviceMeta(BaseMeta):

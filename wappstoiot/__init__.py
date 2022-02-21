@@ -4,6 +4,20 @@
 #                             MOdules Import Stuff
 # #############################################################################
 
+
+import __main__
+import atexit
+import netrc
+import json
+import logging
+
+from pathlib import Path
+from enum import Enum
+
+
+from typing import Any, Dict, Optional, Union, Callable
+
+
 from .modules.network import Network
 # from .modules.network import ConnectionStatus
 # from .modules.network import ConnectionTypes
@@ -14,12 +28,12 @@ from .modules.network import Network
 
 from .modules.device import Device
 from .service.template import ServiceClass
+from .service.iot_api import IoTAPI
 
 from .modules.value import Value
-from .modules.value import Delta
-from .modules.value import Period
+# from .modules.value import Delta  # Note: Not ready yet!
+# from .modules.value import Period  # Note: Not ready yet!
 from .modules.value import PermissionType
-from .modules.value import ValueBaseType
 from .modules.template import ValueType
 
 from .service import template as service
@@ -27,7 +41,10 @@ from .service import template as service
 from .connections import protocol as connection
 
 from .utils.offline_storage import OfflineStorage
+from .utils.certificateread import CertificateRead
+from .utils.offline_storage import OfflineStorageFiles
 
+from .utils import observer
 
 # #############################################################################
 #                             __init__ Setup Stuff
@@ -49,6 +66,8 @@ __all__ = [
     'OfflineStorage',
     'service',
     'connection',
+    'ValueType',
+    'PermissionType'
 ]
 
 
@@ -56,38 +75,12 @@ __all__ = [
 #                  Import Stuff for setting up WappstoIoT
 # #############################################################################
 
-import __main__
-import atexit
-import netrc
-import json
-import logging
-
-from pathlib import Path
-from enum import Enum
-
-
-from typing import Any, Dict, Optional, Union, Callable
-
-
-from .utils.certificateread import CertificateRead
-from .utils.offline_storage import OfflineStorage
-from .utils.offline_storage import OfflineStorageFiles
-
-from .service.iot_api import IoTAPI
-
-# from .utils import observer 
-
-
 __log = logging.getLogger("wappstoiot")
 __log.addHandler(logging.NullHandler())
 
 # #############################################################################
 #                             Status Stuff
 # #############################################################################
-
-
-from .utils import observer
-from .service import template as service
 
 
 def onStatusChange(
@@ -131,7 +124,8 @@ def config(
     # period_handling="",
     ping_pong_period_sec: Optional[int] = None,  # Period between a RPC ping-pong.
     # # Send: {"jsonrpc":"2.0","method":"HEAD","id":"PING-15","params":{"url":"/services/2.0/network"}}
-    # # receive: {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
+    # # receive:
+    # {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
     offline_storage: Union[OfflineStorage, bool] = False,
     # none_blocking=True,  # Whether the post should wait for reply or not.
 ) -> None:

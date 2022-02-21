@@ -2,22 +2,12 @@ import uuid
 
 from enum import Enum
 
-from typing import List
 from typing import Optional
-# from typing import Union
 
 from pydantic import BaseModel
-# from pydantic import validator
 from pydantic import Extra
 
-# from wappstoiot.schema.base_schemas import BlobValueSchema
-# from wappstoiot.schema.base_schemas import DeviceSchema
 from wappstoiot.schema.base_schema import BaseMeta
-# from wappstoiot.schema.base_schemas import NetworkSchema
-# from wappstoiot.schema.base_schemas import NumberValueSchema
-# from wappstoiot.schema.base_schemas import StateSchema
-# from wappstoiot.schema.base_schemas import StringValueSchema
-# from wappstoiot.schema.base_schemas import WappstoMetaType
 from wappstoiot.schema.base_schema import WappstoVersion
 
 

@@ -16,7 +16,7 @@ def main():
         StatusID=wappstoiot.connection.StatusID.CONNECTED,
         callback=statusChange
     )
- 
+
     wappstoiot.onStatusChange(
         StatusID=wappstoiot.service.StatusID.ERROR,
         callback=statusChange

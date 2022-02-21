@@ -16,8 +16,6 @@ from typing import Union
 from pydantic import BaseModel
 from pydantic import Field
 
-import rich
-
 from utils import pkg_smithing
 
 
@@ -52,7 +50,7 @@ class Parameters(BaseModel):
 def pairwise(iterable):
     """
     Pair the iterables, in groups of 2.
-    
+
     s -> (s0, s1), (s2, s3), (s4, s5), ...
 
     Taking advantage of the iter structure and zip's use of iters.
@@ -127,7 +125,8 @@ class SimuServer(object):
         this_name: Optional[str] = None
 
         if this_type:
-            self.add_check(this_type == self_type, f"ADD: Conflict in type: {this_type} == {self_type}, for: {this_uuid}")
+            msg = f"ADD: Conflict in type: {this_type} == {self_type}, for: {this_uuid}"
+            self.add_check(this_type == self_type, msg)
 
         if self_type == 'value':
             this_name = data.pop('name')
@@ -165,7 +164,8 @@ class SimuServer(object):
         this_name: Optional[str] = None
 
         if this_type:
-            self.add_check(this_type == self_type, f"UPDATE: Conflict in type: {this_type} == {self_type}, for: {this_uuid}")
+            msg = f"UPDATE: Conflict in type: {this_type} == {self_type}, for: {this_uuid}"
+            self.add_check(this_type == self_type, msg)
 
         if self_type == 'value':
             this_name = data.pop('name')
@@ -205,9 +205,8 @@ class SimuServer(object):
         mock_rw_socket,
         mock_ssl_socket
     ):
-
         self.killed.clear()
-    
+
         mock_ssl_socket.return_value.close.side_effect = lambda: self.killed.set()
 
         def socket_simu(*args, **kwargs) -> bytes:
@@ -401,7 +400,7 @@ class SimuServer(object):
                 data=str(the_uuid)
             )
 
-        return self._obj_generate(obj_uuid=the_uuid)        
+        return self._obj_generate(obj_uuid=the_uuid)
 
     def post_handle(
         self,

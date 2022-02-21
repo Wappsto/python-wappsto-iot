@@ -30,7 +30,7 @@ def subscribe(event_name: str, callback: Callable[[str, Any], None]) -> None:
     Args:
         event_name: The Unique name for the wanted event.
         callback: The function that need triggeret on the given event.
-            The function will be called with the 'event_name', and 'data', 
+            The function will be called with the 'event_name', and 'data',
             that the event generate.
     """
     obs_log.debug(f"New Subscriber: {event_name}, {callback}")
@@ -66,7 +66,7 @@ def unsubscribe(event_name: str, callback: Callable[[str, Any], None]) -> bool:
     Args:
         event_name: The Unique name for the wanted event.
         callback: The function that need triggeret on the given event.
-            The function will be called with the 'event_name', and 'data', 
+            The function will be called with the 'event_name', and 'data',
             that the event generate.
 
     Returns:

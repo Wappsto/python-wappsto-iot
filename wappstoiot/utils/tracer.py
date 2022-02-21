@@ -182,7 +182,7 @@ class Trace:
         followed with the sending of another trace-package, where the status 'ok'.
         If for some reason it was not possible to generate a reply (but there
         should have been), the trace package should then be send with the
-        'fail' status, on the realization this is the case. 
+        'fail' status, on the realization this is the case.
 
         Args:
             trace_id: A generated ID, that should be added to

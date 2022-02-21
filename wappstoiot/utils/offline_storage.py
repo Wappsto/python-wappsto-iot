@@ -25,10 +25,10 @@ class OfflineStorageFiles(OfflineStorage):
     """
     Timed over 1M runs.
 
-    In [5]: kk = write()               
-    Time used per run: 40_965.816834ns 
-                                       
-    In [7]: kk = read()                
+    In [5]: kk = write()
+    Time used per run: 40_965.816834ns
+
+    In [7]: kk = read()
     Time used per run: 173_536.595006ns
     """
     def __init__(self, location: Union[Path, str]):
@@ -55,7 +55,7 @@ class OfflineStorageFiles(OfflineStorage):
     def _sort_files(self, count) -> List[Path]:
         temp = self._files[:count]
         del self._files[:count]
-        return temp     
+        return temp
 
     @contextmanager
     def auto_save(self, data: str):

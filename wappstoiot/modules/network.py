@@ -3,9 +3,6 @@ import uuid
 
 from typing import Dict, Optional, Callable
 
-from pydantic import UUID4
-
-
 from ..service.template import ServiceClass
 # from .service.rest_api import RestAPI
 
