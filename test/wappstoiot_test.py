@@ -3,12 +3,17 @@
 import uuid
 import shutil
 import datetime
+
 from pathlib import Path
+from typing import Any
+from typing import Dict
 
 import pytest
 
 from utils.generators import client_certifi_gen
 from utils import package_smithing as smithing
+
+from utils.wappstoserver import SimuServer
 
 import wappstoiot
 
@@ -114,61 +119,82 @@ class TestConnection:
         url = "wappsto.com"
         self.generate_certificates(name=url, network_uuid=network_uuid)
 
-        cycle = smithing.get_network_create_cycle(
+        server = SimuServer(
             network_uuid=network_uuid,
-            changed=True
+            name=""
         )
-
-        smithing.socket_generator(
+        server.get_socket(
             mock_rw_socket=mock_rw_socket,
-            mock_ssl_socket=mock_ssl_socket,
-            cycle_list=cycle
+            mock_ssl_socket=mock_ssl_socket
         )
 
         wappstoiot.config(
             config_folder=Path(self.temp),
+            fast_send=True  # NOTE: parametrize options.
         )
-        network = wappstoiot.createNetwork()
-        wappstoiot.close()
+        try:
+            wappstoiot.createNetwork()
+        finally:
+            wappstoiot.close()
 
-        smithing.fail_check()
+        server.fail_check()
 
-    def test_device_creation(self, mock_rw_socket, mock_ssl_socket):
+    @pytest.mark.parametrize(
+        "device_exist",
+        [True, False]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    def test_device_creation(
+        self,
+        mock_rw_socket,
+        mock_ssl_socket,
+        device_exist: bool,
+        fast_send: bool,
+        differ: bool = False  # TODO:
+    ):
+        # TODO: try with filling out the extra data.
+        # TODO: Have to be able to test if it make POSTs that it should not do.
+        network_name = "TestNetwork"  # Test without this.
         network_uuid = uuid.uuid4()
         device_uuid = uuid.uuid4()
         device_name = "test"
         url = "wappsto.com"
         self.generate_certificates(name=url, network_uuid=network_uuid)
 
-        cycle = smithing.get_network_create_cycle(
+        server = SimuServer(
             network_uuid=network_uuid,
-            changed=True
+            name=network_name
         )
-        cycle2 = smithing.get_device_create_cycle(
-            network_uuid=network_uuid,
-            empty=True,  # NOTE: parametrize options?
-            changed=True,  # NOTE: parametrize options?
-            device_uuid=device_uuid,
-            device_name=device_name
-        )
-        cycle.extend(cycle2)
-
-        smithing.socket_generator(
+        server.get_socket(
             mock_rw_socket=mock_rw_socket,
-            mock_ssl_socket=mock_ssl_socket,
-            cycle_list=cycle
+            mock_ssl_socket=mock_ssl_socket
         )
+
+        if device_exist:
+            server.add_object(
+                this_uuid=device_uuid,
+                this_type='device',
+                this_name=device_name,
+                parent_uuid=network_uuid
+            )
 
         wappstoiot.config(
             config_folder=Path(self.temp),
+            fast_send=fast_send
         )
-        network = wappstoiot.createNetwork()
+        network = wappstoiot.createNetwork(name=network_name)
 
-        device = network.createDevice(name=device_name)
+        try:
+            network.createDevice(name=device_name)
+        finally:
+            wappstoiot.close()
 
-        wappstoiot.close()
+        server.fail_check()
 
-        smithing.fail_check()
+        assert len(server.data_in) == 3 if device_exist else 3
 
     @pytest.mark.parametrize(
         "permission",
@@ -183,55 +209,85 @@ class TestConnection:
         "value_type",
         [
             (wappstoiot.ValueType.NUMBER),
-            (wappstoiot.ValueType.STRING),
+            # (wappstoiot.ValueType.STRING),
             # (wappstoiot.ValueType.BLOB),
             # (wappstoiot.ValueType.XML),
         ]
     )
-    def test_value_creation(self, mock_rw_socket, mock_ssl_socket, value_type, permission):
+    @pytest.mark.parametrize(
+        "value_exist",
+        [True, False]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    def test_value_creation(
+        self,
+        mock_rw_socket,
+        mock_ssl_socket,
+        value_type: wappstoiot.ValueType,
+        permission: wappstoiot.PermissionType,
+        fast_send: bool,
+        value_exist: bool,
+    ):
         network_uuid = uuid.uuid4()
         device_uuid = uuid.uuid4()
         value_uuid = uuid.uuid4()
+        network_name = "TestNetwork"
         device_name = "test"
         value_name = "moeller"
+        extra_info: Dict[str, Any] = {
+            'type': value_type.value,
+            'permission': permission
+        }  # TODO: !!!!!!!
+        if value_type == wappstoiot.ValueType.NUMBER:
+            extra_info['number'] = {
+                'min': 0,
+                'max': 22,
+                'step': 1
+            }
+        elif value_type == wappstoiot.ValueType.STRING:
+            extra_info['string'] = {}
+        elif value_type == wappstoiot.ValueType.BLOB:
+            extra_info['blob'] = {}
+        elif value_type == wappstoiot.ValueType.XML:
+            extra_info['xlm'] = {}
+
         url = "wappsto.com"
         self.generate_certificates(name=url, network_uuid=network_uuid)
 
-        cycle = smithing.get_network_create_cycle(
+        server = SimuServer(
             network_uuid=network_uuid,
-            changed=True
+            name=network_name
         )
-        cycle2 = smithing.get_device_create_cycle(
-            network_uuid=network_uuid,
-            empty=True,
-            changed=True,
-            device_uuid=device_uuid,
-            device_name=device_name,
-            value_list=[value_uuid]
-        )
-        cycle.extend(cycle2)
-
-        cycle3 = smithing.get_value_create_cycle(
-            device_uuid=device_uuid,
-            empty=True,    # NOTE: parametrize options?
-            changed=True,  # NOTE: parametrize options?
-            value_type=value_type,  # Make this needed?
-            value_uuid=value_uuid,
-            value_name=value_name,
-            permission=permission
-        )
-        cycle.extend(cycle3)
-
-        smithing.socket_generator(
+        server.get_socket(
             mock_rw_socket=mock_rw_socket,
-            mock_ssl_socket=mock_ssl_socket,
-            cycle_list=cycle
+            mock_ssl_socket=mock_ssl_socket
         )
+
+        server.add_object(
+            this_uuid=device_uuid,
+            this_type='device',
+            this_name=device_name,
+            parent_uuid=network_uuid
+        )
+
+        if value_exist:
+            server.add_object(
+                this_uuid=value_uuid,
+                this_type='value',
+                this_name=value_name,
+                parent_uuid=device_uuid,
+                extra_info=extra_info
+            )
 
         wappstoiot.config(
             config_folder=Path(self.temp),
+            fast_send=fast_send
         )
-        network = wappstoiot.createNetwork()
+
+        network = wappstoiot.createNetwork(name=network_name)
 
         device = network.createDevice(name=device_name)
 
@@ -244,4 +300,61 @@ class TestConnection:
         finally:
             wappstoiot.close()
 
-        smithing.fail_check()
+        server.fail_check()
+
+        # TODO: Check if of the states was created!
+
+        # TODO: +everything after device
+        # assert len(server.data_in) == 3+2 if value_exist else 3+2 # + state creation
+
+        assert False
+
+    # @pytest.mark.parametrize(
+    #     "permission",
+    #     [
+    #         wappstoiot.PermissionType.READWRITE,
+    #         # wappstoiot.PermissionType.READ,
+    #         # wappstoiot.PermissionType.WRITE,
+    #         # wappstoiot.PermissionType.NONE
+    #     ]
+    # )
+    # @pytest.mark.parametrize(
+    #     "min,max,step",
+    #     [
+    #         (0, 1, 1),
+    #     ]
+    # )
+    # @pytest.mark.parametrize(
+    #     "value_exist",
+    #     [True, False]
+    # )
+    # @pytest.mark.parametrize(
+    #     "fast_send",
+    #     [True, False]
+    # )
+    # def test_number_value(
+    #     self,
+    #     mock_rw_socket,
+    #     mock_ssl_socket,
+    #     permission: wappstoiot.PermissionType,
+    #     fast_send: bool,
+    #     value_exist: bool,
+    #     min: int,
+    #     max: int,
+    #     step: int,
+    # ):
+    #     value_type = wappstoiot.ValueType.NUMBER
+    #     pass
+
+    # def test_report_changes(self):
+    #     pass
+
+    # def test_control_changes(self):
+    #     pass
+
+    # def test_examples(self, mock_rw_socket, mock_ssl_socket):
+    #     # TODO:!!!!!!!!
+    #     pass
+
+    # def test_replays_w_errors(self,):
+    #     pass
