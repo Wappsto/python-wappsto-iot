@@ -289,14 +289,24 @@ class Value:
         return subValue
 
     def __update_self(self, element):
+        old_type = type(element)
+
         new_dict = element.copy(update=self.element.dict(exclude_none=True))
         new_dict.meta = element.meta.copy(update=new_dict.meta)
-        new_dict.number = element.number.copy(update=new_dict.number)
-        if type(self.element) is type(element):
+
+        if old_type is WSchema.NumberValue:
+            new_dict.number = element.number.copy(update=new_dict.number)
+        elif old_type is WSchema.StringValue:
+            new_dict.string = element.string.copy(update=new_dict.string)
+        elif old_type is WSchema.BlobValue:
+            new_dict.blob = element.blob.copy(update=new_dict.blob)
+        elif old_type is WSchema.XmlValue:
+            new_dict.xml = element.xml.copy(update=new_dict.xml)
+
+        if type(self.element) is old_type:
             self.element = new_dict
         else:
             new_dict = new_dict.dict(exclude_none=True)
-            old_type = type(element)
             if old_type is WSchema.StringValue:
                 new_dict.pop('string')
             elif old_type is WSchema.NumberValue:
