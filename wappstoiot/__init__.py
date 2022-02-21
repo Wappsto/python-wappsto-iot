@@ -286,7 +286,7 @@ def _setup_offline_storage(
 # #############################################################################
 
 def createNetwork(
-    name: str = "TheNetwork",
+    name: str,
     description: str = "",
 ) -> Network:
     global __config_folder

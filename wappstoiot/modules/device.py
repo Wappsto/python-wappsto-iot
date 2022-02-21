@@ -396,6 +396,7 @@ class Device:
         self,
         name: str,
         value_type: ValueType,
+        description: Optional[str] = None,
         permission: PermissionType = PermissionType.READWRITE,
     ) -> Value:
         """

@@ -5,6 +5,11 @@ v0.6.2 (Feb 1 2022)
  * Now `pathlib.Path` can also be used for the config config_folder input.
 
 
+## Changed
+
+ * Naming policy are now enforced. Have to be set, and may only contain:
+    ALPHA/DIGIT/" . "/" ~ "/"(space)"/" - "/" _ "
+
 v0.6.1 (Feb 21 2022)
 ===============================================================================
 
