@@ -133,7 +133,7 @@ class TestConnection:
             fast_send=True  # NOTE: parametrize options.
         )
         try:
-            wappstoiot.createNetwork()
+            wappstoiot.createNetwork("TestNetwork")
         finally:
             wappstoiot.close()
 
@@ -209,9 +209,9 @@ class TestConnection:
         "value_type",
         [
             (wappstoiot.ValueType.NUMBER),
-            # (wappstoiot.ValueType.STRING),
-            # (wappstoiot.ValueType.BLOB),
-            # (wappstoiot.ValueType.XML),
+            (wappstoiot.ValueType.STRING),
+            (wappstoiot.ValueType.BLOB),
+            (wappstoiot.ValueType.XML),
         ]
     )
     @pytest.mark.parametrize(
@@ -260,7 +260,7 @@ class TestConnection:
                 'encoding': "base64"
             }
         elif value_type == wappstoiot.ValueType.XML:
-            extra_info['xlm'] = {
+            extra_info['xml'] = {
                 'xsd': "Something!",
                 'namespace': "test_value_creation"
             }
