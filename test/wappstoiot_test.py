@@ -15,6 +15,8 @@ from utils import package_smithing as smithing
 
 from utils.wappstoserver import SimuServer
 
+import rich
+
 import wappstoiot
 
 # import logging
@@ -67,25 +69,25 @@ class TestConnection:
         return socket
 
     @classmethod
-    def setup_class(self):
+    def setup_class(cls):
         """
         Sets up the class.
 
         Sets locations to be used in test.
 
         """
-        shutil.rmtree(self.temp, ignore_errors=True)
-        self.temp.mkdir(exist_ok=True, parents=True)
+        shutil.rmtree(cls.temp, ignore_errors=True)
+        cls.temp.mkdir(exist_ok=True, parents=True)
 
     @classmethod
-    def cleanup_class(self):
+    def teardown_class(cls):
         """
         Sets up the class.
 
         Sets locations to be used in test.
 
         """
-        shutil.rmtree(self.temp, ignore_errors=True)
+        shutil.rmtree(cls.temp, ignore_errors=True)
 
     @pytest.mark.parametrize(
         "url, port",
@@ -200,9 +202,9 @@ class TestConnection:
         "permission",
         [
             wappstoiot.PermissionType.READWRITE,
-            # wappstoiot.PermissionType.READ,
-            # wappstoiot.PermissionType.WRITE,
-            # wappstoiot.PermissionType.NONE
+            wappstoiot.PermissionType.READ,
+            wappstoiot.PermissionType.WRITE,
+            wappstoiot.PermissionType.NONE
         ]
     )
     @pytest.mark.parametrize(
@@ -216,11 +218,17 @@ class TestConnection:
     )
     @pytest.mark.parametrize(
         "value_exist",
-        [True, False]
+        [
+            True,
+            False
+        ]
     )
     @pytest.mark.parametrize(
         "fast_send",
-        [True, False]
+        [
+            True,
+            False
+        ]
     )
     def test_value_creation(
         self,
@@ -233,7 +241,8 @@ class TestConnection:
     ):
         network_uuid = uuid.uuid4()
         device_uuid = uuid.uuid4()
-        value_uuid = uuid.uuid4()
+        if value_exist:
+            value_uuid = uuid.uuid4()
         network_name = "TestNetwork"
         device_name = "test"
         value_name = "moeller"
@@ -245,18 +254,18 @@ class TestConnection:
         # TODO: Should just be MVP.
         if value_type == wappstoiot.ValueType.NUMBER:
             extra_info['number'] = {
-                'min': 0,
-                'max': 22,
-                'step': 1
+                'min': -128,
+                'max': 128,
+                'step': 0.1
             }
         elif value_type == wappstoiot.ValueType.STRING:
             extra_info['string'] = {
-                'max': 100,
+                'max': 64,
                 'encoding': "utf-8"
             }
         elif value_type == wappstoiot.ValueType.BLOB:
             extra_info['blob'] = {
-                'max': 100,
+                'max': 280,
                 'encoding': "base64"
             }
         elif value_type == wappstoiot.ValueType.XML:
@@ -285,6 +294,7 @@ class TestConnection:
         )
 
         if value_exist:
+            # TODO: Test with Children & extra_info Permission set, & w/ conflict. (RW + 1 child)
             server.add_object(
                 this_uuid=value_uuid,
                 this_type='value',
@@ -292,6 +302,7 @@ class TestConnection:
                 parent_uuid=device_uuid,
                 extra_info=extra_info
             )
+            # TODO: Add states.
 
         wappstoiot.config(
             config_folder=Path(self.temp),
@@ -303,7 +314,7 @@ class TestConnection:
         device = network.createDevice(name=device_name)
 
         try:
-            device.createValue(
+            value = device.createValue(
                 name=value_name,
                 permission=permission,
                 value_type=value_type
@@ -313,19 +324,36 @@ class TestConnection:
 
         server.fail_check()
 
-        # TODO: Check if of the states was created!
+        state_count = len(server.objects.get(value.uuid, {}).children)
 
-        state_count = len(server.objects.get(device_uuid, {}).children)
-
-        if permission in [wappstoiot.PermissionType.READ, wappstoiot.PermissionType.WRITE]:
-            assert state_count == 1, "The number of states should be 1."
-        elif permission in [wappstoiot.PermissionType.READWRITE, wappstoiot.PermissionType.WRITEREAD]:
+        if permission in [wappstoiot.PermissionType.READWRITE, wappstoiot.PermissionType.WRITEREAD]:
             assert state_count == 2, "The number of states should be 2, when it is a read/write."
+            # NOTE: if value_exist will be 7 after the just-in-time retrieve.
+            msg = f"Package received count Failed. should be 8, was: {len(server.data_in)}"
+            assert len(server.data_in) == 8 if value_exist else 8, msg
 
-        # TODO: +everything after device
-        # assert len(server.data_in) == 3+2 if value_exist else 3+2 # + state creation
+        elif permission in [wappstoiot.PermissionType.READ, wappstoiot.PermissionType.WRITE]:
+            assert state_count == 1, "The number of states should be 1."
+            msg = f"Package received count Failed. should be 7, was: {len(server.data_in)}"
+            assert len(server.data_in) == 7 if value_exist else 7, msg
+
+        elif permission == wappstoiot.PermissionType.NONE:
+            assert state_count == 0, "No state for a virtual Value!"
+            msg = f"Package received count Failed. should be 6, was: {len(server.data_in)}"
+            assert len(server.data_in) == 6 if value_exist else 6, msg
 
         # assert False
+
+    # def test_custom_value_creation(
+    #     self,
+    #     mock_rw_socket,
+    #     mock_ssl_socket,
+    #     value_type: wappstoiot.ValueType,
+    #     permission: wappstoiot.PermissionType,
+    #     fast_send: bool,
+    #     value_exist: bool,
+    # ):
+    #     pass
 
     # @pytest.mark.parametrize(
     #     "permission",
@@ -368,6 +396,24 @@ class TestConnection:
     #     pass
 
     # def test_control_changes(self):
+    #     pass
+
+    # def test_send_delete_value(self):
+    #     pass
+
+    # def test_send_delete_device(self):
+    #     pass
+
+    # def test_send_delete_network(self):
+    #     pass
+
+    # def test_receive_delete_value(self):
+    #     pass
+
+    # def test_receive_delete_device(self):
+    #     pass
+
+    # def test_receive_delete_network(self):
     #     pass
 
     # def test_examples(self, mock_rw_socket, mock_ssl_socket):
