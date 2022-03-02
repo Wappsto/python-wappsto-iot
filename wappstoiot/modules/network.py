@@ -247,6 +247,8 @@ class Network(object):
         product: Optional[str] = None,
         version: Optional[str] = None,
         serial: Optional[str] = None,
+        protocol: Optional[str] = None,
+        communication: Optional[str] = None,
         description: Optional[str] = None,
     ) -> Device:
         """

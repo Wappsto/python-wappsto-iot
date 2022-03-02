@@ -58,6 +58,8 @@ class Device:
         manufacturer: Optional[str] = None,
         product: Optional[str] = None,
         version: Optional[str] = None,
+        protocol: Optional[str] = None,
+        communication: Optional[str] = None,
         serial: Optional[str] = None,
         description: Optional[str] = None,
         # protocol
@@ -88,6 +90,8 @@ class Device:
             version=version,
             serial=serial,
             description=description,
+            protocol=protocol,
+            communication=communication,
             meta=WSchema.DeviceMeta(
                 version=WSchema.WappstoVersion.V2_0,
                 type=WSchema.WappstoMetaType.DEVICE,
@@ -275,6 +279,7 @@ class Device:
     def createNumberValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
         min: Union[int, float],
@@ -316,10 +321,11 @@ class Device:
     def createStringValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
         max: Union[int, float],
-        encoding: Optional[str],
+        encoding: Optional[str] = None,
         description: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
@@ -351,10 +357,11 @@ class Device:
     def createBlobValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
         max: Union[int, float],
-        encoding: Optional[str],
+        encoding: Optional[str] = None,
         description: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
@@ -386,10 +393,11 @@ class Device:
     def createXmlValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
-        xsd: Optional[str],
-        namespace: Optional[str],
+        xsd: Optional[str] = None,
+        namespace: Optional[str] = None,
         description: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
@@ -421,9 +429,9 @@ class Device:
     def createValue(
         self,
         name: str,
+        permission: PermissionType,
         value_template: ValueTemplate,
         description: Optional[str] = None,
-        permission: PermissionType = PermissionType.READWRITE,
     ) -> Value:
         """
         Create a Wappsto Value.
