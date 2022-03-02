@@ -11,9 +11,10 @@ from typing import Dict
 import pytest
 
 from utils.generators import client_certifi_gen
-from utils import package_smithing as smithing
+from utils import pkg_smithing as smithing
 
 from utils.wappstoserver import SimuServer
+from utils.server_utils import generate_value_extra_info
 
 import rich
 
@@ -100,7 +101,7 @@ class TestConnection:
     )
     def test_connection(self, mock_rw_socket, mock_ssl_socket, url: str, port: int):
         self.generate_certificates(name=url, network_uuid=uuid.uuid4())
-        mock_ssl_socket.return_value.recv.return_value = smithing.get_success_pkg(
+        mock_ssl_socket.return_value.recv.return_value = smithing.success_pkg(
             pkg_id="lkjghtrfty",
             timestamp=datetime.datetime.utcnow(),
         )
@@ -239,6 +240,7 @@ class TestConnection:
         fast_send: bool,
         value_exist: bool,
     ):
+        # Should also be able to set what existed of states before this creation.
         network_uuid = uuid.uuid4()
         device_uuid = uuid.uuid4()
         if value_exist:
@@ -246,33 +248,10 @@ class TestConnection:
         network_name = "TestNetwork"
         device_name = "test"
         value_name = "moeller"
-        extra_info: Dict[str, Any] = {
-            'type': value_template.value,
-            'permission': permission
-        }
-
-        # TODO: Should just be MVP.
-        if value_template == wappstoiot.ValueTemplate.NUMBER:
-            extra_info['number'] = {
-                'min': -128,
-                'max': 128,
-                'step': 0.1
-            }
-        elif value_template == wappstoiot.ValueTemplate.STRING:
-            extra_info['string'] = {
-                'max': 64,
-                'encoding': "utf-8"
-            }
-        elif value_template == wappstoiot.ValueTemplate.BLOB:
-            extra_info['blob'] = {
-                'max': 280,
-                'encoding': "base64"
-            }
-        elif value_template == wappstoiot.ValueTemplate.XML:
-            extra_info['xml'] = {
-                'xsd': "Something!",
-                'namespace': "test_value_creation"
-            }
+        extra_info: Dict[str, Any] = generate_value_extra_info(
+            value_template=value_template,
+            permission=permission
+        )
 
         url = "wappsto.com"
         self.generate_certificates(name=url, network_uuid=network_uuid)
@@ -326,21 +305,22 @@ class TestConnection:
 
         state_count = len(server.objects.get(value.uuid, {}).children)
 
+        expected = 5 if value_exist else 5
+
         if permission in [wappstoiot.PermissionType.READWRITE, wappstoiot.PermissionType.WRITEREAD]:
             assert state_count == 2, "The number of states should be 2, when it is a read/write."
-            # NOTE: if value_exist will be 7 after the just-in-time retrieve.
-            msg = f"Package received count Failed. should be 8, was: {len(server.data_in)}"
-            assert len(server.data_in) == 8 if value_exist else 8, msg
+            # NOTE: if value_exist will be one less after the just-in-time retrieve.
+            expected += 2
 
         elif permission in [wappstoiot.PermissionType.READ, wappstoiot.PermissionType.WRITE]:
             assert state_count == 1, "The number of states should be 1."
-            msg = f"Package received count Failed. should be 7, was: {len(server.data_in)}"
-            assert len(server.data_in) == 7 if value_exist else 7, msg
+            expected += 1
 
         elif permission == wappstoiot.PermissionType.NONE:
             assert state_count == 0, "No state for a virtual Value!"
-            msg = f"Package received count Failed. should be 6, was: {len(server.data_in)}"
-            assert len(server.data_in) == 6 if value_exist else 6, msg
+
+        msg = f"Package received count Failed. should be {expected}, was: {len(server.data_in)}"
+        assert len(server.data_in) == expected, msg
 
         # assert False
 
@@ -348,7 +328,7 @@ class TestConnection:
     #     self,
     #     mock_rw_socket,
     #     mock_ssl_socket,
-    #     value_type: wappstoiot.ValueTemplate,
+    #     value_template: wappstoiot.ValueTemplate,
     #     permission: wappstoiot.PermissionType,
     #     fast_send: bool,
     #     value_exist: bool,
