@@ -351,7 +351,7 @@ class Value:
         state_uuid = self.element.state[1]
         state_obj = self.connection.get_state(uuid=state_uuid)
         self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
-        self.children_name_mapping[state_obj.name] = state_uuid
+        self.children_name_mapping[state_obj.type.name] = state_uuid
 
         if state_obj.type == WSchema.StateType.REPORT:
             self.report_state = state_obj
