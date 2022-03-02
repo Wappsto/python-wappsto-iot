@@ -208,12 +208,12 @@ class TestConnection:
         ]
     )
     @pytest.mark.parametrize(
-        "value_type",
+        "value_template",
         [
-            (wappstoiot.ValueType.NUMBER),
-            (wappstoiot.ValueType.STRING),
-            (wappstoiot.ValueType.BLOB),
-            (wappstoiot.ValueType.XML),
+            (wappstoiot.ValueTemplate.NUMBER),
+            (wappstoiot.ValueTemplate.STRING),
+            (wappstoiot.ValueTemplate.BLOB),
+            (wappstoiot.ValueTemplate.XML),
         ]
     )
     @pytest.mark.parametrize(
@@ -234,7 +234,7 @@ class TestConnection:
         self,
         mock_rw_socket,
         mock_ssl_socket,
-        value_type: wappstoiot.ValueType,
+        value_template: wappstoiot.ValueTemplate,
         permission: wappstoiot.PermissionType,
         fast_send: bool,
         value_exist: bool,
@@ -247,28 +247,28 @@ class TestConnection:
         device_name = "test"
         value_name = "moeller"
         extra_info: Dict[str, Any] = {
-            'type': value_type.value,
+            'type': value_template.value,
             'permission': permission
         }
 
         # TODO: Should just be MVP.
-        if value_type == wappstoiot.ValueType.NUMBER:
+        if value_template == wappstoiot.ValueTemplate.NUMBER:
             extra_info['number'] = {
                 'min': -128,
                 'max': 128,
                 'step': 0.1
             }
-        elif value_type == wappstoiot.ValueType.STRING:
+        elif value_template == wappstoiot.ValueTemplate.STRING:
             extra_info['string'] = {
                 'max': 64,
                 'encoding': "utf-8"
             }
-        elif value_type == wappstoiot.ValueType.BLOB:
+        elif value_template == wappstoiot.ValueTemplate.BLOB:
             extra_info['blob'] = {
                 'max': 280,
                 'encoding': "base64"
             }
-        elif value_type == wappstoiot.ValueType.XML:
+        elif value_template == wappstoiot.ValueTemplate.XML:
             extra_info['xml'] = {
                 'xsd': "Something!",
                 'namespace': "test_value_creation"
@@ -317,7 +317,7 @@ class TestConnection:
             value = device.createValue(
                 name=value_name,
                 permission=permission,
-                value_type=value_type
+                value_template=value_template
             )
         finally:
             wappstoiot.close()
@@ -348,7 +348,7 @@ class TestConnection:
     #     self,
     #     mock_rw_socket,
     #     mock_ssl_socket,
-    #     value_type: wappstoiot.ValueType,
+    #     value_type: wappstoiot.ValueTemplate,
     #     permission: wappstoiot.PermissionType,
     #     fast_send: bool,
     #     value_exist: bool,
@@ -389,7 +389,7 @@ class TestConnection:
     #     max: int,
     #     step: int,
     # ):
-    #     value_type = wappstoiot.ValueType.NUMBER
+    #     value_template = wappstoiot.ValueTemplate.NUMBER
     #     pass
 
     # def test_report_changes(self):

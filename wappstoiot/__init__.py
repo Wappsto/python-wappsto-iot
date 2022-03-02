@@ -34,7 +34,7 @@ from .modules.value import Value
 # from .modules.value import Delta  # Note: Not ready yet!
 # from .modules.value import Period  # Note: Not ready yet!
 from .modules.value import PermissionType
-from .modules.template import ValueType
+from .modules.template import ValueTemplate
 
 from .service import template as service
 
@@ -67,7 +67,7 @@ __all__ = [
     'OfflineStorage',
     'service',
     'connection',
-    'ValueType',
+    'ValueTemplate',
     'PermissionType'
 ]
 

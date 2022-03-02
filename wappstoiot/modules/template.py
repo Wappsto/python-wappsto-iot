@@ -6,9 +6,6 @@ from typing import Dict
 from pydantic import BaseModel
 
 
-__version__ = "0.0.1"
-
-
 # #############################################################################
 #                             Value Settings Schema
 # #############################################################################
@@ -44,7 +41,7 @@ class ValueSettinsSchema(BaseModel):
     unit: Optional[str]  # Number only
 
 
-class ValueType(str, Enum):
+class ValueTemplate(str, Enum):
     """
     Predefined ValueTypes.
 
@@ -52,6 +49,8 @@ class ValueType(str, Enum):
     value parameters set, which include BaseType, name,
     permission, range, step and the unit.
     """
+
+    __version__ = "0.0.1"
 
     ANGLE = "ANGLE"
     BLOB = "BLOB"
@@ -88,9 +87,9 @@ class ValueType(str, Enum):
     XML = "XML"
 
 
-valueSettings: Dict[ValueType, ValueSettinsSchema] = {
+valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
 
-    ValueType.BOOLEAN_ONOFF: ValueSettinsSchema(
+    ValueTemplate.BOOLEAN_ONOFF: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="boolean",
         mapping={'0': 'off', '1': 'on'},
@@ -102,7 +101,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit=None,
         si_conversion=None,
     ),
-    ValueType.VOLTAGE_V: ValueSettinsSchema(
+    ValueTemplate.VOLTAGE_V: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="voltage",
         mapping=None,
@@ -114,7 +113,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="V",
         si_conversion=None,
     ),
-    ValueType.POWER_WATT: ValueSettinsSchema(
+    ValueTemplate.POWER_WATT: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="power",
         mapping=None,
@@ -126,7 +125,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="W",
         si_conversion=None,
     ),
-    ValueType.POWER_KW: ValueSettinsSchema(
+    ValueTemplate.POWER_KW: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="power",
         mapping=None,
@@ -138,7 +137,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="kW",
         si_conversion="[W] = 1000 * [kW]",
     ),
-    ValueType.ENERGY_WH: ValueSettinsSchema(
+    ValueTemplate.ENERGY_WH: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="energy",
         mapping=None,
@@ -150,7 +149,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="Wh",
         si_conversion=None,
     ),
-    ValueType.ENERGY_KWH: ValueSettinsSchema(
+    ValueTemplate.ENERGY_KWH: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="energy",
         mapping=None,
@@ -162,7 +161,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="kWh",
         si_conversion="[J] = 3600000 * [kWh]  ",
     ),
-    ValueType.TEMPERATURE_CELSIUS: ValueSettinsSchema(
+    ValueTemplate.TEMPERATURE_CELSIUS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="temperature",
         mapping=None,
@@ -174,7 +173,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°C",
         si_conversion="[K] = [°C] + 273.15",
     ),
-    ValueType.TEMPERATURE_FAHRENHEIT: ValueSettinsSchema(
+    ValueTemplate.TEMPERATURE_FAHRENHEIT: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="temperature",
         mapping=None,
@@ -186,7 +185,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°F",
         si_conversion="[K] = ([°F] + 459.67) × 5/9 ",
     ),
-    ValueType.TEMPERATURE_KELVIN: ValueSettinsSchema(
+    ValueTemplate.TEMPERATURE_KELVIN: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="temperature",
         mapping=None,
@@ -198,7 +197,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="K",
         si_conversion=None,
     ),
-    ValueType.ANGLE: ValueSettinsSchema(
+    ValueTemplate.ANGLE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="angle",
         mapping=None,
@@ -210,7 +209,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°",
         si_conversion="[rad] = (180/pi) * [°]",
     ),
-    ValueType.PERCENTAGE: ValueSettinsSchema(
+    ValueTemplate.PERCENTAGE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="percentage",
         mapping=None,
@@ -222,7 +221,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="%",
         si_conversion="[1] = 100 * [%]",
     ),
-    ValueType.SPEED_MS: ValueSettinsSchema(
+    ValueTemplate.SPEED_MS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="speed",
         mapping=None,
@@ -234,7 +233,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="m/s",
         si_conversion=None,
     ),
-    ValueType.PRECIPITATION_MM: ValueSettinsSchema(
+    ValueTemplate.PRECIPITATION_MM: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="precipitation",
         mapping=None,
@@ -246,7 +245,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="mm",
         si_conversion=None,
     ),
-    ValueType.HUMIDITY: ValueSettinsSchema(
+    ValueTemplate.HUMIDITY: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="relative_humidity",
         mapping=None,
@@ -258,7 +257,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="%",
         si_conversion="[1] = 100 * [%]",
     ),
-    ValueType.CO2: ValueSettinsSchema(
+    ValueTemplate.CO2: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="concentration",
         mapping=None,
@@ -270,7 +269,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="ppm",
         si_conversion="1000000 * [ppm]",
     ),
-    ValueType.PRESSURE_HPA: ValueSettinsSchema(
+    ValueTemplate.PRESSURE_HPA: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="pressure",
         mapping=None,
@@ -282,13 +281,13 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="hPa",
         si_conversion="[Pa] = [hPa]/100",
     ),
-    ValueType.TIMESTAMP: ValueSettinsSchema(
+    ValueTemplate.TIMESTAMP: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="timestamp",
         max="27",
         encoding="ISO 8601",
     ),
-    ValueType.LUMINOUSITY_LX: ValueSettinsSchema(
+    ValueTemplate.LUMINOUSITY_LX: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="luminousity",
         mapping=None,
@@ -300,19 +299,19 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="lx",
         si_conversion=None,
     ),
-    ValueType.COLOR_HEX: ValueSettinsSchema(
+    ValueTemplate.COLOR_HEX: ValueSettinsSchema(
         value_type=ValueBaseType.BLOB,
         type="color",
         max="6",
         encoding="hex",
     ),
-    ValueType.COLOR_INT: ValueSettinsSchema(
+    ValueTemplate.COLOR_INT: ValueSettinsSchema(
         value_type=ValueBaseType.BLOB,
         type="color",
         max="8",
         encoding="integer",
     ),
-    ValueType.COLOR_TEMPERATURE: ValueSettinsSchema(
+    ValueTemplate.COLOR_TEMPERATURE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="color_temperature",
         mapping=None,
@@ -324,13 +323,13 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="K",
         si_conversion=None,
     ),
-    ValueType.IMAGE_JPG: ValueSettinsSchema(
+    ValueTemplate.IMAGE_JPG: ValueSettinsSchema(
         value_type=ValueBaseType.BLOB,
         type="image",
         max="255",
         encoding="base64",
     ),
-    ValueType.LATITUDE: ValueSettinsSchema(
+    ValueTemplate.LATITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="latitude",
         mapping=None,
@@ -342,7 +341,7 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°N",
         si_conversion=None,
     ),
-    ValueType.LONGITUDE: ValueSettinsSchema(
+    ValueTemplate.LONGITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="longitude",
         mapping=None,
@@ -354,37 +353,37 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit="°E",
         si_conversion=None,
     ),
-    ValueType.STREET: ValueSettinsSchema(
+    ValueTemplate.STREET: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="street",
         max="100",
         encoding="",
     ),
-    ValueType.CITY: ValueSettinsSchema(
+    ValueTemplate.CITY: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="city",
         max="100",
         encoding="",
     ),
-    ValueType.POSTCODE: ValueSettinsSchema(
+    ValueTemplate.POSTCODE: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="postcode",
         max="10",
         encoding="",
     ),
-    ValueType.COUNTRY: ValueSettinsSchema(
+    ValueTemplate.COUNTRY: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="country",
         max="20",
         encoding="",
     ),
-    ValueType.COUNTRY_CODE: ValueSettinsSchema(
+    ValueTemplate.COUNTRY_CODE: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="country_code",
         max="2",
         encoding="ISO 3166-1 Alpha-2",
     ),
-    ValueType.NUMBER: ValueSettinsSchema(
+    ValueTemplate.NUMBER: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="number",
         mapping=None,
@@ -396,19 +395,19 @@ valueSettings: Dict[ValueType, ValueSettinsSchema] = {
         unit=None,
         si_conversion=None,
     ),
-    ValueType.STRING: ValueSettinsSchema(
+    ValueTemplate.STRING: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="string",
         max="64",
         encoding="utf-8",
     ),
-    ValueType.BLOB: ValueSettinsSchema(
+    ValueTemplate.BLOB: ValueSettinsSchema(
         value_type=ValueBaseType.BLOB,
         type="blob",
         max="280",
         encoding="base64",
     ),
-    ValueType.XML: ValueSettinsSchema(
+    ValueTemplate.XML: ValueSettinsSchema(
         value_type=ValueBaseType.XML,
         type="xml",
         xsd="",

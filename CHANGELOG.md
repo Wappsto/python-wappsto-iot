@@ -1,4 +1,4 @@
-v0.6.2 (Feb 1 2022)
+v0.6.2 (Mar 1 2022)
 ===============================================================================
 
 ## Fixed
@@ -10,6 +10,8 @@ v0.6.2 (Feb 1 2022)
 
  * Naming policy are now enforced. Have to be set, and may only contain:
     ALPHA/DIGIT/" . "/" ~ "/"(space)"/" - "/" _ "
+ * Breaking Change! - Changes the 'ValueTypes' to 'ValueTemplates', which are a more meaningful name. The createValue input 'value_type', have also change to 'value_template'
+
 
 v0.6.1 (Feb 21 2022)
 ===============================================================================

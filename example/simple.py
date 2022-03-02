@@ -9,5 +9,5 @@ import wappstoiot
 
 network = wappstoiot.createNetwork("TheNetwork")
 device = network.createDevice("TheDevice")
-value = device.createValue("TheValue")
+value = device.createValue("TheValue", value_template=wappstoiot.ValueTemplate.STRING)
 value.report(5)

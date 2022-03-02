@@ -39,7 +39,7 @@ def main():
     value = device.createValue(
         "StringInfo",
         permission=wappstoiot.PermissionType.READWRITE,
-        value_type=wappstoiot.ValueType.STRING,
+        value_template=wappstoiot.ValueTemplate.STRING,
     )
 
     def valueRefresh(obj):

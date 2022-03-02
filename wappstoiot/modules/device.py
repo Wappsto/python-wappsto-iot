@@ -16,7 +16,7 @@ from ..schema.base_schema import PermissionType
 
 from .value import Value
 from .template import valueSettings
-from .template import ValueType
+from .template import ValueTemplate
 from .template import ValueBaseType
 
 from ..utils import name_check
@@ -281,11 +281,11 @@ class Device:
         max: Union[int, float],
         step: Union[int, float],
         unit: str,
-        description: Optional[str],
-        si_conversion: Optional[str],
+        description: Optional[str] = None,
+        si_conversion: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
-        mapping: Optional[bool] = None,
+        mapping: Optional[Dict[str, str]] = None,
         meaningful_zero: Optional[bool] = None,
         ordered_mapping: Optional[bool] = None,
     ) -> Value:
@@ -320,9 +320,9 @@ class Device:
         type: str,
         max: Union[int, float],
         encoding: Optional[str],
-        description: Optional[str],
-        period: Optional[int],  # in Sec
-        delta: Optional[Union[int, float]],
+        description: Optional[str] = None,
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
@@ -355,9 +355,9 @@ class Device:
         type: str,
         max: Union[int, float],
         encoding: Optional[str],
-        description: Optional[str],
-        period: Optional[int],  # in Sec
-        delta: Optional[Union[int, float]],
+        description: Optional[str] = None,
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
@@ -390,9 +390,9 @@ class Device:
         type: str,
         xsd: Optional[str],
         namespace: Optional[str],
-        description: Optional[str],
-        period: Optional[int],  # in Sec
-        delta: Optional[Union[int, float]],
+        description: Optional[str] = None,
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
@@ -421,7 +421,7 @@ class Device:
     def createValue(
         self,
         name: str,
-        value_type: ValueType,
+        value_template: ValueTemplate,
         description: Optional[str] = None,
         permission: PermissionType = PermissionType.READWRITE,
     ) -> Value:
@@ -452,7 +452,7 @@ class Device:
             name=name,
             value_uuid=value_uuid,
             permission=permission,
-            **valueSettings[value_type].dict()
+            **valueSettings[value_template].dict()
         )
 
         self.__add_value(value_obj, name)

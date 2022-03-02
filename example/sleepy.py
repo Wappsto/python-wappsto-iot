@@ -51,19 +51,19 @@ def main():
     latitude = gps.createValue(
         "latitude",
         permission=wappstoiot.PermissionType.READ,
-        value_type=wappstoiot.ValueType.LATITUDE,
+        value_template=wappstoiot.ValueTemplate.LATITUDE,
     )
 
     longitude = gps.createValue(
         "longitude",
         permission=wappstoiot.PermissionType.READ,
-        value_type=wappstoiot.ValueType.LONGITUDE,
+        value_template=wappstoiot.ValueTemplate.LONGITUDE,
     )
 
     sensors = network.createDevice("sensors")
     temperature = sensors.createValue(
         "temperature",
-        value_type=wappstoiot.ValueType.TEMPERATURE,
+        value_template=wappstoiot.ValueTemplate.TEMPERATURE,
         permission=wappstoiot.PermissionType.READWRITE,
         # UNSURE: Should we be able to set the init value for Control & Report?
     )

@@ -26,7 +26,7 @@ def main():
     value = device.createValue(
         name="Moeller",
         permission=wappstoiot.PermissionType.READWRITE,
-        value_type=wappstoiot.ValueType.STRING
+        value_template=wappstoiot.ValueTemplate.STRING
     )
 
     value.onControl(

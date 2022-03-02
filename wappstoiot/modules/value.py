@@ -113,8 +113,8 @@ class Value:
 
         self.connection: ServiceClass = parent.connection
 
-        subValue = self.__parseValueType(
-                ValueType=value_type,
+        subValue = self.__parseValueTemplate(
+                ValueBaseType=value_type,
                 encoding=encoding,
                 mapping=mapping,
                 max_range=max,
@@ -234,9 +234,9 @@ class Value:
     #   Helper methods
     # -------------------------------------------------------------------------
 
-    def __parseValueType(
+    def __parseValueTemplate(
         self,
-        ValueType,
+        ValueBaseType,
         encoding,
         mapping,
         max_range,
@@ -250,7 +250,7 @@ class Value:
         xsd,
     ):
 
-        if ValueType == ValueBaseType.NUMBER:
+        if ValueBaseType == ValueBaseType.NUMBER:
             subValue = {
                 "number": WSchema.Number(
                     min=min_range,
@@ -263,21 +263,21 @@ class Value:
                     unit=unit,
                 )
             }
-        elif ValueType == ValueBaseType.XML:
+        elif ValueBaseType == ValueBaseType.XML:
             subValue = {
                 "xml": WSchema.Xml(
                     xsd=xsd,
                     namespace=namespace,
                 )
             }
-        elif ValueType == ValueBaseType.STRING:
+        elif ValueBaseType == ValueBaseType.STRING:
             subValue = {
                 "string": WSchema.String(
                     max=max_range,
                     encoding=encoding
                 )
             }
-        elif ValueType == ValueBaseType.BLOB:
+        elif ValueBaseType == ValueBaseType.BLOB:
             subValue = {
                 "blob": WSchema.Blob(
                     max=max_range,
