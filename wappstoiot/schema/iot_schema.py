@@ -4,6 +4,7 @@ import datetime
 from enum import Enum
 from itertools import zip_longest
 
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -94,6 +95,10 @@ class JsonMeta(BaseModel):
 
 class JsonReply(BaseModel):
     value: Optional[Union[
+        List[Device],
+        List[Network],
+        List[State],
+        List[ValueUnion],
         Device,
         Network,
         State,

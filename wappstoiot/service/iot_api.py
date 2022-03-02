@@ -517,10 +517,12 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
-    def get_device_where(self, network_uuid: UUID, **kwargs: str) -> Optional[UUID]:
+    def get_device_where(self, network_uuid: UUID, **kwargs: Union[str, int]) -> Optional[UUID]:
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/network/{network_uuid}/device?this_{key}=={value}"
+        if kwargs.get('expand') is not None:
+            url += f"&expand={kwargs['expand']}"
         data: IdList = self._reply_send(
             data=None,
             url=url,
@@ -575,10 +577,12 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
-    def get_value_where(self, device_uuid: UUID, **kwargs: str) -> Optional[UUID]:
+    def get_value_where(self, device_uuid: UUID, **kwargs: Union[str, int]) -> Optional[UUID]:
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/device/{device_uuid}/value?this_{key}=={value}"
+        if kwargs.get('expand') is not None:
+            url += f"&expand={kwargs['expand']}"
         data: IdList = self._reply_send(
             data=None,
             url=url,

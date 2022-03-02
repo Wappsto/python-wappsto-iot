@@ -269,9 +269,11 @@ class Network(object):
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
+        # TODO: Move into Device!
         device_uuid = self.connection.get_device_where(
             network_uuid=self.uuid,
-            name=name
+            name=name,
+            # expand=0
         )
 
         device_obj = Device(
