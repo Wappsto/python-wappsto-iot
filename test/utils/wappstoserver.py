@@ -18,6 +18,8 @@ from pydantic import Field
 
 from utils import pkg_smithing
 
+import rich
+
 
 class ErrorException(Exception):
     def __init__(self, code, msg, data):
@@ -381,13 +383,23 @@ class SimuServer(object):
         data: dict,
         url_obj: Tuple[UrlObject, List[Parameters]],
         fast_send=False
-    ) -> Union[dict, bool]:
+    ) -> Union[dict, bool, List[dict]]:
 
         the_uuid = url_obj[0].self_uuid
         the_type = url_obj[0].object_type
 
+        # rich.print(url_obj[1])
+
         if url_obj[1] or not the_uuid:
-            return self._search_obj(data=data, url_obj=url_obj)
+            obj_type, obj_list = self._search_obj(data=data, url_obj=url_obj)
+            for param in url_obj[1]:
+                if param.left.lower() == "expand":
+                    return [self._obj_generate(obj_uuid=the_uuid) for the_uuid in obj_list]
+
+            return pkg_smithing.idlist_pkg(
+                obj_type=obj_type,
+                obj_list=obj_list
+            )
 
         if the_type == "network":
             the_uuid = self.network_uuid
@@ -493,7 +505,8 @@ class SimuServer(object):
         self,
         data: dict,
         url_obj: Tuple[UrlObject, List[Parameters]]
-    ) -> dict:
+    ) -> Tuple[str, List[uuid.UUID]]:
+        # ) -> dict:
         parent = url_obj[0].parent
         obj_type = url_obj[0].object_type
         if parent not in self.objects.keys():
@@ -521,10 +534,7 @@ class SimuServer(object):
                         valid_children.append(child)
                 # NOTE: We should not need more it this system test.
 
-        return pkg_smithing.idlist_pkg(
-            obj_type=obj_type,
-            obj_list=valid_children
-        )
+        return obj_type, valid_children
 
     def _obj_generate(self, obj_uuid: uuid.UUID) -> dict:
         obj_data = self.objects[obj_uuid]
