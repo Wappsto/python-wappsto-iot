@@ -1,10 +1,11 @@
-v0.6.2 (Mar 1 2022)
+v0.6.2 (Mar 8 2022)
 ===============================================================================
 
 ## Fixed
  * Now `pathlib.Path` can also be used for the config config_folder input.
  * Fixed a issue where it always where asking for the value.
  * Fixed a issue where it did not create the need states, if the device existed. 
+ * Fixed a issue where it will fail om the smallest schema change.
 
 ## Changed
 
