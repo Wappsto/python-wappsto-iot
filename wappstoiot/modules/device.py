@@ -264,13 +264,6 @@ class Device:
         Request a delete of the Device, & all it's Children.
         """
         self.connection.delete_device(uuid=self.uuid)
-        self._delete()
-
-    def _delete(self):
-        for c_uuid, c_obj in self.children_uuid_mapping.items():
-            c_obj._delete()
-        self.children_name_mapping.clear()
-        self.children_uuid_mapping.clear()
 
     # -------------------------------------------------------------------------
     #   Other methods
