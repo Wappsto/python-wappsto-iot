@@ -1,15 +1,21 @@
-# import uuid
+import uuid
 import datetime
 
 from enum import Enum
 from itertools import zip_longest
 
+from typing import Any
+from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Tuple
+# from typing import Type
 from typing import Union
 
 from pydantic import BaseModel
 from pydantic import Extra
-# from pydantic import validator
+from pydantic import parse_obj_as
+from pydantic import validator
 
 from .base_schema import BlobValue
 from .base_schema import Device
@@ -59,6 +65,38 @@ JsonRpc_error_codes = {
 }
 
 
+class WappstoObjectType(str, Enum):
+    # WappstoMetaType
+    NETWORK = "network"
+    DEVICE = "device"
+    VALUE = "value"
+    STATE = "state"
+
+
+ObjectType2BaseModel: Dict[WappstoObjectType, Any] = {
+        WappstoObjectType.NETWORK: Network,
+        WappstoObjectType.DEVICE: Device,
+        WappstoObjectType.VALUE: ValueUnion,
+        WappstoObjectType.STATE: State,
+}
+
+
+def url_parser(url: str) -> List[Tuple[WappstoObjectType, Optional[uuid.UUID]]]:
+    r_list: List[Tuple[WappstoObjectType, Optional[uuid.UUID]]] = []
+    obj_type: Optional[WappstoObjectType] = None
+    parsed_url = url.split("?")[0]
+    if parsed_url.startswith("/services/2.0/"):
+        parsed_url = parsed_url.replace("/services/2.0", "")
+    for selftype, selfid in parwise(parsed_url.split("/")[1:]):
+        obj_type = WappstoObjectType(selftype)
+        if selfid:
+            r_list.append((obj_type, uuid.UUID(selfid)))
+        else:
+            r_list.append((obj_type, None))
+            break
+    return r_list
+
+
 class WappstoMethod(str, Enum):
     GET = "GET"
     POST = "POST"
@@ -66,14 +104,6 @@ class WappstoMethod(str, Enum):
     PUT = "PUT"
     DELETE = "DELETE"
     HEAD = "HEAD"
-
-
-class WappstoObjectType(str, Enum):
-    # WappstoMetaType
-    NETWORK = "network"
-    DEVICE = "device"
-    VALUE = "value"
-    STATE = "state"
 
 
 class Success(BaseModel):
@@ -109,28 +139,48 @@ class JsonReply(BaseModel):
 
 
 class JsonData(BaseModel):
-    data: Optional[Union[
-        Device,
-        Network,
-        State,
-        ValueUnion,
-        IdList,
-        DeleteList,
-    ]]
     url: str
+    data: Optional[Any]
+    # data: Optional[Union[
+    #     Device,
+    #     State,
+    #     Network,
+    #     ValueUnion,
+    #     IdList,
+    #     DeleteList,
+    # ]]
     meta: Optional[Identifier]
 
     class Config:
         extra = Extra.forbid
 
-    # @validator('url')  # TODO: Make it able to handle queries.
-    # def path_check(cls, v, values, **kwargs):
-    #     if v.startswith("/services/2.0/"):
-    #         selftype, selfid = v.replace("/services/2.0/", "").split('/')
-    #         WappstoObjectType(selftype)
-    #         uuid.UUID(selfid)
-    #     for selftype, selfid in parwise(v.split("/")[1:]):
-    #         WappstoObjectType(selftype)
-    #         if selfid:
-    #             uuid.UUID(selfid)
-    #     return v
+    @validator('url')
+    def path_check(cls, v, values, **kwargs):
+        url_parser(v)
+        return v
+
+    @validator("data", pre=True, always=True)
+    def url_data_mapper(
+        cls, v, values, **kwargs
+    ) -> Optional[Union[
+            Network,
+            Device,
+            ValueUnion,
+            State,
+            IdList,
+            DeleteList,
+        ]
+    ]:
+        """Check & enforce the data schema, depended on the method value."""
+        if v is None:
+            return v
+        if type(v) in ObjectType2BaseModel.values():
+            return v
+
+        url_obj = url_parser(values.get('url'))
+        obj_type = url_obj[-1][0]
+
+        model = ObjectType2BaseModel[obj_type]
+        if model is None:
+            raise ValueError('Unhandled Object type.')
+        return parse_obj_as(model, v)
