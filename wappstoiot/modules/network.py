@@ -227,14 +227,6 @@ class Network(object):
         in relation of the rules set up in the certificates.
         """
         self.connection.delete_network(uuid=self.uuid)
-        self._delete()
-
-    def _delete(self):
-        """Helper function for Delete, to only localy delete."""
-        for c_uuid, c_obj in self.children_uuid_mapping.items():
-            c_obj._delete()
-        self.children_name_mapping.clear()
-        self.children_uuid_mapping.clear()
 
     # -------------------------------------------------------------------------
     #   Create methods
