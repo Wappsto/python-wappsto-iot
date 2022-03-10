@@ -1,3 +1,20 @@
+v0.6.2 (Mar 8 2022)
+===============================================================================
+
+## Fixed
+ * Now `pathlib.Path` can also be used for the config config_folder input.
+ * Fixed a issue where it always where asking for the value.
+ * Fixed a issue where it did not create the need states, if the device existed. 
+ * Fixed a issue where it will fail om the smallest schema change.
+
+## Changed
+
+ * Naming policy are now enforced. Have to be set, and may only contain:
+    ALPHA/DIGIT/" . "/" ~ "/"(space)"/" - "/" _ "
+ * Breaking Change! - Changes the 'ValueTypes' to 'ValueTemplates', which are a more meaningful name. The createValue input 'value_type', have also change to 'value_template'
+ * Enforce the parameter-name for multiple inputs in the create-methods. 
+
+
 v0.6.1 (Feb 21 2022)
 ===============================================================================
 

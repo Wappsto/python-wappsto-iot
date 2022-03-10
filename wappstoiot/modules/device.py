@@ -3,26 +3,23 @@ import logging
 
 from enum import Enum
 
-from typing import Any
 from typing import Callable
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Union
 
 from ..service.template import ServiceClass
 
-# from .schema.base_schema import Device as DeviceSchema
 from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod
-# from .schema.iot_schema import WappstoObjectType
 from ..schema.base_schema import PermissionType
 
 from .value import Value
 from .template import valueSettings
-from .template import ValueType
+from .template import ValueTemplate
 from .template import ValueBaseType
-# from .Template import _UnitsInfo
+
+from ..utils import name_check
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -61,6 +58,8 @@ class Device:
         manufacturer: Optional[str] = None,
         product: Optional[str] = None,
         version: Optional[str] = None,
+        protocol: Optional[str] = None,
+        communication: Optional[str] = None,
         serial: Optional[str] = None,
         description: Optional[str] = None,
         # protocol
@@ -91,6 +90,8 @@ class Device:
             version=version,
             serial=serial,
             description=description,
+            protocol=protocol,
+            communication=communication,
             meta=WSchema.DeviceMeta(
                 version=WSchema.WappstoVersion.V2_0,
                 type=WSchema.WappstoMetaType.DEVICE,
@@ -263,13 +264,6 @@ class Device:
         Request a delete of the Device, & all it's Children.
         """
         self.connection.delete_device(uuid=self.uuid)
-        self._delete()
-
-    def _delete(self):
-        for c_uuid, c_obj in self.children_uuid_mapping.items():
-            c_obj._delete()
-        self.children_name_mapping.clear()
-        self.children_uuid_mapping.clear()
 
     # -------------------------------------------------------------------------
     #   Other methods
@@ -278,22 +272,29 @@ class Device:
     def createNumberValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
         min: Union[int, float],
         max: Union[int, float],
         step: Union[int, float],
         unit: str,
-        description: Optional[str],
-        si_conversion: Optional[str],
+        description: Optional[str] = None,
+        si_conversion: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
-        mapping: Optional[bool] = None,
+        mapping: Optional[Dict[str, str]] = None,
         meaningful_zero: Optional[bool] = None,
         ordered_mapping: Optional[bool] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
@@ -313,16 +314,23 @@ class Device:
     def createStringValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
         max: Union[int, float],
-        encoding: Optional[str],
-        description: Optional[str],
-        period: Optional[int],  # in Sec
-        delta: Optional[Union[int, float]],
+        encoding: Optional[str] = None,
+        description: Optional[str] = None,
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
@@ -342,16 +350,23 @@ class Device:
     def createBlobValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
         max: Union[int, float],
-        encoding: Optional[str],
-        description: Optional[str],
-        period: Optional[int],  # in Sec
-        delta: Optional[Union[int, float]],
+        encoding: Optional[str] = None,
+        description: Optional[str] = None,
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
@@ -371,16 +386,23 @@ class Device:
     def createXmlValue(
         self,
         name: str,
+        *,
         permission: PermissionType,
         type: str,
-        xsd: Optional[str],
-        namespace: Optional[str],
-        description: Optional[str],
-        period: Optional[int],  # in Sec
-        delta: Optional[Union[int, float]],
+        xsd: Optional[str] = None,
+        namespace: Optional[str] = None,
+        description: Optional[str] = None,
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
@@ -400,8 +422,9 @@ class Device:
     def createValue(
         self,
         name: str,
-        value_type: ValueType,
-        permission: PermissionType = PermissionType.READWRITE,
+        permission: PermissionType,
+        value_template: ValueTemplate,
+        description: Optional[str] = None,
     ) -> Value:
         """
         Create a Wappsto Value.
@@ -413,6 +436,13 @@ class Device:
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
         """
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
+
         value_uuid = self.connection.get_value_where(
             device_uuid=self.uuid,
             name=name
@@ -423,7 +453,7 @@ class Device:
             name=name,
             value_uuid=value_uuid,
             permission=permission,
-            **valueSettings[value_type].dict()
+            **valueSettings[value_template].dict()
         )
 
         self.__add_value(value_obj, name)

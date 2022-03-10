@@ -181,7 +181,7 @@ class RestAPI(ServiceClass):
     def get_network(self, uuid: UUID) -> Network:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/network/{uuid}"
 
         rdata = httpx.get(
@@ -199,7 +199,7 @@ class RestAPI(ServiceClass):
     def delete_network(self, uuid: UUID) -> bool:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/network/{uuid}"
 
         rdata = httpx.delete(
@@ -270,7 +270,7 @@ class RestAPI(ServiceClass):
     def get_device(self, uuid: UUID) -> Device:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/device/{uuid}"
 
         rdata = httpx.get(
@@ -288,7 +288,7 @@ class RestAPI(ServiceClass):
     def delete_device(self, uuid: UUID) -> bool:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/device/{uuid}"
 
         rdata = httpx.delete(
@@ -361,7 +361,7 @@ class RestAPI(ServiceClass):
     def get_value(self, uuid: UUID) -> ValueUnion:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/value/{uuid}"
 
         rdata = httpx.get(
@@ -372,14 +372,14 @@ class RestAPI(ServiceClass):
         if not rdata.is_error:
             raise WappstoError("Error in Connection.")
         try:
-            return parse_obj_as(ValueUnion, json.loads(rdata.text))
+            return parse_obj_as(self.ValueUnion, json.loads(rdata.text))
         except ValidationError:
             raise WappstoError("Value not founded.")
 
     def delete_value(self, uuid: UUID) -> bool:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/value/{uuid}"
 
         rdata = httpx.delete(
@@ -450,7 +450,7 @@ class RestAPI(ServiceClass):
     def get_state(self, uuid: UUID) -> Union[State, None]:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/state/{uuid}"
 
         rdata = httpx.get(
@@ -468,7 +468,7 @@ class RestAPI(ServiceClass):
     def delete_state(self, uuid: UUID) -> bool:
         if not isinstance(uuid, UUID):
             uuid = UUID(uuid)
-        
+
         url = f"{self.url}/state/{uuid}"
 
         rdata = httpx.delete(

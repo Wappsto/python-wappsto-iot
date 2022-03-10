@@ -6,6 +6,9 @@ clean: clean-pyc clean-build
 
 clean-all: clean-pyc clean-build clean-env
 
+clean-pyc:
+	find -name __pycache__ -exec rm -rf {} +
+
 clean-build:
 	rm --force --recursive build/
 	rm --force --recursive dist/
@@ -14,6 +17,7 @@ clean-build:
 	rm --force --recursive htmlcov
 	rm --force --recursive .coverage
 	rm --force --recursive .mypy_cache
+	rm --force --recursive .pytest_cache
 
 clean-env:
 	rm --force pyvenv.cfg

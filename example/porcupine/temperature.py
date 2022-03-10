@@ -35,7 +35,7 @@ def main():
     rediator = network.createDevice("radiator")
     temperature = rediator.createValue(
         "temperature",
-        value_type=wappstoiot.ValueType.TEMPERATURE,
+        value_template=wappstoiot.ValueTemplate.TEMPERATURE,
         permission=wappstoiot.PermissionType.READWRITE,
         period=98723
     )

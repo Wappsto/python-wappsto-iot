@@ -101,7 +101,7 @@ class IoTAPI(ServiceClass):
 
         params = {
             x: Union[Success, JsonData] for x in WappstoMethod
-        } 
+        }
 
         result = {
             WappstoMethod.GET: JsonReply,
@@ -527,7 +527,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        temp = getattr(data, "id")
+        temp = getattr(data, "id", None)
         if not temp:
             return None
         return temp[0]
@@ -585,7 +585,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        temp = getattr(data, "id")
+        temp = getattr(data, "id", None)
         if not temp:
             return None
         return temp[0]

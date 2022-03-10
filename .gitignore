@@ -50,7 +50,7 @@ coverage.xml
 *.cover
 .hypothesis/
 .pytest_cache/
-test/server_logging
+temp/
 
 # Translations
 *.mo

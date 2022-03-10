@@ -3,9 +3,6 @@ import uuid
 
 from typing import Dict, Optional, Callable
 
-from pydantic import UUID4
-
-
 from ..service.template import ServiceClass
 # from .service.rest_api import RestAPI
 
@@ -13,6 +10,8 @@ from .device import Device
 
 from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod
+
+from ..utils import name_check
 
 
 # #############################################################################
@@ -228,14 +227,6 @@ class Network(object):
         in relation of the rules set up in the certificates.
         """
         self.connection.delete_network(uuid=self.uuid)
-        self._delete()
-
-    def _delete(self):
-        """Helper function for Delete, to only localy delete."""
-        for c_uuid, c_obj in self.children_uuid_mapping.items():
-            c_obj._delete()
-        self.children_name_mapping.clear()
-        self.children_uuid_mapping.clear()
 
     # -------------------------------------------------------------------------
     #   Create methods
@@ -248,6 +239,8 @@ class Network(object):
         product: Optional[str] = None,
         version: Optional[str] = None,
         serial: Optional[str] = None,
+        protocol: Optional[str] = None,
+        communication: Optional[str] = None,
         description: Optional[str] = None,
     ) -> Device:
         """
@@ -261,6 +254,12 @@ class Network(object):
         """
         kwargs = locals()
         kwargs.pop('self')
+
+        if not name_check.legal_name(name):
+            raise ValueError(
+                "Given name contain a ilegal character."
+                f"May only contain: {name_check.wappsto_letters}"
+            )
 
         device_uuid = self.connection.get_device_where(
             network_uuid=self.uuid,

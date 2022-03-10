@@ -38,7 +38,7 @@ def main():
     value = device.createValue(
         name="State",
         permission=wappstoiot.PermissionType.READWRITE,
-        value_type=wappstoiot.ValueType.BOOLEAN
+        value_template=wappstoiot.ValueTemplate.BOOLEAN
     )
 
     def relay_control(obj, new_value):

@@ -28,7 +28,7 @@ def main():
     ledValue = led.createValue(
         "on/off",
         permission=wappstoiot.PermissionType.WRITE,
-        value_type=wappstoiot.ValueType.BOOLEAN
+        value_template=wappstoiot.ValueTemplate.BOOLEAN
     )
     PQPI_led = GPIO(chip=0, pin=16, state=GPIO.OUTPUT)
     ledValue.onControl(lambda obj, value: PQPI_led.write(value))
@@ -38,7 +38,7 @@ def main():
     bntValue = bnt.createValue(
         name="pushed",
         permission=wappstoiot.PermissionType.READ,
-        value_type=wappstoiot.ValueType.BOOLEAN
+        value_template=wappstoiot.ValueTemplate.BOOLEAN
     )
     PQPI_bnt = GPIO(
         chip=0,

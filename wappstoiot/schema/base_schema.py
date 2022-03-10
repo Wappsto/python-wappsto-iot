@@ -18,6 +18,7 @@ from pydantic import conint
 from pydantic import constr
 from pydantic import Extra
 from pydantic import Field
+from pydantic import root_validator
 from pydantic import UUID4
 
 
@@ -117,6 +118,7 @@ class Level(str, Enum):
     IMPORTANT = 'important'
     ERROR = 'error'
     WARNING = 'warning'
+    SUCCESS = 'success'
     INFO = 'info'
     DEBUG = 'debug'
 
@@ -186,6 +188,7 @@ class Geo(BaseModel):
 
 class BaseMeta(BaseModel):  # Base Meta
     id: Optional[UUID4] = None
+    # NOTE: Set in the children-class.
     # #  type: Optional[WappstoMetaType] = None
     version: Optional[WappstoVersion] = None
 
@@ -211,7 +214,7 @@ class BaseMeta(BaseModel):  # Base Meta
     redirect: Optional[  # type: ignore
         constr(regex=r'^[0-9a-zA-Z_-]+$', min_length=1, max_length=200)
     ] = None
-    
+
     error: Optional[UUID4] = None
     warning: Optional[List[WarningItem]] = None
     trace: Optional[Optional[str]] = None
@@ -219,10 +222,21 @@ class BaseMeta(BaseModel):  # Base Meta
     set: Optional[List[UUID4]] = None
     contract: Optional[List[UUID4]] = None
 
+    historical: Optional[bool] = None
+
     class Config:
         json_encoders = {
             datetime: timestamp
         }
+
+
+class EventlogMeta(BaseMeta):
+    class WappstoMetaType(str, Enum):
+        STATUS = "eventlog"
+    type: Optional[WappstoMetaType] = None
+
+    icon: Optional[Optional[str]] = None
+    alert: Optional[List[UUID4]] = None
 
 
 class StatusMeta(BaseMeta):
@@ -230,21 +244,20 @@ class StatusMeta(BaseMeta):
         STATUS = "status"
     type: Optional[WappstoMetaType] = None
 
+    icon: Optional[Optional[str]] = None
+    alert: Optional[List[UUID4]] = None
+
 
 class ValueMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
         VALUE = "value"
     type: Optional[WappstoMetaType] = None
 
-    historical: Optional[bool] = None 
-
 
 class StateMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
         STATE = "state"
     type: Optional[WappstoMetaType] = None
-
-    historical: Optional[bool] = None 
 
 
 class DeviceMeta(BaseMeta):
@@ -253,7 +266,6 @@ class DeviceMeta(BaseMeta):
     type: Optional[WappstoMetaType] = None
 
     geo: Optional[Geo] = None
-    historical: Optional[bool] = None
 
 
 class NetworkMeta(BaseMeta):
@@ -262,8 +274,6 @@ class NetworkMeta(BaseMeta):
     type: Optional[WappstoMetaType] = None
 
     geo: Optional[Geo] = None
-    historical: Optional[bool] = None
-
     connection: Optional[Connection] = None
     accept_test_mode: Optional[bool] = None
     verify_product: Optional[str] = None
@@ -304,10 +314,18 @@ class State(BaseModel):
         }
 
 
+class EventlogItem(BaseModel):
+    message: str
+    timestamp: Optional[datetime] = None
+    info: Optional[Dict[str, Any]] = None
+    level: Level
+    type: Optional[str] = None
+    meta: Optional[EventlogMeta] = Field(None, title='meta-2.0:create')
+
+
 class BaseValue(BaseModel):
     name: Optional[str] = None
     type: Optional[str] = None
-
     description: Optional[str] = None
     period: Optional[str] = None
     delta: Optional[str] = None
@@ -315,10 +333,8 @@ class BaseValue(BaseModel):
     status: Optional[EventStatus] = None
     meta: Optional[ValueMeta] = Field(None, title='meta-2.0:create')
     state: Optional[List[Union[State, UUID4]]] = None
+    eventlog: Optional[List[Union['EventlogItem', UUID4]]] = None
     info: Optional[Info] = None
-
-    class Config:
-        extra = Extra.forbid
 
 
 class Number(BaseModel):
@@ -330,9 +346,6 @@ class Number(BaseModel):
     ordered_mapping: Optional[bool] = None
     si_conversion: Optional[str] = None
     unit: Optional[str] = None
-
-    class Config:
-        extra = Extra.forbid
 
 
 class String(BaseModel):
@@ -353,29 +366,45 @@ class Xml(BaseModel):
 class StringValue(BaseValue):
     string: Optional[String] = None
 
-    class Config:
-        extra = Extra.forbid
+    @root_validator(pre=True)
+    def value_type_check(cls, values):
+        keys = ["number", "blob", "xml"]
+        if any(key in values for key in keys):
+            raise TypeError(f"A string value can not contain: {' '.join(keys)}")
+        return values
 
 
 class NumberValue(BaseValue):
     number: Optional[Number] = None
 
-    class Config:
-        extra = Extra.forbid
+    @root_validator(pre=True)
+    def value_type_check(cls, values):
+        keys = ["string", "blob", "xml"]
+        if any(key in values for key in keys):
+            raise TypeError(f"A number value can not contain: {' '.join(keys)}")
+        return values
 
 
 class BlobValue(BaseValue):
     blob: Optional[Blob] = None
 
-    class Config:
-        extra = Extra.forbid
+    @root_validator(pre=True)
+    def value_type_check(cls, values):
+        keys = ["number", "string", "xml"]
+        if any(key in values for key in keys):
+            raise TypeError(f"A blob value can not contain: {' '.join(keys)}")
+        return values
 
 
 class XmlValue(BaseValue):
     xml: Optional[Xml] = None
 
-    class Config:
-        extra = Extra.forbid
+    @root_validator(pre=True)
+    def value_type_check(cls, values):
+        keys = ["number", "blob", "blob"]
+        if any(key in values for key in keys):
+            raise TypeError(f"A xml value can not contain: {' '.join(keys)}")
+        return values
 
 
 class Device(BaseModel):
@@ -410,8 +439,8 @@ class Device(BaseModel):
     ] = None
     info: Optional[Info] = None
 
-    class Config:
-        extra = Extra.forbid
+    # class Config:
+    #     extra = Extra.forbid
 
 
 class Network(BaseModel):
@@ -421,8 +450,8 @@ class Network(BaseModel):
     meta: Optional[NetworkMeta] = Field(None, title='meta-2.0:create')
     info: Optional[Info] = None
 
-    class Config:
-        extra = Extra.forbid
+    # class Config:
+    #     extra = Extra.forbid
 
 
 class ApiMetaTypes(str, Enum):

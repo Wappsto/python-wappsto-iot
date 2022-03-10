@@ -39,19 +39,19 @@ def main():
 
     co2_value = device.createValue(
         name="Co2",
-        value_type=wappstoiot.ValueType.NUMBER,
+        value_template=wappstoiot.ValueTemplate.NUMBER,
         permission=wappstoiot.PermissionType.READ
     )
 
     temp_value = device.createValue(
         name="Temperature",
-        value_type=wappstoiot.ValueType.TEMPERATURECELCIUS,
+        value_template=wappstoiot.ValueTemplate.TEMPERATURECELCIUS,
         permission=wappstoiot.PermissionType.READ
     )
 
     humi_value = device.createValue(
         name="Humidity",
-        value_type=wappstoiot.ValueType.NUMBER,
+        value_template=wappstoiot.ValueTemplate.NUMBER,
         permission=wappstoiot.PermissionType.READ
     )
 

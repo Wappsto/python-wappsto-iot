@@ -4,6 +4,20 @@
 #                             MOdules Import Stuff
 # #############################################################################
 
+
+import __main__
+import atexit
+import netrc
+import json
+import logging
+
+from pathlib import Path
+from enum import Enum
+
+
+from typing import Any, Dict, Optional, Union, Callable
+
+
 from .modules.network import Network
 # from .modules.network import ConnectionStatus
 # from .modules.network import ConnectionTypes
@@ -14,26 +28,30 @@ from .modules.network import Network
 
 from .modules.device import Device
 from .service.template import ServiceClass
+from .service.iot_api import IoTAPI
 
 from .modules.value import Value
-from .modules.value import Delta
-from .modules.value import Period
+# from .modules.value import Delta  # Note: Not ready yet!
+# from .modules.value import Period  # Note: Not ready yet!
 from .modules.value import PermissionType
-from .modules.value import ValueBaseType
-from .modules.template import ValueType
+from .modules.template import ValueTemplate
 
 from .service import template as service
 
 from .connections import protocol as connection
 
 from .utils.offline_storage import OfflineStorage
+from .utils.certificateread import CertificateRead
+from .utils.offline_storage import OfflineStorageFiles
 
+from .utils import observer
+from .utils import name_check
 
 # #############################################################################
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.6.1"
+__version__ = "v0.6.2"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -49,6 +67,8 @@ __all__ = [
     'OfflineStorage',
     'service',
     'connection',
+    'ValueTemplate',
+    'PermissionType'
 ]
 
 
@@ -56,38 +76,12 @@ __all__ = [
 #                  Import Stuff for setting up WappstoIoT
 # #############################################################################
 
-import __main__
-import atexit
-import netrc
-import json
-import logging
-
-from pathlib import Path
-from enum import Enum
-
-
-from typing import Any, Dict, Optional, Union, Callable
-
-
-from .utils.certificateread import CertificateRead
-from .utils.offline_storage import OfflineStorage
-from .utils.offline_storage import OfflineStorageFiles
-
-from .service.iot_api import IoTAPI
-
-# from .utils import observer 
-
-
 __log = logging.getLogger("wappstoiot")
 __log.addHandler(logging.NullHandler())
 
 # #############################################################################
 #                             Status Stuff
 # #############################################################################
-
-
-from .utils import observer
-from .service import template as service
 
 
 def onStatusChange(
@@ -112,6 +106,7 @@ def onStatusChange(
 
 __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
+__connection_closed: bool = False
 
 
 class ConnectionTypes(str, Enum):
@@ -130,7 +125,8 @@ def config(
     # period_handling="",
     ping_pong_period_sec: Optional[int] = None,  # Period between a RPC ping-pong.
     # # Send: {"jsonrpc":"2.0","method":"HEAD","id":"PING-15","params":{"url":"/services/2.0/network"}}
-    # # receive: {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
+    # # receive:
+    # {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
     offline_storage: Union[OfflineStorage, bool] = False,
     # none_blocking=True,  # Whether the post should wait for reply or not.
 ) -> None:
@@ -152,12 +148,18 @@ def config(
     the maximum, if it is below the minimum, it is set to the minimum value.
     """
     global __config_folder
+    global __connection_closed
+    global __the_connection
+    __the_connection = None
+    __connection_closed = False
 
     if not isinstance(config_folder, Path):
         if config_folder == "." and hasattr(__main__, '__file__'):
             __config_folder = Path(__main__.__file__).absolute().parent / Path(config_folder)
         else:
             __config_folder = Path(config_folder)
+    else:
+        __config_folder = config_folder
 
     _setup_ping_pong(ping_pong_period_sec)
     _setup_offline_storage(offline_storage)
@@ -260,7 +262,7 @@ def _setup_offline_storage(
         __log.debug(f"Resend called with: status={status}")
         try:
             __log.debug("Resending Offline data")
-            while True:
+            while not __connection_closed:
                 data = offline_storage.load(10)
                 if not data:
                     return
@@ -284,15 +286,18 @@ def _setup_offline_storage(
 #                             Create Stuff
 # #############################################################################
 
-__connection_closed = False
-
-
 def createNetwork(
-    name: str = "TheNetwork",
+    name: str,
     description: str = "",
 ) -> Network:
     global __config_folder
     global __the_connection
+
+    if not name_check.legal_name(name):
+        raise ValueError(
+            "Given name contain a ilegal character."
+            f"May only contain: {name_check.wappsto_letters}"
+        )
 
     if not __the_connection:
         config()
@@ -332,7 +337,8 @@ def close():
     global __connection_closed
     global __the_connection
 
-    if not __connection_closed:
+    if not __connection_closed and __the_connection is not None:
+        __log.info("Closing Wappsto IoT")
         __the_connection.close()
         __connection_closed = True
     # Disconnect

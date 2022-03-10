@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     # NOTE: To avoid ciclic import
     from .device import Device
 
-
 # #############################################################################
 #                                 Value Setup
 # #############################################################################
@@ -114,8 +113,8 @@ class Value:
 
         self.connection: ServiceClass = parent.connection
 
-        subValue = self.__parseValueType(
-                ValueType=value_type,
+        subValue = self.__parseValueTemplate(
+                ValueBaseType=value_type,
                 encoding=encoding,
                 mapping=mapping,
                 max_range=max,
@@ -235,9 +234,9 @@ class Value:
     #   Helper methods
     # -------------------------------------------------------------------------
 
-    def __parseValueType(
+    def __parseValueTemplate(
         self,
-        ValueType,
+        ValueBaseType,
         encoding,
         mapping,
         max_range,
@@ -251,7 +250,7 @@ class Value:
         xsd,
     ):
 
-        if ValueType == ValueBaseType.NUMBER:
+        if ValueBaseType == ValueBaseType.NUMBER:
             subValue = {
                 "number": WSchema.Number(
                     min=min_range,
@@ -264,21 +263,21 @@ class Value:
                     unit=unit,
                 )
             }
-        elif ValueType == ValueBaseType.XML:
+        elif ValueBaseType == ValueBaseType.XML:
             subValue = {
                 "xml": WSchema.Xml(
                     xsd=xsd,
                     namespace=namespace,
                 )
             }
-        elif ValueType == ValueBaseType.STRING:
+        elif ValueBaseType == ValueBaseType.STRING:
             subValue = {
                 "string": WSchema.String(
                     max=max_range,
                     encoding=encoding
                 )
             }
-        elif ValueType == ValueBaseType.BLOB:
+        elif ValueBaseType == ValueBaseType.BLOB:
             subValue = {
                 "blob": WSchema.Blob(
                     max=max_range,
@@ -289,13 +288,24 @@ class Value:
         return subValue
 
     def __update_self(self, element):
+        old_type = type(element)
+
         new_dict = element.copy(update=self.element.dict(exclude_none=True))
         new_dict.meta = element.meta.copy(update=new_dict.meta)
-        if type(self.element) is type(element):
+
+        if old_type is WSchema.NumberValue:
+            new_dict.number = element.number.copy(update=new_dict.number)
+        elif old_type is WSchema.StringValue:
+            new_dict.string = element.string.copy(update=new_dict.string)
+        elif old_type is WSchema.BlobValue:
+            new_dict.blob = element.blob.copy(update=new_dict.blob)
+        elif old_type is WSchema.XmlValue:
+            new_dict.xml = element.xml.copy(update=new_dict.xml)
+
+        if type(self.element) is old_type:
             self.element = new_dict
         else:
             new_dict = new_dict.dict(exclude_none=True)
-            old_type = type(element)
             if old_type is WSchema.StringValue:
                 new_dict.pop('string')
             elif old_type is WSchema.NumberValue:
@@ -310,15 +320,54 @@ class Value:
         # TODO: Check for the Difference Value-types & ensure that it is right.
 
     def __update_state(self):
-        for state_uuid in self.element.state:
-            state_obj = self.connection.get_state(uuid=state_uuid)
-            if state_obj:
-                self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
-                self.children_name_mapping[state_obj.type.name] = state_uuid
+        state_count = len(self.element.state)
+        if self.element.permission == PermissionType.NONE:
+            return
+        elif state_count == 0:
+            self._createStates(self.element.permission)
+            return
+
+        state_uuid = self.element.state[0]
+        state_obj = self.connection.get_state(uuid=state_uuid)
+        self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
+        self.children_name_mapping[state_obj.type.name] = state_uuid
+
+        if not state_obj:
+            return
+
+        if state_obj.type == WSchema.StateType.REPORT:
+            self.report_state = state_obj
+        elif state_obj.type == WSchema.StateType.CONTROL:
+            self.control_state = state_obj
+
+        if state_count == 1:
+            if self.element.permission not in [PermissionType.READ, PermissionType.WRITE]:
                 if state_obj.type == WSchema.StateType.REPORT:
-                    self.report_state = state_obj
+                    self._createStates(PermissionType.WRITE)
                 elif state_obj.type == WSchema.StateType.CONTROL:
-                    self.control_state = state_obj
+                    self._createStates(PermissionType.READ)
+            return
+
+        state_uuid = self.element.state[1]
+        state_obj = self.connection.get_state(uuid=state_uuid)
+        self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
+        self.children_name_mapping[state_obj.type.name] = state_uuid
+
+        if state_obj.type == WSchema.StateType.REPORT:
+            self.report_state = state_obj
+        elif state_obj.type == WSchema.StateType.CONTROL:
+            self.control_state = state_obj
+
+    # def __update_state(self):
+    #     for state_uuid in self.element.state:
+    #         state_obj = self.connection.get_state(uuid=state_uuid)
+    #         if state_obj:
+    #             self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
+    #             self.children_name_mapping[state_obj.type.name] = state_uuid
+    #             if state_obj.type == WSchema.StateType.REPORT:
+    #                 self.report_state = state_obj
+    #             elif state_obj.type == WSchema.StateType.CONTROL:
+    #                 self.control_state = state_obj
 
     # -------------------------------------------------------------------------
     #   Value 'on-' methods
@@ -607,7 +656,7 @@ class Value:
             self.children_name_mapping[WSchema.StateType.REPORT.name] = uuid.uuid4()
 
             self.report_state = WSchema.State(
-                data=float("NaN") if self.value_type == ValueBaseType.NUMBER else "",
+                data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.REPORT,
                 meta=WSchema.BaseMeta(
                     id=self.children_name_mapping.get(WSchema.StateType.REPORT.name)
@@ -621,7 +670,7 @@ class Value:
             self.children_name_mapping[WSchema.StateType.CONTROL.name] = uuid.uuid4()
 
             self.control_state = WSchema.State(
-                data=float("NaN") if self.value_type == ValueBaseType.NUMBER else "",
+                data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.CONTROL,
                 meta=WSchema.BaseMeta(
                     id=self.children_name_mapping[WSchema.StateType.CONTROL.name]
