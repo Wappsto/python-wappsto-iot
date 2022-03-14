@@ -630,11 +630,11 @@ class Value:
             timestamp=timestamp if timestamp else Timestamp.timestamp()
         )
         if (
-            data.timestamp and self.report_state.timestamp and
-            data.timestamp > self.report_state.timestamp or
-            not self.report_state.timestamp
+            data.timestamp and self.control_state.timestamp and
+            data.timestamp > self.control_state.timestamp or
+            not self.control_state.timestamp
         ):
-            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+            self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
 
         self.connection.put_state(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],

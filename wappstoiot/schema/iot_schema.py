@@ -137,6 +137,35 @@ class JsonReply(BaseModel):
     class Config:
         extra = Extra.forbid
 
+    # @validator("value", pre=True, always=True)
+    # def url_data_mapper(
+    #     cls, v, values, **kwargs
+    # ) -> Optional[Union[
+    #         Network,
+    #         Device,
+    #         ValueUnion,
+    #         State,
+    #         IdList,
+    #         DeleteList,
+    #         bool
+    #     ]
+    # ]:
+    #     """Check & enforce the data schema, depended on the method value."""
+    #     if v is None or isinstance(v, bool):
+    #         return v
+    #     if type(v) in ObjectType2BaseModel.values():
+    #         return v
+
+    #     # TODO: handle IdList & DeleteList
+
+    #     url_obj = url_parser(values.get('url'))
+    #     obj_type = url_obj[-1][0]
+
+    #     model = ObjectType2BaseModel[obj_type]
+    #     if model is None:
+    #         raise ValueError('Unhandled Object type.')
+    #     return parse_obj_as(model, v)
+
 
 class JsonData(BaseModel):
     url: str
@@ -176,6 +205,8 @@ class JsonData(BaseModel):
             return v
         if type(v) in ObjectType2BaseModel.values():
             return v
+
+        # TODO: handle IdList & DeleteList
 
         url_obj = url_parser(values.get('url'))
         obj_type = url_obj[-1][0]
