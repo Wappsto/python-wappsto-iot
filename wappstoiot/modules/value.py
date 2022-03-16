@@ -188,6 +188,8 @@ class Value:
         unless there isn't one, then it will return None.
         """
         if self.value_type == ValueBaseType.NUMBER:
+            if self.control_state.data == "NA":
+                return None
             return float(self.control_state.data)
         return self.control_state.data
 
@@ -208,7 +210,9 @@ class Value:
         unless there isn't one, then it will return None.
         """
         if self.value_type == ValueBaseType.NUMBER:
-            return float(self.control_state.data)
+            if self.report_state.data == "NA":
+                return None
+            return float(self.report_state.data)
         return self.report_state.data
 
     def getReportTimestamp(self) -> Optional[datetime]:
