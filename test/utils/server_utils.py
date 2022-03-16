@@ -1,7 +1,13 @@
+import uuid
+
 from typing import Any
 from typing import Dict
+from typing import Optional
 
 import wappstoiot
+
+from utils.wappstoserver import ObjectModel
+from utils.wappstoserver import SimuServer
 
 
 def generate_value_extra_info(
@@ -43,3 +49,16 @@ def generate_value_extra_info(
         }
 
     return extra_info
+
+
+def get_state_obj(
+    server: SimuServer,
+    value_uuid: uuid.UUID,
+    state_type: str
+) -> Optional[ObjectModel]:
+    value_obj = server.objects[value_uuid]
+    for state_uuid in value_obj.children:
+        state = server.objects[state_uuid]
+        if state.extra_info.get('type', "").lower() == state_type.lower():
+            return state
+    return None
