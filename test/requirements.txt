@@ -3,4 +3,5 @@ coverage==5.1
 pyOpenSSL==19.1.0
 cryptography==3.1
 rich==10.9.0
+python-dateutil==2.7.3
 pytest-mock==3.6.1

@@ -1,3 +1,4 @@
+import datetime
 import itertools
 import json
 import socket
@@ -138,9 +139,13 @@ class SimuServer(object):
             this_name = data.pop('name')
             children = data.pop('device') if 'device' in data.keys() else []
         elif self_type == 'state':
-            pass
+            if 'timestamp' in data.keys():
+                data['timestamp'] = pkg_smithing.str_to_datetime(
+                    timestamp=data['timestamp']
+                )
 
-        data.pop('meta')
+        if 'meta' in data.keys():
+            data.pop('meta')
 
         self.add_object(
             this_uuid=this_uuid,
@@ -154,10 +159,10 @@ class SimuServer(object):
 
     def _update_object_from_dict(
         self,
+        this_uuid: uuid.UUID,
         self_type: str,
         data: dict
     ) -> uuid.UUID:
-        this_uuid: uuid.UUID = uuid.UUID(data['meta']['id'])
         this_type = data['meta'].get('type') if self_type != "state" else "state"
 
         children: List = []
@@ -177,11 +182,16 @@ class SimuServer(object):
             this_name = data.pop('name')
             children = data.pop('device') if 'device' in data.keys() else []
         elif self_type == 'state':
-            pass
+            if 'timestamp' in data.keys():
+                data['timestamp'] = pkg_smithing.str_to_datetime(
+                    timestamp=data['timestamp']
+                )
 
-        data.pop('meta')
+        if 'meta' in data.keys():
+            data.pop('meta')
 
         old_data = self.objects[this_uuid]
+        old_data.extra_info.update(data)
 
         self.add_object(
             this_uuid=this_uuid,
@@ -189,7 +199,7 @@ class SimuServer(object):
             parent_uuid=old_data.parent,
             this_name=this_name if this_name else old_data.name,
             children=children if children else old_data.children,
-            extra_info=old_data.extra_info.update(data)
+            extra_info=old_data.extra_info
         )
         return this_uuid
 
@@ -221,6 +231,7 @@ class SimuServer(object):
                 if not mock_ssl_socket.return_value.sendall.call_args:
                     time.sleep(0.01)
                     continue
+
                 temp_data, _ = mock_ssl_socket.return_value.sendall.call_args
                 send_data = temp_data[0]
                 mock_ssl_socket.return_value.sendall.call_args = None
@@ -313,6 +324,8 @@ class SimuServer(object):
                 )
             ).encode()
 
+        # TODO: Handle Success & Failed package.
+
         pkg_method = j_data['method']
         the_url = j_data['params']['url']
         the_data = j_data['params'].get('data')
@@ -320,8 +333,6 @@ class SimuServer(object):
         # identifier = j_data['params']['meta']['identifier']
 
         url_obj: Tuple[UrlObject, List[Parameters]] = self._url_parser(the_url)
-
-        # TODO: Handle a error as received data!!
 
         try:
 
@@ -411,9 +422,11 @@ class SimuServer(object):
 
         parent_uuid = url_obj[0].parent
         the_type = url_obj[0].object_type
+        the_uuid = uuid.UUID(data['meta']['id'])
 
         if the_type == "network":
             new_unit_uuid = self._update_object_from_dict(
+                this_uuid=the_uuid,
                 self_type=the_type,
                 data=data,
             )
@@ -454,6 +467,7 @@ class SimuServer(object):
             )
 
         self._update_object_from_dict(
+            this_uuid=the_uuid,
             self_type=url_obj[0].object_type,
             data=data
         )
