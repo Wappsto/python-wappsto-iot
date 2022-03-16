@@ -1,10 +1,26 @@
 import datetime
+import dateutil.parser
 import uuid
 
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+
+
+def str_to_datetime(timestamp: str) -> datetime.datetime:
+    """
+    Convert the logger timestamp to a ISO-T-format w/ timezone.
+
+    Args:
+        data_string: The timestamp needed to be converted.
+
+    Returns:
+        The converted timestamp.
+    """
+    return dateutil.parser.parse(
+        timestamp
+    )
 
 
 def convert_timestamp(timestamp: Optional[datetime.datetime] = None) -> str:
@@ -16,7 +32,6 @@ def convert_timestamp(timestamp: Optional[datetime.datetime] = None) -> str:
     Returns:
         The UTC time string in ISO format.
     """
-    # TODO: Move to package_smithing.py
     if not timestamp:
         return datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
