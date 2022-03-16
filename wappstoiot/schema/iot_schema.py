@@ -84,6 +84,8 @@ ObjectType2BaseModel: Dict[WappstoObjectType, Any] = {
 def url_parser(url: str) -> List[Tuple[WappstoObjectType, Optional[uuid.UUID]]]:
     r_list: List[Tuple[WappstoObjectType, Optional[uuid.UUID]]] = []
     obj_type: Optional[WappstoObjectType] = None
+    if url is None:
+        raise ValueError("Url need to be Set.")
     parsed_url = url.split("?")[0]
     if parsed_url.startswith("/services/2.0/"):
         parsed_url = parsed_url.replace("/services/2.0", "")
