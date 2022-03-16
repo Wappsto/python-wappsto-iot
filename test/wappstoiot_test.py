@@ -7,6 +7,7 @@ import datetime
 from pathlib import Path
 from typing import Any
 from typing import Dict
+from typing import Union
 
 import pytest
 
@@ -14,7 +15,7 @@ from utils.generators import client_certifi_gen
 from utils import pkg_smithing as smithing
 
 from utils.wappstoserver import SimuServer
-from utils.server_utils import generate_value_extra_info
+from utils import server_utils
 
 import rich
 
@@ -203,18 +204,19 @@ class TestConnection:
         "permission",
         [
             wappstoiot.PermissionType.READWRITE,
-            wappstoiot.PermissionType.READ,
-            wappstoiot.PermissionType.WRITE,
-            wappstoiot.PermissionType.NONE
+            # wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
         ]
     )
     @pytest.mark.parametrize(
         "value_template",
         [
+            # *wappstoiot.ValueTemplate
             (wappstoiot.ValueTemplate.NUMBER),
-            (wappstoiot.ValueTemplate.STRING),
-            (wappstoiot.ValueTemplate.BLOB),
-            (wappstoiot.ValueTemplate.XML),
+            # (wappstoiot.ValueTemplate.STRING),
+            # (wappstoiot.ValueTemplate.BLOB),
+            # (wappstoiot.ValueTemplate.XML),
         ]
     )
     @pytest.mark.parametrize(
@@ -248,7 +250,7 @@ class TestConnection:
         network_name = "TestNetwork"
         device_name = "test"
         value_name = "moeller"
-        extra_info: Dict[str, Any] = generate_value_extra_info(
+        extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
             value_template=value_template,
             permission=permission
         )
@@ -324,7 +326,51 @@ class TestConnection:
 
         # assert False
 
-    # def test_custom_value_creation(
+    # def test_state_creation(
+    #     self,
+    #     mock_rw_socket,
+    #     mock_ssl_socket,
+    #     value_template: wappstoiot.ValueTemplate,
+    #     permission: wappstoiot.PermissionType,
+    #     fast_send: bool,
+    #     state_exist: bool,
+    # ):
+    #     pass
+
+    # def test_custom_number_creation(
+    #     self,
+    #     mock_rw_socket,
+    #     mock_ssl_socket,
+    #     value_template: wappstoiot.ValueTemplate,
+    #     permission: wappstoiot.PermissionType,
+    #     fast_send: bool,
+    #     value_exist: bool,
+    # ):
+    #     pass
+
+    # def test_custom_string_creation(
+    #     self,
+    #     mock_rw_socket,
+    #     mock_ssl_socket,
+    #     value_template: wappstoiot.ValueTemplate,
+    #     permission: wappstoiot.PermissionType,
+    #     fast_send: bool,
+    #     value_exist: bool,
+    # ):
+    #     pass
+
+    # def test_custom_blob_creation(
+    #     self,
+    #     mock_rw_socket,
+    #     mock_ssl_socket,
+    #     value_template: wappstoiot.ValueTemplate,
+    #     permission: wappstoiot.PermissionType,
+    #     fast_send: bool,
+    #     value_exist: bool,
+    # ):
+    #     pass
+
+    # def test_custom_xml_creation(
     #     self,
     #     mock_rw_socket,
     #     mock_ssl_socket,
@@ -372,11 +418,245 @@ class TestConnection:
     #     value_template = wappstoiot.ValueTemplate.NUMBER
     #     pass
 
-    # def test_report_changes(self):
-    #     pass
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "value_template",
+        [
+            (wappstoiot.ValueTemplate.NUMBER),
+            (wappstoiot.ValueTemplate.STRING),
+            # (wappstoiot.ValueTemplate.BLOB),
+            # (wappstoiot.ValueTemplate.XML),
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [
+            True,
+            False
+        ]
+    )
+    @pytest.mark.parametrize(
+        "data_value",
+        [
+            0,
+            float("nan"),
+            "hej"
+            "æøå"
+        ]
+    )
+    def test_report_changes(
+        self,
+        mock_rw_socket,
+        mock_ssl_socket,
+        permission: wappstoiot.PermissionType,
+        value_template: wappstoiot.ValueTemplate,
+        fast_send: bool,
+        data_value: Union[int, float, str]
+    ):
+        # Should also be able to set what existed of states before this creation.
+        network_uuid = uuid.uuid4()
+        device_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4()
+        network_name = "TestNetwork"
+        device_name = "test"
+        value_name = "moeller"
+        extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
+            value_template=value_template,
+            permission=permission
+        )
 
-    # def test_control_changes(self):
-    #     pass
+        url = "wappsto.com"
+        self.generate_certificates(name=url, network_uuid=network_uuid)
+
+        server = SimuServer(
+            network_uuid=network_uuid,
+            name=network_name
+        )
+        server.get_socket(
+            mock_rw_socket=mock_rw_socket,
+            mock_ssl_socket=mock_ssl_socket
+        )
+
+        server.add_object(
+            this_uuid=device_uuid,
+            this_type='device',
+            this_name=device_name,
+            parent_uuid=network_uuid
+        )
+
+        server.add_object(
+            this_uuid=value_uuid,
+            this_type='value',
+            this_name=value_name,
+            parent_uuid=device_uuid,
+            extra_info=extra_info
+        )
+
+        wappstoiot.config(
+            config_folder=Path(self.temp),
+            fast_send=fast_send
+        )
+
+        network = wappstoiot.createNetwork(name=network_name)
+
+        device = network.createDevice(name=device_name)
+
+        value = device.createValue(
+            name=value_name,
+            permission=permission,
+            value_template=value_template
+        )
+        try:
+            value.report(data_value)
+        finally:
+            wappstoiot.close()
+
+        server.fail_check()
+        state = server_utils.get_state_obj(
+            server=server,
+            value_uuid=value_uuid,
+            state_type="Report"
+        )
+
+        # assert value.getReportData() == str(data_value)  # TODO: !!!
+        assert state.extra_info.get('data') == str(data_value)
+
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            # wappstoiot.PermissionType.READ,
+            wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "value_template",
+        [
+            (wappstoiot.ValueTemplate.NUMBER),
+            # (wappstoiot.ValueTemplate.STRING),
+            # (wappstoiot.ValueTemplate.BLOB),
+            # (wappstoiot.ValueTemplate.XML),
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [
+            # True,
+            False
+        ]
+    )
+    @pytest.mark.parametrize(
+        "data_value",
+        [
+            0,
+            float("nan"),
+            "hej",
+            "æøå",
+        ]
+    )
+    def test_control_changes(
+        self,
+        mock_rw_socket,
+        mock_ssl_socket,
+        permission: wappstoiot.PermissionType,
+        value_template: wappstoiot.ValueTemplate,
+        fast_send: bool,
+        data_value: Union[int, float, str]
+    ):
+        # Should also be able to set what existed of states before this creation.
+        network_uuid = uuid.uuid4()
+        device_uuid = uuid.uuid4()
+        value_uuid = uuid.uuid4()
+        network_name = "TestNetwork"
+        device_name = "test"
+        value_name = "moeller"
+        extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
+            value_template=value_template,
+            permission=permission
+        )
+
+        url = "wappsto.com"
+        self.generate_certificates(name=url, network_uuid=network_uuid)
+
+        server = SimuServer(
+            network_uuid=network_uuid,
+            name=network_name
+        )
+        server.get_socket(
+            mock_rw_socket=mock_rw_socket,
+            mock_ssl_socket=mock_ssl_socket
+        )
+
+        server.add_object(
+            this_uuid=device_uuid,
+            this_type='device',
+            this_name=device_name,
+            parent_uuid=network_uuid
+        )
+
+        server.add_object(
+            this_uuid=value_uuid,
+            this_type='value',
+            this_name=value_name,
+            parent_uuid=device_uuid,
+            extra_info=extra_info
+        )
+
+        wappstoiot.config(
+            config_folder=Path(self.temp),
+            fast_send=fast_send
+        )
+
+        network = wappstoiot.createNetwork(name=network_name)
+
+        device = network.createDevice(name=device_name)
+
+        value = device.createValue(
+            name=value_name,
+            permission=permission,
+            value_template=value_template
+        )
+
+        the_control_value = None
+        timestamp = datetime.datetime.utcnow()
+
+        @value.onControl
+        def control_test(obj, value):
+            nonlocal the_control_value
+            the_control_value = value
+            print(value)
+
+        state = server_utils.get_state_obj(
+            server=server,
+            value_uuid=value_uuid,
+            state_type="Control"
+        )
+
+        try:
+            server.send_control(
+                obj_uuid=state.self_uuid,
+                data=data_value,
+                timestamp=timestamp,
+            )
+        finally:
+            wappstoiot.close()
+
+        server.fail_check()
+
+        print(f"{state}")
+
+        assert value.getControlData() == str(data_value)
+        assert str(the_control_value) == str(data_value)
+        assert state.extra_info.get('data') == str(data_value)
 
     # def test_send_delete_value(self):
     #     pass
