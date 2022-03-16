@@ -19,6 +19,8 @@ from pydantic import Field
 
 from utils import pkg_smithing
 
+import rich
+
 
 class ErrorException(Exception):
     def __init__(self, code, msg, data):
@@ -88,6 +90,7 @@ class SimuServer(object):
         self.failed_data: List[Tuple[bool, str]] = []
         self.killed = threading.Event()
         self.data_in: List[bytes] = []
+        self.data_to_be_send: list[bytes] = []
 
     def add_object(
         self,
@@ -229,6 +232,10 @@ class SimuServer(object):
                     break
 
                 if not mock_ssl_socket.return_value.sendall.call_args:
+                    if self.data_to_be_send:
+                        t_data = self.data_to_be_send.pop()
+                        rich.print("Socket sending: ", t_data)
+                        return t_data
                     time.sleep(0.01)
                     continue
 
@@ -247,12 +254,54 @@ class SimuServer(object):
                     )
                     raise error
                 else:
-                    return data
+                    if data != b'':
+                        return data
 
             time.sleep(0.5)
             raise socket.timeout(timeout)
 
         mock_ssl_socket.return_value.recv.side_effect = socket_simu
+
+    def send_data(
+        self,
+        data: bytes,
+        pkg_method: str,
+        pkg_url: str,
+        pkg_id: Optional[str] = None,
+    ) -> None:
+        if pkg_id is None:
+            pkg_id = pkg_smithing.random_string()
+        pkg_data = json.dumps(
+            pkg_smithing.rpc_pkg_request(
+                pkg_method=pkg_method,
+                pkg_id=pkg_id,
+                pkg_url=pkg_url,
+                pkg_data=data,
+            )
+        ).encode()
+        self.data_to_be_send.append(pkg_data)
+        # TODO: Add to wait for reply list/function.
+
+    def send_control(
+        self,
+        obj_uuid: uuid.UUID,
+        data: Union[str, int, float],
+        timestamp: datetime.datetime
+    ) -> None:
+        pkg_id = f"ServerControl_PUT_{pkg_smithing.random_string()}"
+        pkg_data = pkg_smithing.state_pkg(
+            obj_uuid=obj_uuid,
+            # type="Control",
+            data=str(data),
+            timestamp=timestamp
+        )
+        # TODO: Update the self.object
+        self.send_data(
+            data=pkg_data,
+            pkg_method="PUT",
+            pkg_id=pkg_id,
+            pkg_url=f"/state/{obj_uuid}",
+        )
 
     def _params_parser(self, params) -> List[Parameters]:
         param_list: List[Parameters] = []
@@ -310,81 +359,95 @@ class SimuServer(object):
         )
 
     def rpc_handle(self, data: bytes) -> bytes:
-        j_data = json.loads(data.decode())
-        # TODO: check if it is a list!!!!!!
-        pkg_id = j_data['id']
+        return_value: list = []
+        p_data = json.loads(data.decode())
 
-        error = j_data.get('error')
-        if error:
-            self.add_check(False, error)
-            return json.dumps(
-                pkg_smithing.rpc_pkg(
+        if not isinstance(p_data, list):
+            p_data = [p_data]
+
+        for j_data in p_data:
+            pkg_id = j_data['id']
+
+            error = j_data.get('error')
+            if error:
+                self.add_check(False, error)
+                return_value.append(
+                    pkg_smithing.rpc_pkg_result(
+                        pkg_id=pkg_id,
+                        pkg_data=True
+                    )
+                )
+
+            if 'result' in j_data:
+                # TODO: Handle Success & Failed package.
+                return b''
+
+            pkg_method = j_data['method']
+            the_url = j_data['params']['url']
+            the_data = j_data['params'].get('data')
+            fast_send = j_data['params'].get('meta', {}).get('fast', False)
+            # identifier = j_data['params']['meta']['identifier']
+
+            url_obj: Tuple[UrlObject, List[Parameters]] = self._url_parser(the_url)
+
+            try:
+
+                if pkg_method.upper() == 'GET':
+                    r_data = self.get_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'POST':
+                    r_data = self.post_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'PUT':
+                    r_data = self.put_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'DELETE':
+                    r_data = self.delete_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                else:
+                    self.add_check(False, f"Unknown method: {pkg_method}")
+                    return pkg_smithing.error_pkg(
+                        pkg_id=pkg_id,
+                        data=j_data,
+                        code=-32601,
+                        msg="Unhandled Method",
+                    )
+
+            except ErrorException as err:
+                self.add_check(False, f"Could not parse data: {data!r}")
+                return_value.append(
+                    pkg_smithing.error_pkg(
+                        pkg_id=pkg_id,
+                        code=err.code,
+                        msg=err.msg,
+                        data=err.data
+                    )
+                )
+
+            return_value.append(
+                pkg_smithing.rpc_pkg_result(
                     pkg_id=pkg_id,
-                    pkg_data=True
+                    pkg_data=r_data
                 )
-            ).encode()
+            )
 
-        # TODO: Handle Success & Failed package.
-
-        pkg_method = j_data['method']
-        the_url = j_data['params']['url']
-        the_data = j_data['params'].get('data')
-        fast_send = j_data['params'].get('meta', {}).get('fast', False)
-        # identifier = j_data['params']['meta']['identifier']
-
-        url_obj: Tuple[UrlObject, List[Parameters]] = self._url_parser(the_url)
-
-        try:
-
-            if pkg_method.upper() == 'GET':
-                r_data = self.get_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            elif pkg_method.upper() == 'POST':
-                r_data = self.post_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            elif pkg_method.upper() == 'PUT':
-                r_data = self.put_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            elif pkg_method.upper() == 'DELETE':
-                r_data = self.delete_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            else:
-                self.add_check(False, f"Unknown method: {pkg_method}")
-                return pkg_smithing.error_pkg(
-                    pkg_id=pkg_id,
-                    data=j_data,
-                    code=-32601,
-                    msg="Unhandled Method",
-                )
-
-        except ErrorException as err:
-            self.add_check(False, f"Could not parse data: {data!r}")
-            return json.dumps(
-                pkg_smithing.error_pkg(
-                    pkg_id=pkg_id,
-                    code=err.code,
-                    msg=err.msg,
-                    data=err.data
-                )
-            ).encode()
+        if not return_value:
+            return b''
 
         return json.dumps(
-            pkg_smithing.rpc_pkg(
-                pkg_id=pkg_id,
-                pkg_data=r_data
-            )
+            return_value if len(return_value) > 1 else return_value[-1]
         ).encode()
 
     def get_handle(

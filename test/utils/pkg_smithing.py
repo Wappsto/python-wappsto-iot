@@ -1,11 +1,27 @@
 import datetime
 import dateutil.parser
 import uuid
+import string
+import random
 
 from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
+
+
+def random_string(count=10):
+    """
+    Return a random string with the length of given count.
+
+    Args:
+        count: the count of random charactors to return. (default: 10)
+
+    Returns:
+        string, with random charactors, with the length of count.
+    """
+    charactors = string.ascii_letters + string.digits
+    return "".join(random.choices(charactors, k=count))
 
 
 def str_to_datetime(timestamp: str) -> datetime.datetime:
@@ -71,14 +87,35 @@ def success_pkg(
     pkg_id: str,
     timestamp: Optional[datetime.datetime] = None,
 ) -> dict:
-    return rpc_pkg(
+    return rpc_pkg_result(
         pkg_id=pkg_id,
         pkg_data=True,
         timestamp=timestamp
     )
 
 
-def rpc_pkg(
+def rpc_pkg_request(
+    pkg_method: str,
+    pkg_id: str,
+    pkg_url: str,
+    pkg_data: Union[dict, bool],
+    timestamp: Optional[datetime.datetime] = None,
+) -> dict:
+    return {
+        "jsonrpc": "2.0",
+        "id": pkg_id,
+        "method": pkg_method,
+        "params": {
+            "url": pkg_url,
+            "data": pkg_data,
+            "meta": {
+                "identifier": random_string()
+            },
+        }
+    }
+
+
+def rpc_pkg_result(
     pkg_id: str,
     pkg_data: Union[dict, bool],
     timestamp: Optional[datetime.datetime] = None,
@@ -227,14 +264,14 @@ def value_pkg(
 
 def state_pkg(
     obj_uuid: uuid.UUID,
-    type: str,
     data: Optional[str],
+    type: Optional[str] = None,
     timestamp: Optional[datetime.datetime] = None,
 ) -> dict:
-    if type not in ['Report', 'Control']:
+    if type not in ['Report', 'Control', None]:
         raise ValueError(f"Type must be: 'Report' or 'Control' not: {type}")
-    return {
-        "type": type,
+    pkg_data = {
+        # "type": type,
         "data": data if data else "NA",
         "timestamp": convert_timestamp(timestamp),
         "meta": {
@@ -243,3 +280,7 @@ def state_pkg(
             "version": "2.0"
         }
     }
+    if type:
+        pkg_data['type'] = type
+
+    return pkg_data
