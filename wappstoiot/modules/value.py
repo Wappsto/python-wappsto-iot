@@ -686,9 +686,9 @@ class Value:
             try:
                 if method == WappstoMethod.PUT:
                     if (
-                        obj.timestamp and self.report_state.timestamp and
-                        obj.timestamp > self.report_state.timestamp or
-                        not self.report_state.timestamp
+                        obj.timestamp and self.control_state.timestamp and
+                        obj.timestamp > self.control_state.timestamp or
+                        not self.control_state.timestamp
                     ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
                         self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
