@@ -186,6 +186,7 @@ class SimuServer(object):
             children = data.pop('device') if 'device' in data.keys() else []
         elif self_type == 'state':
             if 'timestamp' in data.keys():
+                # ERROR: Deepcopy? Else it changes the data.
                 data['timestamp'] = pkg_smithing.str_to_datetime(
                     timestamp=data['timestamp']
                 )
@@ -234,7 +235,6 @@ class SimuServer(object):
                 if not mock_ssl_socket.return_value.sendall.call_args:
                     if self.data_to_be_send:
                         t_data = self.data_to_be_send.pop()
-                        rich.print("Socket sending: ", t_data)
                         return t_data
                     time.sleep(0.01)
                     continue
@@ -295,12 +295,18 @@ class SimuServer(object):
             data=str(data),
             timestamp=timestamp
         )
-        # TODO: Update the self.object
+
         self.send_data(
             data=pkg_data,
             pkg_method="PUT",
             pkg_id=pkg_id,
             pkg_url=f"/state/{obj_uuid}",
+        )
+
+        self._update_object_from_dict(
+            this_uuid=obj_uuid,
+            self_type="state",
+            data=pkg_data
         )
 
     def _params_parser(self, params) -> List[Parameters]:
