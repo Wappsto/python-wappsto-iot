@@ -310,6 +310,10 @@ class TestConnection:
 
         expected = 5 if value_exist else 5
 
+        if value_exist:
+            assert value.uuid == value_uuid
+        assert value.name == value_name
+
         if permission in [wappstoiot.PermissionType.READWRITE, wappstoiot.PermissionType.WRITEREAD]:
             assert state_count == 2, "The number of states should be 2, when it is a read/write."
             # NOTE: if value_exist will be one less after the just-in-time retrieve.
@@ -431,6 +435,7 @@ class TestConnection:
     @pytest.mark.parametrize(
         "value_template",
         [
+            # *wappstoiot.ValueTemplate,
             (wappstoiot.ValueTemplate.NUMBER),
             (wappstoiot.ValueTemplate.STRING),
             # (wappstoiot.ValueTemplate.BLOB),
@@ -448,9 +453,8 @@ class TestConnection:
         "data_value",
         [
             0,
-            # float("nan"),
-            # "hej"
-            # "æøå"
+            float("nan"),
+            "NA",
         ]
     )
     def test_report_changes(
@@ -515,8 +519,12 @@ class TestConnection:
             permission=permission,
             value_template=value_template
         )
+
+        timestamp = datetime.datetime.utcnow()
+
         try:
-            value.report(data_value)
+            value.report(data_value, timestamp)
+            print(value.report_state)
         finally:
             wappstoiot.close()
 
@@ -526,9 +534,22 @@ class TestConnection:
             value_uuid=value_uuid,
             state_type="Report"
         )
-        data_value = str(data_value) if value_template != wappstoiot.ValueTemplate.NUMBER else data_value
-        assert value.getReportData() == data_value, "'getReportData' did not return expected data."
-        assert state.extra_info.get('data') == str(data_value), "The server did not have the expected data."
+        is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
+        if not is_number_type:
+            data_value = str(data_value)
+
+        assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+        if data_value != data_value:
+            temp_control_value = value.getReportData()
+            assert temp_control_value != temp_control_value
+        else:
+            if data_value == 'NA' and is_number_type:
+                data_value = None
+            assert value.getReportData() == data_value  # , "'getControlData' did not return expected data."
+
+        # str_timestamp = smithing.convert_timestamp(timestamp)
+        assert state.extra_info.get('timestamp') == timestamp
+        assert value.getReportTimestamp() == timestamp
 
     @pytest.mark.parametrize(
         "permission",
@@ -542,8 +563,9 @@ class TestConnection:
     @pytest.mark.parametrize(
         "value_template",
         [
+            # *wappstoiot.ValueTemplate,
             (wappstoiot.ValueTemplate.NUMBER),
-            # (wappstoiot.ValueTemplate.STRING),
+            (wappstoiot.ValueTemplate.STRING),
             # (wappstoiot.ValueTemplate.BLOB),
             # (wappstoiot.ValueTemplate.XML),
         ]
@@ -551,7 +573,7 @@ class TestConnection:
     @pytest.mark.parametrize(
         "fast_send",
         [
-            # True,
+            True,
             False
         ]
     )
@@ -559,9 +581,8 @@ class TestConnection:
         "data_value",
         [
             0,
-            # float("nan"),
-            # "hej",
-            # "æøå",
+            float("nan"),
+            "NA",
         ]
     )
     def test_control_changes(
@@ -648,18 +669,46 @@ class TestConnection:
                 data=data_value,
                 timestamp=timestamp,
             )
-            time.sleep(1)
+            start = time.time() + 1
+            while the_control_value is None:
+                if start <= time.time():
+                    break
+                time.sleep(0.1)
+            # control_date = value.getControlData()
+            print(value.control_state)
         finally:
             wappstoiot.close()
 
         server.fail_check()
 
         # print(f"{state}")
+        is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
+        if not is_number_type:
+            data_value = str(data_value)
 
-        data_value = str(data_value) if value_template != wappstoiot.ValueTemplate.NUMBER else data_value
-        assert the_control_value == data_value  # , "Did not receive the expected data."
-        assert state.extra_info.get('data') == data_value  # , "The server did not have the expected data."
-        assert value.getControlData() == data_value  # , "'getControlData' did not return expected data."
+        assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+        if data_value != data_value:
+            assert the_control_value != the_control_value
+            # assert the_control_value == data_value  # , "Did not receive the expected data."
+            # assert value.getControlData() == data_value  # , "'getControlData' did not return expected data."
+            temp_control_value = value.getControlData()
+            assert temp_control_value != temp_control_value
+        else:
+            assert the_control_value == data_value  # , "Did not receive the expected data."
+            # assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+            if data_value == 'NA' and is_number_type:
+                data_value = None
+            assert value.getControlData() == data_value  # , "'getControlData' did not return expected data."
+
+        # str_timestamp = smithing.convert_timestamp(timestamp)
+        assert state.extra_info.get('timestamp') == timestamp
+        assert value.getControlTimestamp() == timestamp
+
+    # def test_receive_report_value(self):
+    #     pass
+
+    # def test_send_control_value(self):
+    #     pass
 
     # def test_send_delete_value(self):
     #     pass
