@@ -166,19 +166,19 @@ class Value:
 
             self._createStates(permission)
 
-    def __print(self, element):
-        self.log.debug(
-            type(self.element)
-        )
-        self.log.debug(
-            self.element
-        )
-        self.log.debug(
-            type(element)
-        )
-        self.log.debug(
-            element
-        )
+    # def __print(self, element):
+    #     self.log.debug(
+    #         type(self.element)
+    #     )
+    #     self.log.debug(
+    #         self.element
+    #     )
+    #     self.log.debug(
+    #         type(element)
+    #     )
+    #     self.log.debug(
+    #         element
+    #     )
 
     def getControlData(self) -> Optional[Union[float, str]]:
         """
@@ -609,7 +609,8 @@ class Value:
             not self.report_state.timestamp
         ):
             self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
-
+            if self.report_state.timestamp:
+                self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             data=data
@@ -639,7 +640,8 @@ class Value:
             not self.control_state.timestamp
         ):
             self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
-
+            if self.control_state.timestamp:
+                self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
             data=data
@@ -692,6 +694,8 @@ class Value:
                     ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
                         self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+                        if self.control_state.timestamp:
+                            self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
             except Exception:
                 self.log.exception("onCreateControl callback error.")
                 raise

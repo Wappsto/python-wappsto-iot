@@ -36,7 +36,7 @@ def str_to_datetime(timestamp: str) -> datetime.datetime:
     """
     return dateutil.parser.parse(
         timestamp
-    )
+    ).replace(tzinfo=None)
 
 
 def convert_timestamp(timestamp: Optional[datetime.datetime] = None) -> str:
@@ -99,7 +99,6 @@ def rpc_pkg_request(
     pkg_id: str,
     pkg_url: str,
     pkg_data: Union[dict, bool],
-    timestamp: Optional[datetime.datetime] = None,
 ) -> dict:
     return {
         "jsonrpc": "2.0",
