@@ -50,7 +50,7 @@ def _log_request_error(data):
     else:
         err = err.get('message', f"Unknown Error: http error: {data.status_code}")
     print(f"\t{err}")
-    sys.exit(-2)
+    exit(-2)
 
 
 def start_session(base_url, username, password):
@@ -69,6 +69,7 @@ def start_session(base_url, username, password):
         headers=headers,
         data=data
     )
+
     if rdata.status_code >= 300:
         print("\nAn error occurred during login:")
         _log_request_error(rdata)
@@ -183,7 +184,7 @@ def get_network(session, base_url, network_uuid):
             print(f"{data['message']}")
         else:
             print(f"UnKnown Error: {data}")
-        sys.exit(-3)
+        exit(-3)
     creator_id = data['id'][0]
     url = f"https://{base_url}/services/2.1/creator/{creator_id}"
 
@@ -219,7 +220,7 @@ def create_certificaties_files(location, creator, args):
             print("\nAn error occurred while saving Certificates:")
             print(f"\t{err}")
             print("\nWhen fixed you can recreate the certificate file with the --recreate option.")
-            sys.exit(-3)
+            exit(-3)
     else:
         print("\nDry-run: Fake Save done!")
     print(f"\nLocation of generated certificates:\t{location.absolute()}")
@@ -301,7 +302,7 @@ def main():
     create_certificaties_files(args.path, creator, args)
 
     print("\nEnjoy...")
-    sys.exit(0)
+    exit(0)
 
 
 if __name__ == "__main__":
