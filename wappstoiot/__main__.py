@@ -75,6 +75,8 @@ def start_session(base_url, username, password):
 
     rjson = json.loads(rdata.text)
 
+    print(rjson)
+
     return rjson["meta"]["id"]
 
 
@@ -177,7 +179,10 @@ def get_network(session, base_url, network_uuid):
     data = json.loads(rdata.text)
 
     if not data['id']:
-        print(f"{data['message']}")
+        if 'message' in data.keys():
+            print(f"{data['message']}")
+        else:
+            print(f"UnKnown Error: {data}")
         sys.exit(-3)
     creator_id = data['id'][0]
     url = f"https://{base_url}/services/2.1/creator/{creator_id}"
