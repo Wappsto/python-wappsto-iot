@@ -30,18 +30,18 @@ class ErrorException(Exception):
 
 
 class ObjectModel(BaseModel):
-    object_type: str
-    self_uuid: Optional[uuid.UUID]
+    type: str
     name: Optional[str]
     extra_info: dict = Field(default_factory=dict)
     children: List[uuid.UUID] = Field(default_factory=list)
     parent: Optional[uuid.UUID] = None
+    uuid: Optional[uuid.UUID]
 
 
 class UrlObject(BaseModel):
-    object_type: str
-    self_uuid: Optional[uuid.UUID]
+    type: str
     parent: Optional[uuid.UUID]
+    uuid: Optional[uuid.UUID]
 
 
 class Parameters(BaseModel):
@@ -78,10 +78,11 @@ class SimuServer(object):
         description: Optional[str] = None
     ):
         self.network_uuid: uuid.UUID = network_uuid
+        self.network_name: str = name
         self.objects: Dict[uuid.UUID, ObjectModel] = {}
         self.objects[self.network_uuid] = ObjectModel(
-            object_type='network',
-            self_uuid=self.network_uuid,
+            type='network',
+            uuid=self.network_uuid,
             # children=[],
             name=name,
             extra_info={'description': description} if description else {}
@@ -91,6 +92,15 @@ class SimuServer(object):
         self.killed = threading.Event()
         self.data_in: List[bytes] = []
         self.data_to_be_send: list[bytes] = []
+
+    def get_network_obj(self) -> ObjectModel:
+        return self.objects[self.network_uuid]
+
+    def get_obj(self, name: str) -> Optional[ObjectModel]:
+        for obj in self.objects.values():
+            if obj.name == name:
+                return obj
+        return None
 
     def add_object(
         self,
@@ -105,8 +115,8 @@ class SimuServer(object):
             raise ValueError("Parent need to exist!")
         self.objects[this_uuid] = ObjectModel(
             parent=parent_uuid,
-            object_type=this_type,
-            self_uuid=this_uuid,
+            type=this_type,
+            uuid=this_uuid,
             name=this_name,
             children=children if children else [],
             extra_info=extra_info if extra_info else {}
@@ -288,7 +298,7 @@ class SimuServer(object):
         data: Union[str, int, float],
         timestamp: datetime.datetime
     ) -> None:
-        pkg_id = f"ServerControl_PUT_{pkg_smithing.random_string()}"
+        pkg_id = f"Server_PUT_{pkg_smithing.random_string()}"
         pkg_data = pkg_smithing.state_pkg(
             obj_uuid=obj_uuid,
             # type="Control",
@@ -349,8 +359,8 @@ class SimuServer(object):
             object_uuid = obj_uuid if obj_uuid else None
 
         return UrlObject(
-            object_type=object_type,
-            self_uuid=object_uuid,
+            type=object_type,
+            uuid=object_uuid,
             parent=parent_uuid,
         )
 
@@ -463,8 +473,8 @@ class SimuServer(object):
         fast_send=False
     ) -> Union[dict, bool]:
 
-        the_uuid = url_obj[0].self_uuid
-        the_type = url_obj[0].object_type
+        the_uuid = url_obj[0].uuid
+        the_type = url_obj[0].type
 
         if url_obj[1] or not the_uuid:
             return self._search_obj(data=data, url_obj=url_obj)
@@ -490,7 +500,7 @@ class SimuServer(object):
     ) -> Union[dict, bool]:
 
         parent_uuid = url_obj[0].parent
-        the_type = url_obj[0].object_type
+        the_type = url_obj[0].type
         the_uuid = uuid.UUID(data['meta']['id'])
 
         if the_type == "network":
@@ -525,7 +535,7 @@ class SimuServer(object):
         fast_send=False
     ) -> Union[dict, bool]:
 
-        the_uuid = url_obj[0].self_uuid
+        the_uuid = url_obj[0].uuid
 
         if the_uuid not in self.objects.keys() or not the_uuid:
             self.add_check(False, f"GET: {the_uuid} not found.")
@@ -537,7 +547,7 @@ class SimuServer(object):
 
         self._update_object_from_dict(
             this_uuid=the_uuid,
-            self_type=url_obj[0].object_type,
+            self_type=url_obj[0].type,
             data=data
         )
 
@@ -553,7 +563,7 @@ class SimuServer(object):
         fast_send=False
     ) -> Union[dict, bool]:
 
-        the_uuid = url_obj[0].self_uuid
+        the_uuid = url_obj[0].uuid
 
         if the_uuid not in self.objects.keys() or not the_uuid:
             self.add_check(False, f"GET: {the_uuid} not found.")
@@ -578,7 +588,7 @@ class SimuServer(object):
         url_obj: Tuple[UrlObject, List[Parameters]]
     ) -> dict:
         parent = url_obj[0].parent
-        obj_type = url_obj[0].object_type
+        obj_type = url_obj[0].type
         if parent not in self.objects.keys():
             # UNSURE: Should it raise an ErrorException instead?
             self.add_check(False, f"Search: {parent} not found.")
@@ -612,35 +622,35 @@ class SimuServer(object):
     def _obj_generate(self, obj_uuid: uuid.UUID) -> dict:
         obj_data = self.objects[obj_uuid]
         # NOTE: Can be make to a dictionary instead!
-        if obj_data.object_type == 'network':
+        if obj_data.type == 'network':
             return pkg_smithing.network_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 obj_children=obj_data.children,
                 name=obj_data.name,
                 **obj_data.extra_info
             )
-        elif obj_data.object_type == 'device':
+        elif obj_data.type == 'device':
             return pkg_smithing.device_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 obj_children=obj_data.children,
                 name=obj_data.name,
                 **obj_data.extra_info
             )
-        elif obj_data.object_type == 'value':
+        elif obj_data.type == 'value':
             return pkg_smithing.value_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 obj_children=obj_data.children,
                 name=obj_data.name,
                 **obj_data.extra_info
             )
-        elif obj_data.object_type == 'state':
+        elif obj_data.type == 'state':
             return pkg_smithing.state_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 **obj_data.extra_info
             )
         else:
             raise ErrorException(
                 code=-32602,
                 msg="Unknown Object type!",
-                data=obj_data.object_type
+                data=obj_data.type
             )

@@ -1,22 +1,23 @@
 #! /usr/bin/env python3
 
 import uuid
-import shutil
 import datetime
 import time
 
-from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import Union
 
 import pytest
 
-from utils.generators import client_certifi_gen
 from utils import pkg_smithing as smithing
 
 from utils.wappstoserver import SimuServer
 from utils import server_utils
+
+from utils.presetup_templates import BaseConnection
+from utils.presetup_templates import BaseNetwork
+from utils.presetup_templates import BaseDevice
 
 import rich
 
@@ -31,67 +32,17 @@ import wappstoiot
 # logging.basicConfig(
 #     level=logging.WARNING,
 #     format="%(asctime)s - %(name)s - %(message)s",
-#     handlers=[RichHandler()],
+#     handlers=[RichHandler()],and
 # )
 
 
-class TestConnection:
+class TestConnection(BaseConnection):
     """
     TestJsonLoadClass instance.
 
     Tests loading json files in wappsto.
 
     """
-
-    temp = Path(__file__).parent.parent / Path('temp')
-
-    def generate_certificates(self, name: str, network_uuid: uuid.UUID):
-        """Generate & save certificates."""
-        certi = client_certifi_gen(name=name, uid=network_uuid)
-        for name, data in zip(["ca.crt", "client.key", "client.crt"], certi):
-            path = self.temp / name
-            with path.open("w") as file:
-                file.write(data)
-
-    @pytest.fixture
-    def mock_ssl_socket(self, mocker):
-        socket = mocker.patch(
-            target='wappstoiot.connections.sslsocket.ssl.SSLContext.wrap_socket',
-            autospec=True
-        )
-
-        return socket
-
-    @pytest.fixture
-    def mock_rw_socket(self, mocker):
-        socket = mocker.patch(
-            target='wappstoiot.connections.sslsocket.socket.socket',
-            autospec=True
-        )
-
-        return socket
-
-    @classmethod
-    def setup_class(cls):
-        """
-        Sets up the class.
-
-        Sets locations to be used in test.
-
-        """
-        shutil.rmtree(cls.temp, ignore_errors=True)
-        cls.temp.mkdir(exist_ok=True, parents=True)
-
-    @classmethod
-    def teardown_class(cls):
-        """
-        Sets up the class.
-
-        Sets locations to be used in test.
-
-        """
-        shutil.rmtree(cls.temp, ignore_errors=True)
-
     @pytest.mark.parametrize(
         "url, port",
         [
@@ -109,7 +60,7 @@ class TestConnection:
         )
         try:
             wappstoiot.config(
-                config_folder=Path(self.temp),
+                config_folder=self.temp,
             )
         finally:
             wappstoiot.close()
@@ -119,14 +70,35 @@ class TestConnection:
 
         mock_ssl_socket.return_value.connect.assert_called_with((f"{url}", port))
 
-    def test_network_creation(self, mock_rw_socket, mock_ssl_socket):
+
+class TestNetwork(BaseConnection):
+
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    @pytest.mark.parametrize(
+        "network_name",
+        [
+            "the_network",  # The Preexisting name
+            "lkjskhbdf"
+        ]
+    )
+    def test_network_creation(
+        self,
+        mock_rw_socket,
+        mock_ssl_socket,
+        fast_send: bool,
+        network_name: str
+    ):
         network_uuid = uuid.uuid4()
+        name_mismatch = network_name != "the_network"
         url = "wappsto.com"
         self.generate_certificates(name=url, network_uuid=network_uuid)
 
         server = SimuServer(
             network_uuid=network_uuid,
-            name=""
+            name="the_network"
         )
         server.get_socket(
             mock_rw_socket=mock_rw_socket,
@@ -134,15 +106,26 @@ class TestConnection:
         )
 
         wappstoiot.config(
-            config_folder=Path(self.temp),
-            fast_send=True  # NOTE: parametrize options.
+            config_folder=self.temp,
+            fast_send=fast_send
         )
         try:
-            wappstoiot.createNetwork("TestNetwork")
+            wappstoiot.createNetwork(network_name)
         finally:
             wappstoiot.close()
 
         server.fail_check()
+
+        network_obj = server.get_network_obj()
+
+        assert len(server.data_in) == 2 if name_mismatch else 1
+
+        assert network_obj.name == network_name
+        assert network_obj.uuid == network_uuid
+        # UNSURE: Description set test?
+
+
+class TestDevice(BaseNetwork):
 
     @pytest.mark.parametrize(
         "device_exist",
@@ -152,54 +135,56 @@ class TestConnection:
         "fast_send",
         [True, False]
     )
+    @pytest.mark.parametrize(
+        "device_name",
+        [
+            "the_device",  # The Preexisting name
+            "lkjskhbdf"
+        ]
+    )
     def test_device_creation(
         self,
-        mock_rw_socket,
-        mock_ssl_socket,
+        mock_network_server,
         device_exist: bool,
         fast_send: bool,
-        differ: bool = False  # TODO:
+        device_name: str,
+        data_mismatch: bool = False  # TODO:
     ):
         # TODO: try with filling out the extra data.
-        # TODO: Have to be able to test if it make POSTs that it should not do.
-        network_name = "TestNetwork"  # Test without this.
-        network_uuid = uuid.uuid4()
         device_uuid = uuid.uuid4()
-        device_name = "test"
-        url = "wappsto.com"
-        self.generate_certificates(name=url, network_uuid=network_uuid)
-
-        server = SimuServer(
-            network_uuid=network_uuid,
-            name=network_name
-        )
-        server.get_socket(
-            mock_rw_socket=mock_rw_socket,
-            mock_ssl_socket=mock_ssl_socket
-        )
 
         if device_exist:
-            server.add_object(
+            mock_network_server.add_object(
                 this_uuid=device_uuid,
                 this_type='device',
-                this_name=device_name,
-                parent_uuid=network_uuid
+                this_name='the_device',
+                parent_uuid=mock_network_server.network_uuid
             )
 
         wappstoiot.config(
-            config_folder=Path(self.temp),
+            config_folder=self.temp,
             fast_send=fast_send
         )
-        network = wappstoiot.createNetwork(name=network_name)
+        network = wappstoiot.createNetwork(name=mock_network_server.network_name)
 
         try:
             network.createDevice(name=device_name)
         finally:
             wappstoiot.close()
 
-        server.fail_check()
+        mock_network_server.fail_check()
 
-        assert len(server.data_in) == 3 if device_exist else 3
+        expected_pkg = 2 + 1  # +1 until expand=0 implemented.
+        if data_mismatch and device_exist:
+            expected_pkg += 1
+        # if not device_exist:
+        #     expected_pkg += 1
+
+        assert len(mock_network_server.data_in) == expected_pkg
+        # TODO: More tests. like the test of name, uuid & description are right.
+
+
+class TestValue(BaseDevice):
 
     @pytest.mark.parametrize(
         "permission",
@@ -236,64 +221,42 @@ class TestConnection:
     )
     def test_value_creation(
         self,
-        mock_rw_socket,
-        mock_ssl_socket,
+        mock_device_server,
         value_template: wappstoiot.ValueTemplate,
         permission: wappstoiot.PermissionType,
         fast_send: bool,
         value_exist: bool,
     ):
         # Should also be able to set what existed of states before this creation.
-        network_uuid = uuid.uuid4()
-        device_uuid = uuid.uuid4()
+        device_obj = mock_device_server.get_obj(name="the_device")
+
         if value_exist:
             value_uuid = uuid.uuid4()
-        network_name = "TestNetwork"
-        device_name = "test"
         value_name = "moeller"
         extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
             value_template=value_template,
             permission=permission
         )
 
-        url = "wappsto.com"
-        self.generate_certificates(name=url, network_uuid=network_uuid)
-
-        server = SimuServer(
-            network_uuid=network_uuid,
-            name=network_name
-        )
-        server.get_socket(
-            mock_rw_socket=mock_rw_socket,
-            mock_ssl_socket=mock_ssl_socket
-        )
-
-        server.add_object(
-            this_uuid=device_uuid,
-            this_type='device',
-            this_name=device_name,
-            parent_uuid=network_uuid
-        )
-
         if value_exist:
             # TODO: Test with Children & extra_info Permission set, & w/ conflict. (RW + 1 child)
-            server.add_object(
+            mock_device_server.add_object(
                 this_uuid=value_uuid,
                 this_type='value',
                 this_name=value_name,
-                parent_uuid=device_uuid,
+                parent_uuid=device_obj.uuid,
                 extra_info=extra_info
             )
             # TODO: Add states.
 
         wappstoiot.config(
-            config_folder=Path(self.temp),
+            config_folder=self.temp,
             fast_send=fast_send
         )
 
-        network = wappstoiot.createNetwork(name=network_name)
+        network = wappstoiot.createNetwork(name=mock_device_server.network_name)
 
-        device = network.createDevice(name=device_name)
+        device = network.createDevice(name=device_obj.name)
 
         try:
             value = device.createValue(
@@ -304,9 +267,9 @@ class TestConnection:
         finally:
             wappstoiot.close()
 
-        server.fail_check()
+        mock_device_server.fail_check()
 
-        state_count = len(server.objects.get(value.uuid, {}).children)
+        state_count = len(mock_device_server.objects.get(value.uuid, {}).children)
 
         expected = 5 if value_exist else 5
 
@@ -326,8 +289,8 @@ class TestConnection:
         elif permission == wappstoiot.PermissionType.NONE:
             assert state_count == 0, "No state for a virtual Value!"
 
-        msg = f"Package received count Failed. should be {expected}, was: {len(server.data_in)}"
-        assert len(server.data_in) == expected, msg
+        msg = f"Package received count Failed. should be {expected}, was: {len(mock_device_server.data_in)}"
+        assert len(mock_device_server.data_in) == expected, msg
 
         # assert False
 
@@ -459,60 +422,38 @@ class TestConnection:
     )
     def test_report_changes(
         self,
-        mock_rw_socket,
-        mock_ssl_socket,
+        mock_device_server,
         permission: wappstoiot.PermissionType,
         value_template: wappstoiot.ValueTemplate,
         fast_send: bool,
         data_value: Union[int, float, str]
     ):
         # Should also be able to set what existed of states before this creation.
-        network_uuid = uuid.uuid4()
-        device_uuid = uuid.uuid4()
+        device_obj = mock_device_server.get_obj(name="the_device")
+
         value_uuid = uuid.uuid4()
-        network_name = "TestNetwork"
-        device_name = "test"
         value_name = "moeller"
         extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
             value_template=value_template,
             permission=permission
         )
 
-        url = "wappsto.com"
-        self.generate_certificates(name=url, network_uuid=network_uuid)
-
-        server = SimuServer(
-            network_uuid=network_uuid,
-            name=network_name
-        )
-        server.get_socket(
-            mock_rw_socket=mock_rw_socket,
-            mock_ssl_socket=mock_ssl_socket
-        )
-
-        server.add_object(
-            this_uuid=device_uuid,
-            this_type='device',
-            this_name=device_name,
-            parent_uuid=network_uuid
-        )
-
-        server.add_object(
+        mock_device_server.add_object(
             this_uuid=value_uuid,
             this_type='value',
             this_name=value_name,
-            parent_uuid=device_uuid,
+            parent_uuid=device_obj.uuid,
             extra_info=extra_info
         )
 
         wappstoiot.config(
-            config_folder=Path(self.temp),
+            config_folder=self.temp,
             fast_send=fast_send
         )
 
-        network = wappstoiot.createNetwork(name=network_name)
+        network = wappstoiot.createNetwork(name=mock_device_server.network_name)
 
-        device = network.createDevice(name=device_name)
+        device = network.createDevice(name=device_obj.name)
 
         value = device.createValue(
             name=value_name,
@@ -528,9 +469,9 @@ class TestConnection:
         finally:
             wappstoiot.close()
 
-        server.fail_check()
+        mock_device_server.fail_check()
         state = server_utils.get_state_obj(
-            server=server,
+            server=mock_device_server,
             value_uuid=value_uuid,
             state_type="Report"
         )
@@ -587,60 +528,38 @@ class TestConnection:
     )
     def test_control_changes(
         self,
-        mock_rw_socket,
-        mock_ssl_socket,
+        mock_device_server,
         permission: wappstoiot.PermissionType,
         value_template: wappstoiot.ValueTemplate,
         fast_send: bool,
         data_value: Union[int, float, str]
     ):
         # Should also be able to set what existed of states before this creation.
-        network_uuid = uuid.uuid4()
-        device_uuid = uuid.uuid4()
+        device_obj = mock_device_server.get_obj(name="the_device")
+
         value_uuid = uuid.uuid4()
-        network_name = "TestNetwork"
-        device_name = "test"
         value_name = "moeller"
         extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
             value_template=value_template,
             permission=permission
         )
 
-        url = "wappsto.com"
-        self.generate_certificates(name=url, network_uuid=network_uuid)
-
-        server = SimuServer(
-            network_uuid=network_uuid,
-            name=network_name
-        )
-        server.get_socket(
-            mock_rw_socket=mock_rw_socket,
-            mock_ssl_socket=mock_ssl_socket
-        )
-
-        server.add_object(
-            this_uuid=device_uuid,
-            this_type='device',
-            this_name=device_name,
-            parent_uuid=network_uuid
-        )
-
-        server.add_object(
+        mock_device_server.add_object(
             this_uuid=value_uuid,
             this_type='value',
             this_name=value_name,
-            parent_uuid=device_uuid,
+            parent_uuid=device_obj.uuid,
             extra_info=extra_info
         )
 
         wappstoiot.config(
-            config_folder=Path(self.temp),
+            config_folder=self.temp,
             fast_send=fast_send
         )
 
-        network = wappstoiot.createNetwork(name=network_name)
+        network = wappstoiot.createNetwork(name=mock_device_server.network_name)
 
-        device = network.createDevice(name=device_name)
+        device = network.createDevice(name=device_obj.name)
 
         value = device.createValue(
             name=value_name,
@@ -658,14 +577,14 @@ class TestConnection:
             print(f"OnControl: {value}")
 
         state = server_utils.get_state_obj(
-            server=server,
+            server=mock_device_server,
             value_uuid=value_uuid,
             state_type="Control"
         )
 
         try:
-            server.send_control(
-                obj_uuid=state.self_uuid,
+            mock_device_server.send_control(
+                obj_uuid=state.uuid,
                 data=data_value,
                 timestamp=timestamp,
             )
@@ -679,7 +598,7 @@ class TestConnection:
         finally:
             wappstoiot.close()
 
-        server.fail_check()
+        mock_device_server.fail_check()
 
         # print(f"{state}")
         is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
