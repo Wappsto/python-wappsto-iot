@@ -7,7 +7,7 @@
 
 import __main__
 import atexit
-import netrc
+# import netrc
 import json
 import logging
 
@@ -167,10 +167,10 @@ def config(
     if connection == ConnectionTypes.IOTAPI:
         _setup_IoTAPI(__config_folder, fast_send=fast_send)
 
-    elif connection == ConnectionTypes.RESTAPI:
-        # TODO: Find & load configs.
-        configs: Dict[Any, Any] = {}
-        _setup_RestAPI(__config_folder, configs)  # FIXME:
+    # elif connection == ConnectionTypes.RESTAPI:
+    #     # TODO: Find & load configs.
+    #     configs: Dict[Any, Any] = {}
+    #     _setup_RestAPI(__config_folder, configs)  # FIXME:
 
 
 def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
@@ -180,18 +180,18 @@ def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
     __the_connection = IoTAPI(**kwargs, fast_send=fast_send)
 
 
-def _setup_RestAPI(__config_folder, configs):
-    # TODO: Setup the Connection.
-    global __the_connection
-    token = configs.get("token")
-    login = netrc.netrc().authenticators(configs.end_point)
-    if token:
-        kwargs = {"token": token}
-    elif login:
-        kwargs = {"username": login[0], "password": login[1]}
-    else:
-        raise ValueError("No login was found.")
-    __the_connection = RestAPI(**kwargs, url=configs.end_point)
+# def _setup_RestAPI(__config_folder, configs):
+#     # TODO: Setup the Connection.
+#     global __the_connection
+#     token = configs.get("token")
+#     login = netrc.netrc().authenticators(configs.end_point)
+#     if token:
+#         kwargs = {"token": token}
+#     elif login:
+#         kwargs = {"username": login[0], "password": login[1]}
+#     else:
+#         raise ValueError("No login was found.")
+#     __the_connection = RestAPI(**kwargs, url=configs.end_point)
 
 
 def _certificate_check(path) -> Dict[str, Path]:
