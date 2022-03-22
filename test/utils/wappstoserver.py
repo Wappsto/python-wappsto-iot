@@ -274,7 +274,7 @@ class SimuServer(object):
 
     def send_data(
         self,
-        data: bytes,
+        data: Union[dict, list],
         pkg_method: str,
         pkg_url: str,
         pkg_id: Optional[str] = None,
@@ -317,6 +317,15 @@ class SimuServer(object):
             this_uuid=obj_uuid,
             self_type="state",
             data=pkg_data
+        )
+
+    def send_delete(self, obj_uuid, obj_type: str):
+        pkg_id = f"Server_DELETE_{pkg_smithing.random_string()}"
+        self.send_data(
+            data={},
+            pkg_method="DELETE",
+            pkg_id=pkg_id,
+            pkg_url=f"/{obj_type}/{obj_uuid}",
         )
 
     def _params_parser(self, params) -> List[Parameters]:

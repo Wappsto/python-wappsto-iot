@@ -124,6 +124,61 @@ class TestNetwork(BaseConnection):
         assert network_obj.uuid == network_uuid
         # UNSURE: Description set test?
 
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    def test_network_deleting(
+        self,
+        mock_rw_socket,
+        mock_ssl_socket,
+        fast_send: bool,
+    ):
+        network_uuid = uuid.uuid4()
+        network_name = "the_network"
+        url = "wappsto.com"
+        self.generate_certificates(name=url, network_uuid=network_uuid)
+
+        server = SimuServer(
+            network_uuid=network_uuid,
+            name="the_network"
+        )
+        server.get_socket(
+            mock_rw_socket=mock_rw_socket,
+            mock_ssl_socket=mock_ssl_socket
+        )
+
+        wappstoiot.config(
+            config_folder=self.temp,
+            fast_send=fast_send
+        )
+        network = wappstoiot.createNetwork(network_name)
+
+        network_deleted: bool = False
+
+        @network.onDelete
+        def network_rm(obj):
+            nonlocal network_deleted
+            network_deleted = True
+
+        try:
+            server.send_delete(
+                obj_uuid=server.network_uuid,
+                obj_type="network"
+            )
+            start = time.time() + 1
+            while network_deleted is False:
+                if start <= time.time():
+                    break
+                time.sleep(0.1)
+        finally:
+            wappstoiot.close()
+
+        server.fail_check()
+
+        assert len(server.data_in) == 2
+        assert network_deleted, "Didn't receive a Delete"
+
 
 class TestDevice(BaseNetwork):
 
@@ -182,6 +237,55 @@ class TestDevice(BaseNetwork):
 
         assert len(mock_network_server.data_in) == expected_pkg
         # TODO: More tests. like the test of name, uuid & description are right.
+
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    def test_device_deleting(
+        self,
+        mock_network_server,
+        fast_send: bool,
+        data_mismatch: bool = False  # TODO:
+    ):
+        # TODO: try with filling out the extra data.
+        device_uuid = uuid.uuid4()
+        device_name = 'the_device'
+
+        mock_network_server.add_object(
+            this_uuid=device_uuid,
+            this_type='device',
+            this_name='the_device',
+            parent_uuid=mock_network_server.network_uuid
+        )
+
+        wappstoiot.config(
+            config_folder=self.temp,
+            fast_send=fast_send
+        )
+        network = wappstoiot.createNetwork(name=mock_network_server.network_name)
+        device = network.createDevice(name=device_name)
+        device_deleted = False
+
+        @device.onDelete
+        def device_rm(obj):
+            nonlocal device_deleted
+            device_deleted = True
+        try:
+            mock_network_server.send_delete(
+                obj_uuid=device_uuid,
+                obj_type="device"
+            )
+            start = time.time() + 1
+            while device_deleted is False:
+                if start <= time.time():
+                    break
+                time.sleep(0.1)
+        finally:
+            wappstoiot.close()
+
+        mock_network_server.fail_check()
+        assert device_deleted, "Didn't receive a Delete"
 
 
 class TestValue(BaseDevice):
@@ -293,6 +397,52 @@ class TestValue(BaseDevice):
         assert len(mock_device_server.data_in) == expected, msg
 
         # assert False
+
+    @pytest.mark.parametrize(
+        "fast_send",
+        [
+            True,
+            False
+        ]
+    )
+    def test_value_deleting(
+        self,
+        mock_value_rw_nr_server,
+        fast_send: bool,
+    ):
+        device_obj = mock_value_rw_nr_server.get_obj(name="the_device")
+        value_obj = mock_value_rw_nr_server.get_obj(name="the_value")
+        network = wappstoiot.createNetwork(name=mock_value_rw_nr_server.network_name)
+
+        device = network.createDevice(name=device_obj.name)
+
+        value = device.createValue(
+            name=value_obj.name,
+            permission=wappstoiot.PermissionType.READWRITE,
+            value_template=wappstoiot.ValueTemplate.NUMBER
+        )
+        device_deleted = False
+
+        @value.onDelete
+        def value_delete(obj):
+            nonlocal device_deleted
+            device_deleted = True
+        try:
+            mock_value_rw_nr_server.send_delete(
+                obj_uuid=value_obj.uuid,
+                obj_type="value"
+            )
+            start = time.time() + 1
+            while device_deleted is False:
+                if start <= time.time():
+                    break
+                time.sleep(0.1)
+        finally:
+            wappstoiot.close()
+
+        mock_value_rw_nr_server.fail_check()
+        print(mock_value_rw_nr_server.data_in)
+        assert device_deleted, "Didn't receive a Delete"
 
     # def test_state_creation(
     #     self,
