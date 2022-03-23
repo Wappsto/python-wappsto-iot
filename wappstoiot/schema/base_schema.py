@@ -213,7 +213,7 @@ class BaseMeta(BaseModel):  # Base Meta
     accept_manufacturer_as_owner: Optional[Optional[bool]] = None
     redirect: Optional[  # type: ignore
         constr(
-            regex=r'^[0-9a-zA-Z_-]+$',  # type: ignore[F722]
+            regex=r'^[0-9a-zA-Z_-]+$',  # noqa: F722
             min_length=1,
             max_length=200
         )
