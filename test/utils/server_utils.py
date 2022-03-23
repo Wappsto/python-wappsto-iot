@@ -1,8 +1,11 @@
+import json
 import uuid
 
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import Optional
+from typing import Union
 
 import wappstoiot
 
@@ -26,12 +29,19 @@ def generate_value_extra_info(
             'min': value_settings.min,
             'max': value_settings.max,
             'step': value_settings.step,
-            'mapping': value_settings.mapping,
-            'meaningful_zero': value_settings.meaningful_zero,
-            'ordered_mapping': value_settings.ordered_mapping,
-            'si_conversion': value_settings.si_conversion,
-            'unit': value_settings.unit,
         }
+
+        if value_settings.mapping:
+            extra_info['number']['mapping'] = value_settings.mapping,
+        if value_settings.meaningful_zero:
+            extra_info['number']['meaningful_zero'] = value_settings.meaningful_zero,
+        if value_settings.ordered_mapping:
+            extra_info['number']['ordered_mapping'] = value_settings.ordered_mapping,
+        if value_settings.si_conversion:
+            extra_info['number']['si_conversion'] = value_settings.si_conversion,
+        if value_settings.unit:
+            extra_info['number']['unit'] = value_settings.unit,
+
     elif value_settings.value_type == wappstoiot.modules.template.ValueBaseType.STRING:
         extra_info['string'] = {
             "max": value_settings.max,
@@ -62,3 +72,21 @@ def get_state_obj(
         if state.extra_info.get('type', "").lower() == state_type.lower():
             return state
     return None
+
+
+def fast_send_check(pkg_list: List[Union[bytes, str, dict]], fast_send: bool):
+    for x in pkg_list:
+        print(x)
+        if not isinstance(x, dict):
+            pkg = json.loads(x)
+        else:
+            pkg = x
+        if not isinstance(pkg, list):
+            pkg = [pkg]
+        for x_pkg in pkg:
+            if x_pkg.get('result'):
+                continue
+            if x_pkg.get('method') == 'GET':
+                assert x_pkg.get('params', {}).get('meta', {}).get('fast', False) is False
+                continue
+            assert x_pkg.get('params', {}).get('meta', {}).get('fast', False) is fast_send
