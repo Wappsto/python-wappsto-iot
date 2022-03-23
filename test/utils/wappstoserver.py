@@ -407,6 +407,10 @@ class SimuServer(object):
                 # TODO: Handle Success & Failed package.
                 return b''
 
+            if 'error' in j_data:
+                self.add_check(False, j_data['error']['message'])
+                return b''
+
             pkg_method = j_data['method']
             the_url = j_data['params']['url']
             the_data = j_data['params'].get('data')
@@ -437,6 +441,12 @@ class SimuServer(object):
                     )
                 elif pkg_method.upper() == 'DELETE':
                     r_data = self.delete_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'HEAD':
+                    r_data = self.head_handle(
                         data=the_data,
                         fast_send=fast_send,
                         url_obj=url_obj
@@ -590,6 +600,15 @@ class SimuServer(object):
             return True
 
         return the_obj
+
+    def head_handle(
+        self,
+        data: dict,
+        url_obj: Tuple[UrlObject, List[Parameters]],
+        fast_send=False
+    ) -> Union[dict, bool]:
+
+        return True
 
     def _search_obj(
         self,
