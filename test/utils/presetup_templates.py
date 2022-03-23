@@ -99,6 +99,8 @@ class BaseDevice(BaseNetwork):
         )
         return mock_network_server
 
+
+class BaseValue(BaseDevice):
     @pytest.fixture
     def mock_value_rw_nr_server(self, mock_device_server):
         device_obj = mock_device_server.get_obj(name="the_device")
