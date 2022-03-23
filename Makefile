@@ -18,6 +18,7 @@ clean-build:
 	rm --force --recursive .coverage
 	rm --force --recursive .mypy_cache
 	rm --force --recursive .pytest_cache
+	rm --force --recursive .cprofile
 
 clean-env:
 	rm --force pyvenv.cfg
