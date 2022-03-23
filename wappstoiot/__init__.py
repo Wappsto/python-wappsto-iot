@@ -10,6 +10,7 @@ import atexit
 # import netrc
 import json
 import logging
+import threading
 
 from pathlib import Path
 from enum import Enum
@@ -107,6 +108,7 @@ def onStatusChange(
 __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 __connection_closed: bool = False
+__ping_pong_thread_killed = threading.Event()
 
 
 class ConnectionTypes(str, Enum):
@@ -214,16 +216,16 @@ def _certificate_check(path) -> Dict[str, Path]:
 
 def _setup_ping_pong(period_s: Optional[int] = None):
     # TODO: Test me!
+    __ping_pong_thread_killed.clear()
     if not period_s:
         return
-    import threading
 
     # TODO: Need a close check so it do not hold wappstoiot open.
     def _ping():
         __log.debug("Ping-Pong called!")
         nonlocal thread
-        global __connection_closed
-        if __connection_closed:
+        global __ping_pong_thread_killed
+        if __ping_pong_thread_killed.is_set():
             return
         try:
             thread = threading.Timer(period_s, _ping)
@@ -235,6 +237,7 @@ def _setup_ping_pong(period_s: Optional[int] = None):
     thread.daemon = True
     thread.start()
     atexit.register(lambda: thread.cancel())
+    # atexit.register(lambda: __ping_pong_thread_killed.set())
 
 
 def _setup_offline_storage(
@@ -333,6 +336,7 @@ def disconnect():
 def close():
     """."""
     atexit.unregister(close)
+    __ping_pong_thread_killed.set()
     # atexit._run_exitfuncs()
     global __connection_closed
     global __the_connection
