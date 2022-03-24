@@ -62,8 +62,6 @@ class Device:
         communication: Optional[str] = None,
         serial: Optional[str] = None,
         description: Optional[str] = None,
-        # protocol
-        # communication
     ):
 
         self.log = logging.getLogger(__name__)
