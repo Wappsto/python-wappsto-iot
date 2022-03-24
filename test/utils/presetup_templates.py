@@ -26,6 +26,10 @@ class BaseConnection:
             with path.open("w") as file:
                 file.write(data)
 
+    def remove_temps(self):
+        shutil.rmtree(self.temp, ignore_errors=True)
+        self.temp.mkdir(exist_ok=True, parents=True)
+
     @pytest.fixture
     def mock_ssl_socket(self, mocker):
         socket = mocker.patch(
@@ -52,8 +56,9 @@ class BaseConnection:
         Sets locations to be used in test.
 
         """
-        shutil.rmtree(cls.temp, ignore_errors=True)
-        cls.temp.mkdir(exist_ok=True, parents=True)
+        cls.remove_temps(cls)
+        # shutil.rmtree(cls.temp, ignore_errors=True)
+        # cls.temp.mkdir(exist_ok=True, parents=True)
 
     @classmethod
     def teardown_class(cls):
