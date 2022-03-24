@@ -1,7 +1,9 @@
 import json
+import time
 import uuid
 
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -11,6 +13,14 @@ import wappstoiot
 
 from utils.wappstoserver import ObjectModel
 from utils.wappstoserver import SimuServer
+
+
+def wait_until_or(check: Callable[[], bool], max_wait: int):
+    start = time.time() + max_wait
+    while not check():
+        if start <= time.time():
+            break
+        time.sleep(0.1)
 
 
 def generate_value_extra_info(
