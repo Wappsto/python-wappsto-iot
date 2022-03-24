@@ -51,6 +51,7 @@ class TestConnection(BaseConnection):
             url = f"collector.{url}"
 
         mock_ssl_socket.return_value.connect.assert_called_with((f"{url}", port))
+        self.remove_temps()
 
 
 class TestNetwork(BaseNetwork):
@@ -66,12 +67,19 @@ class TestNetwork(BaseNetwork):
             "lkjskhbdf"
         ]
     )
+    @pytest.mark.parametrize(
+        "description",
+        [
+            "The Description",
+        ]
+    )
     def test_creation(
         self,
         mock_rw_socket,
         mock_ssl_socket,
         fast_send: bool,
-        network_name: str
+        network_name: str,
+        description: str
     ):
         network_uuid = uuid.uuid4()
         name_mismatch = network_name != "the_network"
@@ -92,7 +100,10 @@ class TestNetwork(BaseNetwork):
             fast_send=fast_send
         )
         try:
-            wappstoiot.createNetwork(network_name)
+            network = wappstoiot.createNetwork(
+                name=network_name,
+                description=description
+            )
         finally:
             wappstoiot.close()
 
@@ -104,7 +115,9 @@ class TestNetwork(BaseNetwork):
 
         assert network_obj.name == network_name
         assert network_obj.uuid == network_uuid
-        # UNSURE: Description set test?
+        assert description == network_obj.extra_info.get('description')
+        assert description == network.element.description
+
         server_utils.fast_send_check(
             pkg_list=server.data_in,
             fast_send=fast_send
@@ -137,11 +150,7 @@ class TestNetwork(BaseNetwork):
                 obj_uuid=mock_network_server.network_uuid,
                 obj_type="network"
             )
-            start = time.time() + 1
-            while network_deleted is False:
-                if start <= time.time():
-                    break
-                time.sleep(0.1)
+            server_utils.wait_until_or(lambda: network_deleted, 1)
         finally:
             wappstoiot.close()
 
@@ -202,13 +211,18 @@ class TestNetwork(BaseNetwork):
                 ping_pong_period_sec=1
             )
             wappstoiot.createNetwork(mock_network_server.network_name)
-            start = time.time() + 2
-            while len(mock_network_server.data_in) < 2:
-                if start <= time.time():
-                    break
-                time.sleep(0.01)
+            server_utils.wait_until_or(
+                lambda: len(mock_network_server.data_in) >= 2,
+                2
+            )
         finally:
             wappstoiot.close()
+
+        # To ensure that the Ping thread have closed, so the next test do not fail.
+        server_utils.wait_until_or(
+            lambda: len(mock_network_server.data_in) >= 3,
+            2
+        )
 
         mock_network_server.fail_check()
 
@@ -241,13 +255,27 @@ class TestDevice(BaseDevice):
             "lkjskhbdf"
         ]
     )
+    @pytest.mark.parametrize(
+        "description",
+        [
+            "",
+            "Some Description"
+        ]
+    )
     def test_creation(
         self,
         mock_network_server,
         device_exist: bool,
         fast_send: bool,
         device_name: str,
-        data_mismatch: bool = False  # TODO:
+        description: str,
+        # manufacturer: str,
+        # product: str,
+        # version: str,
+        # protocol: str,
+        # communication: str,
+        # serial: str,
+        # data_mismatch: bool = False  # TODO:
     ):
         # TODO: try with filling out the extra data.
         # TODO: Test with device change Permission and/or ValueTemplate.
@@ -257,7 +285,7 @@ class TestDevice(BaseDevice):
             mock_network_server.add_object(
                 this_uuid=device_uuid,
                 this_type='device',
-                this_name='the_device',
+                this_name=device_name,
                 parent_uuid=mock_network_server.network_uuid
             )
 
@@ -268,20 +296,32 @@ class TestDevice(BaseDevice):
         network = wappstoiot.createNetwork(name=mock_network_server.network_name)
 
         try:
-            network.createDevice(name=device_name)
+            device = network.createDevice(
+                name=device_name,
+                description=description
+            )
         finally:
             wappstoiot.close()
 
         mock_network_server.fail_check()
+        device_obj = mock_network_server.get_obj(name=device_name)
+
+        data_mismatch = description != ''
 
         expected_pkg = 2 + 1  # +1 until expand=0 implemented.
         if data_mismatch and device_exist:
             expected_pkg += 1
-        # if not device_exist:
-        #     expected_pkg += 1
 
         assert len(mock_network_server.data_in) == expected_pkg
+
         # TODO: More tests. like the test of name, uuid & description are right.
+        if 'the_device' == device_name and device_exist:
+            assert device_uuid == device.uuid
+        assert device_name == device_obj.name
+        assert device_name == device.name
+        assert description == device_obj.extra_info.get("description", '')
+        assert description == device.element.description
+
         server_utils.fast_send_check(
             pkg_list=mock_network_server.data_in,
             fast_send=fast_send
@@ -317,11 +357,12 @@ class TestDevice(BaseDevice):
                 obj_uuid=device_obj.uuid,
                 obj_type="device"
             )
-            start = time.time() + 1
-            while device_deleted is False:
-                if start <= time.time():
-                    break
-                time.sleep(0.1)
+            server_utils.wait_until_or(lambda: device_deleted, 1)
+            # start = time.time() + 1
+            # while device_deleted is False:
+            #     if start <= time.time():
+            #         break
+            #     time.sleep(0.1)
         finally:
             wappstoiot.close()
 
@@ -484,6 +525,368 @@ class TestValue(BaseValue):
         )
 
     @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            # wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    @pytest.mark.parametrize(
+        "value_name",
+        [
+            "the_value",
+            "lkjskhbdf"
+        ]
+    )
+    @pytest.mark.parametrize(
+        "vtype,vmin,vmax,step,unit,description,si_conversion,period,delta,mapping,meaningful_zero,ordered_mapping",
+        [
+            ["Test_Number", 0, 10, 1, "tal", "TestingDescription.", "km/km", 74, 42, {"1": "First", "2": "Others"}, False, False],
+        ]
+    )
+    def test_createNumberValue(
+        self,
+        mock_device_server,
+        fast_send: bool,
+        value_name: str,
+        permission: wappstoiot.PermissionType,
+        vtype: str,
+        vmin: Union[int, float],
+        vmax: Union[int, float],
+        step: Union[int, float],
+        unit: str,
+        description: str,
+        si_conversion: str,
+        period: int,  # in Sec
+        delta: Union[int, float],
+        mapping: Dict[str, str],
+        meaningful_zero: bool,
+        ordered_mapping: bool,
+    ):
+        # TODO: Test Illegal Names!
+        try:
+            wappstoiot.config(
+                config_folder=self.temp,
+                fast_send=fast_send
+            )
+            network = wappstoiot.createNetwork(name=mock_device_server.network_name)
+            device = network.createDevice(name="the_device")
+            value = device.createNumberValue(
+                name=value_name,
+                permission=permission,
+                type=vtype,
+                min=vmin,
+                max=vmax,
+                step=step,
+                unit=unit,
+                description=description,
+                si_conversion=si_conversion,
+                period=period,
+                delta=delta,
+                mapping=mapping,
+                meaningful_zero=meaningful_zero,
+                ordered_mapping=ordered_mapping,
+            )
+
+        finally:
+            wappstoiot.close()
+
+        value_obj = mock_device_server.get_obj(name=value_name)
+
+        mock_device_server.fail_check()
+
+        print(value_obj)
+
+        assert value_name == value_obj.name
+        assert value_name == value.name
+        assert value_obj.uuid == value.uuid
+        assert vtype == value_obj.extra_info.get("type")
+        assert vtype == value.element.type
+        assert vmin == value_obj.extra_info.get('number', {}).get("min")
+        assert vmin == value.element.number.min
+        assert vmax == value_obj.extra_info.get('number', {}).get("max")
+        assert vmax == value.element.number.max
+        assert step == value_obj.extra_info.get('number', {}).get("step")
+        assert step == value.element.number.step
+        assert unit == value_obj.extra_info.get('number', {}).get("unit")
+        assert unit == value.element.number.unit
+        assert description == value_obj.extra_info.get("description")
+        assert description == value.element.description
+        assert si_conversion == value_obj.extra_info.get('number', {}).get("si_conversion")
+        assert si_conversion == value.element.number.si_conversion
+        assert str(period) == value_obj.extra_info.get("period")
+        assert str(period) == value.element.period
+        assert mapping.items() == value_obj.extra_info.get('number', {}).get("mapping").items()
+        assert mapping.items() == value.element.number.mapping.items()
+        assert meaningful_zero == value_obj.extra_info.get('number', {}).get("meaningful_zero")
+        assert meaningful_zero == value.element.number.meaningful_zero
+        assert ordered_mapping == value_obj.extra_info.get('number', {}).get("ordered_mapping")
+        assert ordered_mapping == value.element.number.ordered_mapping
+
+        server_utils.fast_send_check(
+            pkg_list=mock_device_server.data_in,
+            fast_send=fast_send
+        )
+
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            # wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    @pytest.mark.parametrize(
+        "value_name",
+        [
+            "the_value",
+            "lkjskhbdf"
+        ]
+    )
+    @pytest.mark.parametrize(
+        "vtype,vmax,encoding,description,period",
+        [
+            ["Test_String", 10, "UTF-8", "TestingDescription.", 74],
+        ]
+    )
+    def test_createStringValue(
+        self,
+        mock_device_server,
+        fast_send: bool,
+        value_name: str,
+        permission: wappstoiot.PermissionType,
+        vtype: str,
+        vmax: Union[int, float],
+        encoding: str,
+        description: str,
+        period: int,  # in Sec  # UNSURE: How to test this in a short time period?
+    ):
+        # TODO: Test Illegal Names!
+        try:
+            wappstoiot.config(
+                config_folder=self.temp,
+                fast_send=fast_send
+            )
+            network = wappstoiot.createNetwork(name=mock_device_server.network_name)
+            device = network.createDevice(name="the_device")
+            value = device.createStringValue(
+                name=value_name,
+                permission=permission,
+                type=vtype,
+                max=vmax,
+                encoding=encoding,
+                description=description,
+                period=period
+            )
+
+        finally:
+            wappstoiot.close()
+
+        value_obj = mock_device_server.get_obj(name=value_name)
+
+        mock_device_server.fail_check()
+
+        print(value_obj)
+
+        assert value_name == value_obj.name
+        assert value_name == value.name
+        assert value_obj.uuid == value.uuid
+        assert encoding == value_obj.extra_info.get('string', {}).get("encoding")
+        assert encoding == value.element.string.encoding
+        assert description == value_obj.extra_info.get("description")
+        assert description == value.element.description
+        assert str(period) == value_obj.extra_info.get("period")
+        assert str(period) == value.element.period
+        assert vtype == value_obj.extra_info.get("type")
+        assert vtype == value.element.type
+        assert vmax == value_obj.extra_info.get('string', {}).get("max")
+        assert vmax == value.element.string.max
+
+        server_utils.fast_send_check(
+            pkg_list=mock_device_server.data_in,
+            fast_send=fast_send
+        )
+
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            # wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    @pytest.mark.parametrize(
+        "value_name",
+        [
+            "the_value",
+            "lkjskhbdf"
+        ]
+    )
+    @pytest.mark.parametrize(
+        "vtype,vmax,encoding,description,period",
+        [
+            ["Test_Blob", 10, "Base64", "TestingDescription.", 74],
+        ]
+    )
+    def test_createBlobValue(
+        self,
+        mock_device_server,
+        fast_send: bool,
+        value_name: str,
+        permission: wappstoiot.PermissionType,
+        vtype: str,
+        vmax: Union[int, float],
+        encoding: str,
+        description: str,
+        period: int,  # in Sec  # UNSURE: How to test this in a short time period?
+    ):
+        # TODO: Test Illegal Names!
+        try:
+            wappstoiot.config(
+                config_folder=self.temp,
+                fast_send=fast_send
+            )
+            network = wappstoiot.createNetwork(name=mock_device_server.network_name)
+            device = network.createDevice(name="the_device")
+            value = device.createBlobValue(
+                name=value_name,
+                permission=permission,
+                type=vtype,
+                max=vmax,
+                encoding=encoding,
+                description=description,
+                period=period
+            )
+
+        finally:
+            wappstoiot.close()
+
+        value_obj = mock_device_server.get_obj(name=value_name)
+
+        mock_device_server.fail_check()
+
+        print(value_obj)
+
+        assert value_name == value_obj.name
+        assert value_name == value.name
+        assert value_obj.uuid == value.uuid
+        assert encoding == value_obj.extra_info.get('blob', {}).get("encoding")
+        assert encoding == value.element.blob.encoding
+        assert description == value_obj.extra_info.get("description")
+        assert description == value.element.description
+        assert str(period) == value_obj.extra_info.get("period")
+        assert str(period) == value.element.period
+        assert vtype == value_obj.extra_info.get("type")
+        assert vtype == value.element.type
+        assert vmax == value_obj.extra_info.get('blob', {}).get("max")
+        assert vmax == value.element.blob.max
+
+        server_utils.fast_send_check(
+            pkg_list=mock_device_server.data_in,
+            fast_send=fast_send
+        )
+
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            # wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    @pytest.mark.parametrize(
+        "value_name",
+        [
+            "the_value",
+            "lkjskhbdf"
+        ]
+    )
+    @pytest.mark.parametrize(
+        "vtype,xsd,namespace,description,period",
+        [
+            ["Test_Xml", "<test></test>", "First", "TestingDescription.", 74],
+        ]
+    )
+    def test_createXmlValue(
+        self,
+        mock_device_server,
+        fast_send: bool,
+        value_name: str,
+        permission: wappstoiot.PermissionType,
+        vtype: str,
+        xsd: str,
+        namespace: str,
+        description: str,
+        period: int,  # in Sec  # UNSURE: How to test this in a short time period?
+    ):
+        # TODO: Test Illegal Names!
+        try:
+            wappstoiot.config(
+                config_folder=self.temp,
+                fast_send=fast_send
+            )
+            network = wappstoiot.createNetwork(name=mock_device_server.network_name)
+            device = network.createDevice(name="the_device")
+            value = device.createXmlValue(
+                name=value_name,
+                permission=permission,
+                type=vtype,
+                xsd=xsd,
+                namespace=namespace,
+                description=description,
+                period=period
+            )
+
+        finally:
+            wappstoiot.close()
+
+        value_obj = mock_device_server.get_obj(name=value_name)
+
+        mock_device_server.fail_check()
+
+        print(value_obj)
+
+        assert value_name == value_obj.name
+        assert value_name == value.name
+        assert value_obj.uuid == value.uuid
+        assert xsd == value_obj.extra_info.get('xml', {}).get("xsd")
+        assert xsd == value.element.xml.xsd
+        assert description == value_obj.extra_info.get("description")
+        assert description == value.element.description
+        assert str(period) == value_obj.extra_info.get("period")
+        assert str(period) == value.element.period
+        assert vtype == value_obj.extra_info.get("type")
+        assert vtype == value.element.type
+        assert namespace == value_obj.extra_info.get('xml', {}).get("namespace")
+        assert namespace == value.element.xml.namespace
+
+        server_utils.fast_send_check(
+            pkg_list=mock_device_server.data_in,
+            fast_send=fast_send
+        )
+
+    @pytest.mark.parametrize(
         "fast_send",
         [
             True,
@@ -510,26 +913,27 @@ class TestValue(BaseValue):
                 permission=wappstoiot.PermissionType.READWRITE,
                 value_template=wappstoiot.ValueTemplate.NUMBER
             )
-            device_deleted = False
+            value_deleted = False
 
             @value.onDelete
             def value_delete(obj):
-                nonlocal device_deleted
-                device_deleted = True
+                nonlocal value_deleted
+                value_deleted = True
             mock_value_rw_nr_server.send_delete(
                 obj_uuid=value_obj.uuid,
                 obj_type="value"
             )
-            start = time.time() + 1
-            while device_deleted is False:
-                if start <= time.time():
-                    break
-                time.sleep(0.1)
+            server_utils.wait_until_or(lambda: value_deleted, 1)
+            # start = time.time() + 1
+            # while device_deleted is False:
+            #     if start <= time.time():
+            #         break
+            #     time.sleep(0.1)
         finally:
             wappstoiot.close()
 
         mock_value_rw_nr_server.fail_check()
-        assert device_deleted, "Didn't receive a Delete"
+        assert value_deleted, "Didn't receive a Delete"
 
         server_utils.fast_send_check(
             pkg_list=mock_value_rw_nr_server.data_in,
@@ -878,19 +1282,13 @@ class TestValue(BaseValue):
                 data=data_value,
                 timestamp=timestamp,
             )
-            start = time.time() + 1
-            while the_control_value is None:
-                if start <= time.time():
-                    break
-                time.sleep(0.1)
-            # control_date = value.getControlData()
-            print(value.control_state)
+            server_utils.wait_until_or(lambda: the_control_value, 1)
+
         finally:
             wappstoiot.close()
 
         mock_device_server.fail_check()
 
-        # print(f"{state}")
         is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
         if not is_number_type:
             data_value = str(data_value)
@@ -909,7 +1307,6 @@ class TestValue(BaseValue):
                 data_value = None
             assert value.getControlData() == data_value  # , "'getControlData' did not return expected data."
 
-        # str_timestamp = smithing.convert_timestamp(timestamp)
         assert state.extra_info.get('timestamp') == timestamp
         assert value.getControlTimestamp() == timestamp
 
