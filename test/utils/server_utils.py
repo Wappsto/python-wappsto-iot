@@ -100,3 +100,70 @@ def fast_send_check(pkg_list: List[Union[bytes, str, dict]], fast_send: bool):
                 assert x_pkg.get('params', {}).get('meta', {}).get('fast', False) is False
                 continue
             assert x_pkg.get('params', {}).get('meta', {}).get('fast', False) is fast_send
+
+
+def base_type_number_check(
+    value: ObjectModel,
+    target: wappstoiot.modules.template.ValueSettinsSchema
+):
+    assert 'number' in value.extra_info.keys()
+    assert value.extra_info.get('type') == target.type
+    assert value.extra_info.get('number', {}).get('min') == target.min
+    assert value.extra_info.get('number', {}).get('max') == target.max
+    assert value.extra_info.get('number', {}).get('step') == target.step
+    assert value.extra_info.get('number', {}).get('unit') == target.unit
+    assert value.extra_info.get('number', {}).get('si_conversion') == target.si_conversion
+    assert value.extra_info.get('number', {}).get('meaningful_zero') == target.meaningful_zero
+    assert value.extra_info.get('number', {}).get('ordered_mapping') == target.ordered_mapping
+    if target.mapping:
+        assert value.extra_info.get('number', {}).get('mapping', {}).items() == target.mapping.items()
+
+
+def base_type_string_check(
+    value: ObjectModel,
+    target: wappstoiot.modules.template.ValueSettinsSchema
+):
+    assert 'string' in value.extra_info.keys()
+    assert value.extra_info.get('type') == target.type
+    assert value.extra_info.get('string', {}).get('max') == target.max
+    assert value.extra_info.get('string', {}).get('encoding') == target.encoding
+
+
+def base_type_blob_check(
+    value: ObjectModel,
+    target: wappstoiot.modules.template.ValueSettinsSchema
+):
+    assert 'blob' in value.extra_info.keys()
+    assert value.extra_info.get('type') == target.type
+    assert value.extra_info.get('blob', {}).get('max') == target.max
+    assert value.extra_info.get('blob', {}).get('encoding') == target.encoding
+
+
+def base_type_xml_check(
+    value: ObjectModel,
+    target: wappstoiot.modules.template.ValueSettinsSchema
+):
+    assert 'xml' in value.extra_info.keys()
+    assert value.extra_info.get('type') == target.type
+    assert value.extra_info.get('xml', {}).get('xsd') == target.xsd
+    assert value.extra_info.get('xml', {}).get('namespace') == target.namespace
+
+
+def is_base_type(
+    value: ObjectModel,
+    target: wappstoiot.ValueTemplate
+):
+    print(f"Value: {value}")
+    value_type = wappstoiot.modules.template.valueSettings[target]
+    print(f"Target: {value_type}")
+    if value_type.value_type == wappstoiot.modules.template.ValueBaseType.NUMBER:
+        base_type_number_check(value, value_type)
+
+    elif value_type.value_type == wappstoiot.modules.template.ValueBaseType.STRING:
+        base_type_string_check(value, value_type)
+
+    elif value_type.value_type == wappstoiot.modules.template.ValueBaseType.BLOB:
+        base_type_blob_check(value, value_type)
+
+    elif value_type.value_type == wappstoiot.modules.template.ValueBaseType.XML:
+        base_type_xml_check(value, value_type)
