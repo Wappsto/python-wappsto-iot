@@ -112,10 +112,9 @@ class TestNetwork(BaseNetwork):
 
         assert len(server.data_in) == 2 if name_mismatch else 1
 
-        assert network_obj.name == network_name
-        assert network_obj.uuid == network_uuid
-        assert description == network_obj.extra_info.get('description')
-        assert description == network.element.description
+        assert network_obj.name == network_name == network.name
+        assert network_obj.uuid == network_uuid == network.uuid
+        assert description == network_obj.extra_info.get('description') == network.element.description
 
         server_utils.fast_send_check(
             pkg_list=server.data_in,
@@ -1157,7 +1156,7 @@ class TestValue(BaseValue):
             expected_pkg += 1
 
         value_obj = mock_device_server.get_obj(name="the_value")
-        assert server_utils.is_base_type(value_obj, new_template)
+        server_utils.is_base_type(value_obj, new_template)
 
         assert len(mock_device_server.data_in) == expected_pkg
 

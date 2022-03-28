@@ -106,8 +106,8 @@ def base_type_number_check(
     value: ObjectModel,
     target: wappstoiot.modules.template.ValueSettinsSchema
 ):
-    assert 'number' in value.extra_info.keys()
-    assert value.extra_info.get('type') == target.type
+    assert 'number' in value.extra_info.keys(), "Not a number type"
+    assert value.extra_info.get('type') == target.type, "Type Have not been changed"
     assert value.extra_info.get('number', {}).get('min') == target.min
     assert value.extra_info.get('number', {}).get('max') == target.max
     assert value.extra_info.get('number', {}).get('step') == target.step
@@ -123,8 +123,8 @@ def base_type_string_check(
     value: ObjectModel,
     target: wappstoiot.modules.template.ValueSettinsSchema
 ):
-    assert 'string' in value.extra_info.keys()
-    assert value.extra_info.get('type') == target.type
+    assert 'string' in value.extra_info.keys(), "Not a string type"
+    assert value.extra_info.get('type') == target.type, "Type Have not been changed"
     assert value.extra_info.get('string', {}).get('max') == target.max
     assert value.extra_info.get('string', {}).get('encoding') == target.encoding
 
@@ -133,8 +133,8 @@ def base_type_blob_check(
     value: ObjectModel,
     target: wappstoiot.modules.template.ValueSettinsSchema
 ):
-    assert 'blob' in value.extra_info.keys()
-    assert value.extra_info.get('type') == target.type
+    assert 'blob' in value.extra_info.keys(), "Not a blob type"
+    assert value.extra_info.get('type') == target.type, "Type Have not been changed"
     assert value.extra_info.get('blob', {}).get('max') == target.max
     assert value.extra_info.get('blob', {}).get('encoding') == target.encoding
 
@@ -143,8 +143,8 @@ def base_type_xml_check(
     value: ObjectModel,
     target: wappstoiot.modules.template.ValueSettinsSchema
 ):
-    assert 'xml' in value.extra_info.keys()
-    assert value.extra_info.get('type') == target.type
+    assert 'xml' in value.extra_info.keys(), "Not a XML type"
+    assert value.extra_info.get('type') == target.type, "Type Have not been changed"
     assert value.extra_info.get('xml', {}).get('xsd') == target.xsd
     assert value.extra_info.get('xml', {}).get('namespace') == target.namespace
 

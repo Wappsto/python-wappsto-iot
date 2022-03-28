@@ -136,9 +136,6 @@ class Device:
         for nr, value in enumerate(self.element.value):
             self.cloud_id_mapping[nr] = value
 
-    def _device_name_gen(self, name, value_id):
-        return f"{name}_{value_id}"
-
     # -------------------------------------------------------------------------
     #   Device 'on-' methods
     # -------------------------------------------------------------------------

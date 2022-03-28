@@ -78,12 +78,6 @@ class Network(object):
         else:
             self.connection.post_network(self.element)
 
-    def clean(self) -> None:
-        """
-        Remove local storage, and references to the Wappsto data-model.
-        """
-        pass
-
     @property
     def name(self) -> Optional[str]:
         """Returns the name of the value."""
@@ -93,13 +87,6 @@ class Network(object):
     def uuid(self) -> uuid.UUID:
         """Returns the name of the value."""
         return self.__uuid
-
-    # -------------------------------------------------------------------------
-    #   Helper methods
-    # -------------------------------------------------------------------------
-
-    def _device_name_gen(self, device_id):
-        return f"device_{device_id}"
 
     # -------------------------------------------------------------------------
     #   Save/Load helper methods
