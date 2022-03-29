@@ -53,6 +53,51 @@ class TestConnection(BaseConnection):
         self.remove_temps()
 
 
+class TestOfflineStorage(BaseNetwork):
+
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    def test_active(
+        self,
+        mock_network_server,
+        fast_send: bool,
+    ):
+        try:
+            wappstoiot.config(
+                config_folder=self.temp,
+                fast_send=fast_send,
+                offline_storage=True
+            )
+            network = wappstoiot.createNetwork(mock_network_server.network_name)
+
+            network_deleted: bool = False
+
+            @network.onDelete
+            def network_rm(obj):
+                nonlocal network_deleted
+                network_deleted = True
+
+            mock_network_server.send_delete(
+                obj_uuid=mock_network_server.network_uuid,
+                obj_type="network"
+            )
+            server_utils.wait_until_or(lambda: network_deleted, 1)
+        finally:
+            wappstoiot.close()
+
+        mock_network_server.fail_check()
+
+        assert len(mock_network_server.data_in) == 2
+        assert network_deleted, "Didn't receive a Delete"
+        server_utils.fast_send_check(
+            pkg_list=mock_network_server.data_in,
+            fast_send=fast_send
+        )
+        self.remove_temps()
+
+
 class TestNetwork(BaseNetwork):
 
     @pytest.mark.parametrize(
