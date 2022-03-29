@@ -109,6 +109,7 @@ __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 __connection_closed: bool = False
 __ping_pong_thread_killed = threading.Event()
+__offline_storage_thread_killed = threading.Event()
 
 
 class ConnectionTypes(str, Enum):
@@ -244,6 +245,8 @@ def _setup_offline_storage(
     offlineStorage: Union[OfflineStorage, bool],
 ) -> None:
     global __the_connection
+    global __offline_storage_thread_killed
+    __ping_pong_thread_killed.clear()
 
     if offlineStorage is False:
         return
@@ -261,11 +264,11 @@ def _setup_offline_storage(
 
     def _resend_logic(status, status_data):
         nonlocal offline_storage
-        global __connection_closed
+        global __offline_storage_thread_killed
         __log.debug(f"Resend called with: status={status}")
         try:
             __log.debug("Resending Offline data")
-            while not __connection_closed:
+            while not __offline_storage_thread_killed.is_set():
                 data = offline_storage.load(10)
                 if not data:
                     return
@@ -337,6 +340,7 @@ def close():
     """."""
     atexit.unregister(close)
     __ping_pong_thread_killed.set()
+    __offline_storage_thread_killed.set()
     # atexit._run_exitfuncs()
     global __connection_closed
     global __the_connection
