@@ -44,6 +44,7 @@ from .connections import protocol as connection
 from .utils.offline_storage import OfflineStorage
 from .utils.certificateread import CertificateRead
 from .utils.offline_storage import OfflineStorageFiles
+from .utils.plugin_template import PlugInTemplate
 
 from .utils import observer
 from .utils import name_check
@@ -100,7 +101,6 @@ def onStatusChange(
         callback=callback
     )
 
-
 # #############################################################################
 #                             Config Stuff
 # #############################################################################
@@ -108,8 +108,8 @@ def onStatusChange(
 __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 __connection_closed: bool = False
-__ping_pong_thread_killed = threading.Event()
-__offline_storage_thread_killed = threading.Event()
+__ping_pong_thread_killed = threading.Event()  # TODO: Move into _plugin Dictionary.
+__offline_storage_thread_killed = threading.Event()  # TODO: Move into _plugin Dictionary.
 
 
 class ConnectionTypes(str, Enum):
@@ -341,6 +341,7 @@ def close():
     atexit.unregister(close)
     __ping_pong_thread_killed.set()
     __offline_storage_thread_killed.set()
+    observer.unsubscribe_all()
     # atexit._run_exitfuncs()
     global __connection_closed
     global __the_connection

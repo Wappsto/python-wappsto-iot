@@ -82,3 +82,25 @@ def unsubscribe(event_name: str, callback: Callable[[str, Any], None]) -> bool:
         return False
     else:
         return True
+
+
+def unsubscribe_all() -> None:
+    """
+    Unsubscribe from given event name.
+
+    Note: if lambda was used to subscribe with, it need to be the same
+    instance that is used to unsubscribe with.
+
+    Args:
+        event_name: The Unique name for the wanted event.
+        callback: The function that need triggeret on the given event.
+            The function will be called with the 'event_name', and 'data',
+            that the event generate.
+
+    Returns:
+        True, is the function was removed from the subcriber list.
+        False, if it could not be, as in could not find it.
+    """
+    obs_log.debug("Unsubscribing all.")
+    global subscriber
+    subscriber = {}
