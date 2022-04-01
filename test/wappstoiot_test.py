@@ -64,6 +64,7 @@ class TestOfflineStorage(BaseNetwork):
         mock_network_server,
         fast_send: bool,
     ):
+        # TODO: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         try:
             wappstoiot.config(
                 config_folder=self.temp,
@@ -96,6 +97,50 @@ class TestOfflineStorage(BaseNetwork):
             fast_send=fast_send
         )
         self.remove_temps()
+
+
+class TestPingPong(BaseNetwork):
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    def test_ping(
+        self,
+        mock_network_server,
+        fast_send: bool,
+    ):
+        try:
+            wappstoiot.config(
+                config_folder=self.temp,
+                fast_send=fast_send,
+                ping_pong_period_sec=1
+            )
+            wappstoiot.createNetwork(mock_network_server.network_name)
+            server_utils.wait_until_or(
+                lambda: len(mock_network_server.data_in) >= 2,
+                2
+            )
+        finally:
+            wappstoiot.close()
+
+        # To ensure that the Ping thread have closed, so the next test do not fail.
+        server_utils.wait_until_or(
+            lambda: len(mock_network_server.data_in) >= 3,
+            2
+        )
+
+        mock_network_server.fail_check()
+
+        last_pkg = json.loads(mock_network_server.data_in[-1])
+
+        print(mock_network_server.data_in)
+
+        assert last_pkg.get('method') == 'HEAD'
+        assert last_pkg.get('params', {}).get('url') == '/network'
+        server_utils.fast_send_check(
+            pkg_list=mock_network_server.data_in,
+            fast_send=fast_send
+        )
 
 
 class TestNetwork(BaseNetwork):
@@ -233,48 +278,6 @@ class TestNetwork(BaseNetwork):
         assert del_pkg.get('method') == 'DELETE'
         assert del_pkg.get('params', {}).get('url') == f'/network/{mock_network_server.network_uuid}'
 
-        server_utils.fast_send_check(
-            pkg_list=mock_network_server.data_in,
-            fast_send=fast_send
-        )
-
-    @pytest.mark.parametrize(
-        "fast_send",
-        [True, False]
-    )
-    def test_ping(
-        self,
-        mock_network_server,
-        fast_send: bool,
-    ):
-        try:
-            wappstoiot.config(
-                config_folder=self.temp,
-                fast_send=fast_send,
-                ping_pong_period_sec=1
-            )
-            wappstoiot.createNetwork(mock_network_server.network_name)
-            server_utils.wait_until_or(
-                lambda: len(mock_network_server.data_in) >= 2,
-                2
-            )
-        finally:
-            wappstoiot.close()
-
-        # To ensure that the Ping thread have closed, so the next test do not fail.
-        server_utils.wait_until_or(
-            lambda: len(mock_network_server.data_in) >= 3,
-            2
-        )
-
-        mock_network_server.fail_check()
-
-        last_pkg = json.loads(mock_network_server.data_in[-1])
-
-        print(mock_network_server.data_in)
-
-        assert last_pkg.get('method') == 'HEAD'
-        assert last_pkg.get('params', {}).get('url') == '/network'
         server_utils.fast_send_check(
             pkg_list=mock_network_server.data_in,
             fast_send=fast_send

@@ -7,25 +7,16 @@
 
 import __main__
 import atexit
-# import netrc
-import json
 import logging
-import threading
 
 from pathlib import Path
 from enum import Enum
 
 
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Any, Dict, Optional, Union, Callable, List, Tuple
 
 
 from .modules.network import Network
-# from .modules.network import ConnectionStatus
-# from .modules.network import ConnectionTypes
-# from .modules.network import NetworkChangeType  # NOt needed anymore.
-# from .modules.network import NetworkRequestType  # NOt needed anymore.
-# from .modules.network import ServiceStatus
-# from .modules.network import StatusID
 
 from .modules.device import Device
 from .service.template import ServiceClass
@@ -41,10 +32,11 @@ from .service import template as service
 
 from .connections import protocol as connection
 
-from .utils.offline_storage import OfflineStorage
 from .utils.certificateread import CertificateRead
-from .utils.offline_storage import OfflineStorageFiles
-from .utils.plugin_template import PlugInTemplate
+
+from .plugins.plugin_template import PlugInTemplate
+from .plugins.ping_pong import PingPong
+from .plugins.offline_storage import OfflineStorageFiles
 
 from .utils import observer
 from .utils import name_check
@@ -66,7 +58,6 @@ __all__ = [
     'connect',
     'disconnect',
     'close',
-    'OfflineStorage',
     'service',
     'connection',
     'ValueTemplate',
@@ -101,6 +92,7 @@ def onStatusChange(
         callback=callback
     )
 
+
 # #############################################################################
 #                             Config Stuff
 # #############################################################################
@@ -108,8 +100,6 @@ def onStatusChange(
 __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 __connection_closed: bool = False
-__ping_pong_thread_killed = threading.Event()  # TODO: Move into _plugin Dictionary.
-__offline_storage_thread_killed = threading.Event()  # TODO: Move into _plugin Dictionary.
 
 
 class ConnectionTypes(str, Enum):
@@ -119,7 +109,7 @@ class ConnectionTypes(str, Enum):
 
 def config(
     config_folder: Union[Path, str] = ".",  # Relative to the main.py-file.
-    connection: ConnectionTypes = ConnectionTypes.IOTAPI,
+    # connection: ConnectionTypes = ConnectionTypes.IOTAPI,
     # JPC_timeout=3
     # mix_max_enforce="warning",  # "ignore", "enforce"
     # step_enforce="warning",  # "ignore", "enforce"
@@ -130,8 +120,9 @@ def config(
     # # Send: {"jsonrpc":"2.0","method":"HEAD","id":"PING-15","params":{"url":"/services/2.0/network"}}
     # # receive:
     # {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
-    offline_storage: Union[OfflineStorage, bool] = False,
+    offline_storage: bool = False,
     # none_blocking=True,  # Whether the post should wait for reply or not.
+    plugins: List[Tuple[PlugInTemplate, Dict[str, Any]]] = None
 ) -> None:
     """
     Configure the WappstoIoT settings.
@@ -156,6 +147,9 @@ def config(
     __the_connection = None
     __connection_closed = False
 
+    if plugins is None:
+        plugins = []
+
     if not isinstance(config_folder, Path):
         if config_folder == "." and hasattr(__main__, '__file__'):
             __config_folder = Path(__main__.__file__).absolute().parent / Path(config_folder)
@@ -164,37 +158,22 @@ def config(
     else:
         __config_folder = config_folder
 
-    _setup_ping_pong(ping_pong_period_sec)
-    _setup_offline_storage(offline_storage)
+    if offline_storage is True:
+        plugins.append((OfflineStorageFiles, {}))
 
-    if connection == ConnectionTypes.IOTAPI:
-        _setup_IoTAPI(__config_folder, fast_send=fast_send)
+    if ping_pong_period_sec is not None:
+        plugins.append((PingPong, {"period_s": ping_pong_period_sec}))
 
-    # elif connection == ConnectionTypes.RESTAPI:
-    #     # TODO: Find & load configs.
-    #     configs: Dict[Any, Any] = {}
-    #     _setup_RestAPI(__config_folder, configs)  # FIXME:
+    IoTkwargs = _certificate_check(__config_folder)
+    __the_connection = IoTAPI(
+        ca=IoTkwargs['ca'],
+        crt=IoTkwargs['crt'],
+        key=IoTkwargs['key'],
+        fast_send=fast_send
+    )
 
-
-def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
-    # TODO: Setup the Connection.
-    global __the_connection
-    kwargs = _certificate_check(__config_folder)
-    __the_connection = IoTAPI(**kwargs, fast_send=fast_send)
-
-
-# def _setup_RestAPI(__config_folder, configs):
-#     # TODO: Setup the Connection.
-#     global __the_connection
-#     token = configs.get("token")
-#     login = netrc.netrc().authenticators(configs.end_point)
-#     if token:
-#         kwargs = {"token": token}
-#     elif login:
-#         kwargs = {"username": login[0], "password": login[1]}
-#     else:
-#         raise ValueError("No login was found.")
-#     __the_connection = RestAPI(**kwargs, url=configs.end_point)
+    setup_plugins(plugins=plugins)
+    # TODO: POST Status change. (Connected)
 
 
 def _certificate_check(path) -> Dict[str, Path]:
@@ -215,77 +194,39 @@ def _certificate_check(path) -> Dict[str, Path]:
     return r_paths
 
 
-def _setup_ping_pong(period_s: Optional[int] = None):
-    # TODO: Test me!
-    __ping_pong_thread_killed.clear()
-    if not period_s:
-        return
+# #############################################################################
+#                             Plugin Stuff
+# #############################################################################
 
-    # TODO: Need a close check so it do not hold wappstoiot open.
-    def _ping():
-        __log.debug("Ping-Pong called!")
-        nonlocal thread
-        global __ping_pong_thread_killed
-        if __ping_pong_thread_killed.is_set():
-            return
-        try:
-            thread = threading.Timer(period_s, _ping)
-            thread.start()
-            __the_connection.ping()
-        except Exception:
-            __log.exception("Ping-Pong:")
-    thread = threading.Timer(period_s, _ping)
-    thread.daemon = True
-    thread.start()
-    atexit.register(lambda: thread.cancel())
-    # atexit.register(lambda: __ping_pong_thread_killed.set())
+_plugins_list: List[PlugInTemplate] = []
 
 
-def _setup_offline_storage(
-    offlineStorage: Union[OfflineStorage, bool],
-) -> None:
+def setup_plugins(
+    plugins: List[Tuple[PlugInTemplate, Dict[str, Any]]]
+):
+    for x in plugins:
+        setup_plugin(x[0], x[1])
+
+
+def close_plugins():
+    global _plugins_list
+    for plugin in _plugins_list:
+        plugin.close()
+
+
+def setup_plugin(plugin: PlugInTemplate, params: Dict[str, Any]):
     global __the_connection
-    global __offline_storage_thread_killed
-    __ping_pong_thread_killed.clear()
+    global __config_folder
+    global observer
 
-    if offlineStorage is False:
-        return
-    # if offlineStorage is True:
-    offline_storage: OfflineStorage = OfflineStorageFiles(
-        location=__config_folder
-    ) if offlineStorage is True else offlineStorage
-    # else:
-    #     offline_storage: OfflineStorage = offlineStorage
-
-    observer.subscribe(
-        service.StatusID.SENDERROR,
-        lambda _, data: offline_storage.save(data.json(exclude_none=True))
+    pg: PlugInTemplate = plugin(
+        config_location=__config_folder,
+        service=__the_connection,
+        observer=observer,
+        **params
     )
 
-    def _resend_logic(status, status_data):
-        nonlocal offline_storage
-        global __offline_storage_thread_killed
-        __log.debug(f"Resend called with: status={status}")
-        try:
-            __log.debug("Resending Offline data")
-            while not __offline_storage_thread_killed.is_set():
-                data = offline_storage.load(10)
-                if not data:
-                    return
-
-                s_data = [json.loads(d) for d in data]
-                __log.debug(f"Sending Data: {s_data}")
-                __the_connection._resend_data(
-                    json.dumps(s_data)
-                )
-
-        except Exception:
-            __log.exception("Resend Logic")
-
-    observer.subscribe(
-        connection.StatusID.CONNECTED,
-        _resend_logic
-    )
+    _plugins_list.append(pg)
 
 
 # #############################################################################
@@ -329,26 +270,28 @@ def createNetwork(
 
 
 def connect():
+    # TODO: Connect with same settings as before the disconnect.
+    # TODO: POST Status change. (Connecting)
     pass
+    # TODO: POST Status change. (Connected)
 
 
 def disconnect():
-    pass
+    global __connection_closed
+    global __the_connection
+    # TODO: POST Status change. (Disconnecting)
+    if not __connection_closed and __the_connection is not None:
+        __log.info("Disconnecting Wappsto IoT")
+        __the_connection.close()
+        __connection_closed = True
 
 
 def close():
     """."""
+    # TODO: POST Status change. (Closing)
     atexit.unregister(close)
-    __ping_pong_thread_killed.set()
-    __offline_storage_thread_killed.set()
+    close_plugins()
     observer.unsubscribe_all()
     # atexit._run_exitfuncs()
-    global __connection_closed
-    global __the_connection
-
-    if not __connection_closed and __the_connection is not None:
-        __log.info("Closing Wappsto IoT")
-        __the_connection.close()
-        __connection_closed = True
-    # Disconnect
-    pass
+    disconnect()
+    __log.info("Wappsto IoT Closed")
