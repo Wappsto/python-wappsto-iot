@@ -125,3 +125,23 @@ class BaseValue(BaseDevice):
             extra_info=extra_info
         )
         return mock_device_server
+
+    @pytest.fixture
+    def mock_value_string_server(self, mock_device_server):
+        device_obj = mock_device_server.get_obj(name="the_device")
+
+        value_uuid = uuid.uuid4()
+        value_name = "the_value"
+        extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
+            value_template=wappstoiot.ValueTemplate.STRING,
+            permission=wappstoiot.PermissionType.READWRITE
+        )
+
+        mock_device_server.add_object(
+            this_uuid=value_uuid,
+            this_type='value',
+            this_name=value_name,
+            parent_uuid=device_obj.uuid,
+            extra_info=extra_info
+        )
+        return mock_device_server

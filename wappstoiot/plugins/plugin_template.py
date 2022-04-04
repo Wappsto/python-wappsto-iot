@@ -3,11 +3,11 @@ import pathlib
 from abc import ABC
 from abc import abstractmethod
 
-from ..connections import protocol as ConnectionTemplate
-from ..service import template as ServiceTemplate
-from ..modules import template as ModuleTemplate
+from ..connections import protocol as ConnectionTemplate   # noqa: F401
+from ..service import template as ServiceTemplate   # noqa: F401
+from ..modules import template as ModuleTemplate   # noqa: F401
 
-from ..utils import observer
+from ..utils import observer   # noqa: F401
 
 
 class PlugInTemplate(ABC):
