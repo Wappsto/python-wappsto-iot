@@ -20,7 +20,7 @@ def wait_until_or(check: Callable[[], bool], max_wait: int):
     while not check():
         if start <= time.time():
             break
-        time.sleep(0.1)
+        time.sleep(0.05)
 
 
 def generate_value_extra_info(

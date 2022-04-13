@@ -267,7 +267,7 @@ class SimuServer(object):
                     if data != b'':
                         return data
 
-            time.sleep(0.5)
+            time.sleep(0.1)
             raise socket.timeout(timeout)
 
         mock_ssl_socket.return_value.recv.side_effect = socket_simu

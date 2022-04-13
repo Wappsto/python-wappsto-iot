@@ -401,11 +401,6 @@ class TestDevice(BaseDevice):
                 obj_type="device"
             )
             server_utils.wait_until_or(lambda: device_deleted, 1)
-            # start = time.time() + 1
-            # while device_deleted is False:
-            #     if start <= time.time():
-            #         break
-            #     time.sleep(0.1)
         finally:
             wappstoiot.close()
 
