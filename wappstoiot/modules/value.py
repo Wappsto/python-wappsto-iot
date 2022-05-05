@@ -613,8 +613,7 @@ class Value:
             timestamp=timestamp if timestamp else Timestamp.timestamp()
         )
         if (
-            data.timestamp and self.report_state.timestamp and
-            data.timestamp > self.report_state.timestamp or
+            data.timestamp and self.report_state.timestamp or
             not self.report_state.timestamp
         ):
             self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
@@ -644,8 +643,7 @@ class Value:
             timestamp=timestamp if timestamp else Timestamp.timestamp()
         )
         if (
-            data.timestamp and self.control_state.timestamp and
-            data.timestamp > self.control_state.timestamp or
+            data.timestamp and self.control_state.timestamp or
             not self.control_state.timestamp
         ):
             self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
@@ -697,8 +695,7 @@ class Value:
             try:
                 if method == WappstoMethod.PUT:
                     if (
-                        obj.timestamp and self.control_state.timestamp and
-                        obj.timestamp > self.control_state.timestamp or
+                        obj.timestamp and self.control_state.timestamp or
                         not self.control_state.timestamp
                     ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
