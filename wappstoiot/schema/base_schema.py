@@ -212,7 +212,11 @@ class BaseMeta(BaseModel):  # Base Meta
     oem: Optional[Optional[str]] = None
     accept_manufacturer_as_owner: Optional[Optional[bool]] = None
     redirect: Optional[  # type: ignore
-        constr(regex=r'^[0-9a-zA-Z_-]+$', min_length=1, max_length=200)
+        constr(
+            regex=r'^[0-9a-zA-Z_-]+$',  # noqa: F722
+            min_length=1,
+            max_length=200
+        )
     ] = None
 
     error: Optional[UUID4] = None

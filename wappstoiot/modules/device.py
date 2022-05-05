@@ -62,8 +62,6 @@ class Device:
         communication: Optional[str] = None,
         serial: Optional[str] = None,
         description: Optional[str] = None,
-        # protocol
-        # communication
     ):
 
         self.log = logging.getLogger(__name__)
@@ -137,9 +135,6 @@ class Device:
         self.element.meta = element.meta.copy(update=self.element.meta)
         for nr, value in enumerate(self.element.value):
             self.cloud_id_mapping[nr] = value
-
-    def _device_name_gen(self, name, value_id):
-        return f"{name}_{value_id}"
 
     # -------------------------------------------------------------------------
     #   Device 'on-' methods

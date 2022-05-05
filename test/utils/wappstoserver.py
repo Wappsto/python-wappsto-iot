@@ -1,3 +1,4 @@
+import datetime
 import itertools
 import json
 import socket
@@ -18,6 +19,8 @@ from pydantic import Field
 
 from utils import pkg_smithing
 
+import rich
+
 
 class ErrorException(Exception):
     def __init__(self, code, msg, data):
@@ -27,18 +30,18 @@ class ErrorException(Exception):
 
 
 class ObjectModel(BaseModel):
-    object_type: str
-    self_uuid: Optional[uuid.UUID]
+    type: str
     name: Optional[str]
     extra_info: dict = Field(default_factory=dict)
     children: List[uuid.UUID] = Field(default_factory=list)
     parent: Optional[uuid.UUID] = None
+    uuid: Optional[uuid.UUID]
 
 
 class UrlObject(BaseModel):
-    object_type: str
-    self_uuid: Optional[uuid.UUID]
+    type: str
     parent: Optional[uuid.UUID]
+    uuid: Optional[uuid.UUID]
 
 
 class Parameters(BaseModel):
@@ -75,10 +78,11 @@ class SimuServer(object):
         description: Optional[str] = None
     ):
         self.network_uuid: uuid.UUID = network_uuid
+        self.network_name: str = name
         self.objects: Dict[uuid.UUID, ObjectModel] = {}
         self.objects[self.network_uuid] = ObjectModel(
-            object_type='network',
-            self_uuid=self.network_uuid,
+            type='network',
+            uuid=self.network_uuid,
             # children=[],
             name=name,
             extra_info={'description': description} if description else {}
@@ -87,6 +91,16 @@ class SimuServer(object):
         self.failed_data: List[Tuple[bool, str]] = []
         self.killed = threading.Event()
         self.data_in: List[bytes] = []
+        self.data_to_be_send: list[bytes] = []
+
+    def get_network_obj(self) -> ObjectModel:
+        return self.objects[self.network_uuid]
+
+    def get_obj(self, name: str) -> Optional[ObjectModel]:
+        for obj in self.objects.values():
+            if obj.name == name:
+                return obj
+        return None
 
     def add_object(
         self,
@@ -101,8 +115,8 @@ class SimuServer(object):
             raise ValueError("Parent need to exist!")
         self.objects[this_uuid] = ObjectModel(
             parent=parent_uuid,
-            object_type=this_type,
-            self_uuid=this_uuid,
+            type=this_type,
+            uuid=this_uuid,
             name=this_name,
             children=children if children else [],
             extra_info=extra_info if extra_info else {}
@@ -138,9 +152,13 @@ class SimuServer(object):
             this_name = data.pop('name')
             children = data.pop('device') if 'device' in data.keys() else []
         elif self_type == 'state':
-            pass
+            if 'timestamp' in data.keys():
+                data['timestamp'] = pkg_smithing.str_to_datetime(
+                    timestamp=data['timestamp']
+                )
 
-        data.pop('meta')
+        if 'meta' in data.keys():
+            data.pop('meta')
 
         self.add_object(
             this_uuid=this_uuid,
@@ -154,10 +172,10 @@ class SimuServer(object):
 
     def _update_object_from_dict(
         self,
+        this_uuid: uuid.UUID,
         self_type: str,
         data: dict
     ) -> uuid.UUID:
-        this_uuid: uuid.UUID = uuid.UUID(data['meta']['id'])
         this_type = data['meta'].get('type') if self_type != "state" else "state"
 
         children: List = []
@@ -177,11 +195,17 @@ class SimuServer(object):
             this_name = data.pop('name')
             children = data.pop('device') if 'device' in data.keys() else []
         elif self_type == 'state':
-            pass
+            if 'timestamp' in data.keys():
+                # ERROR: Deepcopy? Else it changes the data.
+                data['timestamp'] = pkg_smithing.str_to_datetime(
+                    timestamp=data['timestamp']
+                )
 
-        data.pop('meta')
+        if 'meta' in data.keys():
+            data.pop('meta')
 
         old_data = self.objects[this_uuid]
+        old_data.extra_info.update(data)
 
         self.add_object(
             this_uuid=this_uuid,
@@ -189,7 +213,7 @@ class SimuServer(object):
             parent_uuid=old_data.parent,
             this_name=this_name if this_name else old_data.name,
             children=children if children else old_data.children,
-            extra_info=old_data.extra_info.update(data)
+            extra_info=old_data.extra_info
         )
         return this_uuid
 
@@ -219,8 +243,12 @@ class SimuServer(object):
                     break
 
                 if not mock_ssl_socket.return_value.sendall.call_args:
+                    if self.data_to_be_send:
+                        t_data = self.data_to_be_send.pop()
+                        return t_data
                     time.sleep(0.01)
                     continue
+
                 temp_data, _ = mock_ssl_socket.return_value.sendall.call_args
                 send_data = temp_data[0]
                 mock_ssl_socket.return_value.sendall.call_args = None
@@ -236,12 +264,69 @@ class SimuServer(object):
                     )
                     raise error
                 else:
-                    return data
+                    if data != b'':
+                        return data
 
-            time.sleep(0.5)
+            time.sleep(0.1)
             raise socket.timeout(timeout)
 
         mock_ssl_socket.return_value.recv.side_effect = socket_simu
+
+    def send_data(
+        self,
+        data: Union[dict, list],
+        pkg_method: str,
+        pkg_url: str,
+        pkg_id: Optional[str] = None,
+    ) -> None:
+        if pkg_id is None:
+            pkg_id = pkg_smithing.random_string()
+        pkg_data = json.dumps(
+            pkg_smithing.rpc_pkg_request(
+                pkg_method=pkg_method,
+                pkg_id=pkg_id,
+                pkg_url=pkg_url,
+                pkg_data=data,
+            )
+        ).encode()
+        self.data_to_be_send.append(pkg_data)
+        # TODO: Add to wait for reply list/function.
+
+    def send_control(
+        self,
+        obj_uuid: uuid.UUID,
+        data: Union[str, int, float],
+        timestamp: datetime.datetime
+    ) -> None:
+        pkg_id = f"Server_PUT_{pkg_smithing.random_string()}"
+        pkg_data = pkg_smithing.state_pkg(
+            obj_uuid=obj_uuid,
+            # type="Control",
+            data=str(data),
+            timestamp=timestamp
+        )
+
+        self.send_data(
+            data=pkg_data,
+            pkg_method="PUT",
+            pkg_id=pkg_id,
+            pkg_url=f"/state/{obj_uuid}",
+        )
+
+        self._update_object_from_dict(
+            this_uuid=obj_uuid,
+            self_type="state",
+            data=pkg_data
+        )
+
+    def send_delete(self, obj_uuid, obj_type: str):
+        pkg_id = f"Server_DELETE_{pkg_smithing.random_string()}"
+        self.send_data(
+            data={},
+            pkg_method="DELETE",
+            pkg_id=pkg_id,
+            pkg_url=f"/{obj_type}/{obj_uuid}",
+        )
 
     def _params_parser(self, params) -> List[Parameters]:
         param_list: List[Parameters] = []
@@ -283,8 +368,8 @@ class SimuServer(object):
             object_uuid = obj_uuid if obj_uuid else None
 
         return UrlObject(
-            object_type=object_type,
-            self_uuid=object_uuid,
+            type=object_type,
+            uuid=object_uuid,
             parent=parent_uuid,
         )
 
@@ -299,81 +384,105 @@ class SimuServer(object):
         )
 
     def rpc_handle(self, data: bytes) -> bytes:
-        j_data = json.loads(data.decode())
-        # TODO: check if it is a list!!!!!!
-        pkg_id = j_data['id']
+        return_value: list = []
+        p_data = json.loads(data.decode())
 
-        error = j_data.get('error')
-        if error:
-            self.add_check(False, error)
-            return json.dumps(
-                pkg_smithing.rpc_pkg(
+        if not isinstance(p_data, list):
+            p_data = [p_data]
+
+        for j_data in p_data:
+            pkg_id = j_data['id']
+
+            error = j_data.get('error')
+            if error:
+                self.add_check(False, error)
+                return_value.append(
+                    pkg_smithing.rpc_pkg_result(
+                        pkg_id=pkg_id,
+                        pkg_data=True
+                    )
+                )
+
+            if 'result' in j_data:
+                # TODO: Handle Success & Failed package.
+                return b''
+
+            if 'error' in j_data:
+                self.add_check(False, j_data['error']['message'])
+                return b''
+
+            pkg_method = j_data['method']
+            the_url = j_data['params']['url']
+            the_data = j_data['params'].get('data')
+            fast_send = j_data['params'].get('meta', {}).get('fast', False)
+            # identifier = j_data['params']['meta']['identifier']
+
+            url_obj: Tuple[UrlObject, List[Parameters]] = self._url_parser(the_url)
+
+            try:
+
+                if pkg_method.upper() == 'GET':
+                    r_data = self.get_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'POST':
+                    r_data = self.post_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'PUT':
+                    r_data = self.put_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'DELETE':
+                    r_data = self.delete_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                elif pkg_method.upper() == 'HEAD':
+                    r_data = self.head_handle(
+                        data=the_data,
+                        fast_send=fast_send,
+                        url_obj=url_obj
+                    )
+                else:
+                    self.add_check(False, f"Unknown method: {pkg_method}")
+                    return pkg_smithing.error_pkg(
+                        pkg_id=pkg_id,
+                        data=j_data,
+                        code=-32601,
+                        msg="Unhandled Method",
+                    )
+
+            except ErrorException as err:
+                self.add_check(False, f"Could not parse data: {data!r}")
+                return_value.append(
+                    pkg_smithing.error_pkg(
+                        pkg_id=pkg_id,
+                        code=err.code,
+                        msg=err.msg,
+                        data=err.data
+                    )
+                )
+
+            return_value.append(
+                pkg_smithing.rpc_pkg_result(
                     pkg_id=pkg_id,
-                    pkg_data=True
+                    pkg_data=r_data
                 )
-            ).encode()
+            )
 
-        pkg_method = j_data['method']
-        the_url = j_data['params']['url']
-        the_data = j_data['params'].get('data')
-        fast_send = j_data['params'].get('meta', {}).get('fast', False)
-        # identifier = j_data['params']['meta']['identifier']
-
-        url_obj: Tuple[UrlObject, List[Parameters]] = self._url_parser(the_url)
-
-        # TODO: Handle a error as received data!!
-
-        try:
-
-            if pkg_method.upper() == 'GET':
-                r_data = self.get_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            elif pkg_method.upper() == 'POST':
-                r_data = self.post_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            elif pkg_method.upper() == 'PUT':
-                r_data = self.put_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            elif pkg_method.upper() == 'DELETE':
-                r_data = self.delete_handle(
-                    data=the_data,
-                    fast_send=fast_send,
-                    url_obj=url_obj
-                )
-            else:
-                self.add_check(False, f"Unknown method: {pkg_method}")
-                return pkg_smithing.error_pkg(
-                    pkg_id=pkg_id,
-                    data=j_data,
-                    code=-32601,
-                    msg="Unhandled Method",
-                )
-
-        except ErrorException as err:
-            self.add_check(False, f"Could not parse data: {data!r}")
-            return json.dumps(
-                pkg_smithing.error_pkg(
-                    pkg_id=pkg_id,
-                    code=err.code,
-                    msg=err.msg,
-                    data=err.data
-                )
-            ).encode()
+        if not return_value:
+            return b''
 
         return json.dumps(
-            pkg_smithing.rpc_pkg(
-                pkg_id=pkg_id,
-                pkg_data=r_data
-            )
+            return_value if len(return_value) > 1 else return_value[-1]
         ).encode()
 
     def get_handle(
@@ -383,8 +492,8 @@ class SimuServer(object):
         fast_send=False
     ) -> Union[dict, bool]:
 
-        the_uuid = url_obj[0].self_uuid
-        the_type = url_obj[0].object_type
+        the_uuid = url_obj[0].uuid
+        the_type = url_obj[0].type
 
         if url_obj[1] or not the_uuid:
             return self._search_obj(data=data, url_obj=url_obj)
@@ -410,10 +519,12 @@ class SimuServer(object):
     ) -> Union[dict, bool]:
 
         parent_uuid = url_obj[0].parent
-        the_type = url_obj[0].object_type
+        the_type = url_obj[0].type
+        the_uuid = uuid.UUID(data['meta']['id'])
 
         if the_type == "network":
             new_unit_uuid = self._update_object_from_dict(
+                this_uuid=the_uuid,
                 self_type=the_type,
                 data=data,
             )
@@ -443,7 +554,7 @@ class SimuServer(object):
         fast_send=False
     ) -> Union[dict, bool]:
 
-        the_uuid = url_obj[0].self_uuid
+        the_uuid = url_obj[0].uuid
 
         if the_uuid not in self.objects.keys() or not the_uuid:
             self.add_check(False, f"GET: {the_uuid} not found.")
@@ -454,7 +565,8 @@ class SimuServer(object):
             )
 
         self._update_object_from_dict(
-            self_type=url_obj[0].object_type,
+            this_uuid=the_uuid,
+            self_type=url_obj[0].type,
             data=data
         )
 
@@ -470,7 +582,7 @@ class SimuServer(object):
         fast_send=False
     ) -> Union[dict, bool]:
 
-        the_uuid = url_obj[0].self_uuid
+        the_uuid = url_obj[0].uuid
 
         if the_uuid not in self.objects.keys() or not the_uuid:
             self.add_check(False, f"GET: {the_uuid} not found.")
@@ -489,13 +601,22 @@ class SimuServer(object):
 
         return the_obj
 
+    def head_handle(
+        self,
+        data: dict,
+        url_obj: Tuple[UrlObject, List[Parameters]],
+        fast_send=False
+    ) -> Union[dict, bool]:
+
+        return True
+
     def _search_obj(
         self,
         data: dict,
         url_obj: Tuple[UrlObject, List[Parameters]]
     ) -> dict:
         parent = url_obj[0].parent
-        obj_type = url_obj[0].object_type
+        obj_type = url_obj[0].type
         if parent not in self.objects.keys():
             # UNSURE: Should it raise an ErrorException instead?
             self.add_check(False, f"Search: {parent} not found.")
@@ -529,35 +650,35 @@ class SimuServer(object):
     def _obj_generate(self, obj_uuid: uuid.UUID) -> dict:
         obj_data = self.objects[obj_uuid]
         # NOTE: Can be make to a dictionary instead!
-        if obj_data.object_type == 'network':
+        if obj_data.type == 'network':
             return pkg_smithing.network_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 obj_children=obj_data.children,
                 name=obj_data.name,
                 **obj_data.extra_info
             )
-        elif obj_data.object_type == 'device':
+        elif obj_data.type == 'device':
             return pkg_smithing.device_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 obj_children=obj_data.children,
                 name=obj_data.name,
                 **obj_data.extra_info
             )
-        elif obj_data.object_type == 'value':
+        elif obj_data.type == 'value':
             return pkg_smithing.value_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 obj_children=obj_data.children,
                 name=obj_data.name,
                 **obj_data.extra_info
             )
-        elif obj_data.object_type == 'state':
+        elif obj_data.type == 'state':
             return pkg_smithing.state_pkg(
-                obj_uuid=obj_data.self_uuid,
+                obj_uuid=obj_data.uuid,
                 **obj_data.extra_info
             )
         else:
             raise ErrorException(
                 code=-32602,
                 msg="Unknown Object type!",
-                data=obj_data.object_type
+                data=obj_data.type
             )

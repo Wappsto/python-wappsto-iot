@@ -7,9 +7,10 @@
 
 import __main__
 import atexit
-import netrc
+# import netrc
 import json
 import logging
+import threading
 
 from pathlib import Path
 from enum import Enum
@@ -51,7 +52,7 @@ from .utils import name_check
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.6.2"
+__version__ = "v0.6.3"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -107,6 +108,8 @@ def onStatusChange(
 __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 __connection_closed: bool = False
+__ping_pong_thread_killed = threading.Event()
+__offline_storage_thread_killed = threading.Event()
 
 
 class ConnectionTypes(str, Enum):
@@ -167,10 +170,10 @@ def config(
     if connection == ConnectionTypes.IOTAPI:
         _setup_IoTAPI(__config_folder, fast_send=fast_send)
 
-    elif connection == ConnectionTypes.RESTAPI:
-        # TODO: Find & load configs.
-        configs: Dict[Any, Any] = {}
-        _setup_RestAPI(__config_folder, configs)  # FIXME:
+    # elif connection == ConnectionTypes.RESTAPI:
+    #     # TODO: Find & load configs.
+    #     configs: Dict[Any, Any] = {}
+    #     _setup_RestAPI(__config_folder, configs)  # FIXME:
 
 
 def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
@@ -180,18 +183,18 @@ def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
     __the_connection = IoTAPI(**kwargs, fast_send=fast_send)
 
 
-def _setup_RestAPI(__config_folder, configs):
-    # TODO: Setup the Connection.
-    global __the_connection
-    token = configs.get("token")
-    login = netrc.netrc().authenticators(configs.end_point)
-    if token:
-        kwargs = {"token": token}
-    elif login:
-        kwargs = {"username": login[0], "password": login[1]}
-    else:
-        raise ValueError("No login was found.")
-    __the_connection = RestAPI(**kwargs, url=configs.end_point)
+# def _setup_RestAPI(__config_folder, configs):
+#     # TODO: Setup the Connection.
+#     global __the_connection
+#     token = configs.get("token")
+#     login = netrc.netrc().authenticators(configs.end_point)
+#     if token:
+#         kwargs = {"token": token}
+#     elif login:
+#         kwargs = {"username": login[0], "password": login[1]}
+#     else:
+#         raise ValueError("No login was found.")
+#     __the_connection = RestAPI(**kwargs, url=configs.end_point)
 
 
 def _certificate_check(path) -> Dict[str, Path]:
@@ -214,16 +217,16 @@ def _certificate_check(path) -> Dict[str, Path]:
 
 def _setup_ping_pong(period_s: Optional[int] = None):
     # TODO: Test me!
+    __ping_pong_thread_killed.clear()
     if not period_s:
         return
-    import threading
 
     # TODO: Need a close check so it do not hold wappstoiot open.
     def _ping():
         __log.debug("Ping-Pong called!")
         nonlocal thread
-        global __connection_closed
-        if __connection_closed:
+        global __ping_pong_thread_killed
+        if __ping_pong_thread_killed.is_set():
             return
         try:
             thread = threading.Timer(period_s, _ping)
@@ -235,12 +238,15 @@ def _setup_ping_pong(period_s: Optional[int] = None):
     thread.daemon = True
     thread.start()
     atexit.register(lambda: thread.cancel())
+    # atexit.register(lambda: __ping_pong_thread_killed.set())
 
 
 def _setup_offline_storage(
     offlineStorage: Union[OfflineStorage, bool],
 ) -> None:
     global __the_connection
+    global __offline_storage_thread_killed
+    __ping_pong_thread_killed.clear()
 
     if offlineStorage is False:
         return
@@ -258,11 +264,11 @@ def _setup_offline_storage(
 
     def _resend_logic(status, status_data):
         nonlocal offline_storage
-        global __connection_closed
+        global __offline_storage_thread_killed
         __log.debug(f"Resend called with: status={status}")
         try:
             __log.debug("Resending Offline data")
-            while not __connection_closed:
+            while not __offline_storage_thread_killed.is_set():
                 data = offline_storage.load(10)
                 if not data:
                     return
@@ -333,6 +339,8 @@ def disconnect():
 def close():
     """."""
     atexit.unregister(close)
+    __ping_pong_thread_killed.set()
+    __offline_storage_thread_killed.set()
     # atexit._run_exitfuncs()
     global __connection_closed
     global __the_connection

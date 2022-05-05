@@ -54,7 +54,7 @@ setup(
     description="Simple Wappsto Python user-interface to Wappsto IoT",
     long_description=get_long_description(),
     long_description_content_type="text/markdown",
-    url="https://github.com/Wappsto/python-wappstoiot",
+    url="https://github.com/Wappsto/python-wappsto-iot",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent"

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import argparse
+import getpass
 import json
 import pathlib
+import sys
 import uuid
-import getpass
 
 import requests
 
@@ -67,11 +69,14 @@ def start_session(base_url, username, password):
         headers=headers,
         data=data
     )
+
     if rdata.status_code >= 300:
         print("\nAn error occurred during login:")
         _log_request_error(rdata)
 
     rjson = json.loads(rdata.text)
+
+    print(rjson)
 
     return rjson["meta"]["id"]
 
@@ -175,7 +180,10 @@ def get_network(session, base_url, network_uuid):
     data = json.loads(rdata.text)
 
     if not data['id']:
-        print(f"{data['message']}")
+        if 'message' in data.keys():
+            print(f"{data['message']}")
+        else:
+            print(f"UnKnown Error: {data}")
         exit(-3)
     creator_id = data['id'][0]
     url = f"https://{base_url}/services/2.1/creator/{creator_id}"
@@ -218,8 +226,9 @@ def create_certificaties_files(location, creator, args):
     print(f"\nLocation of generated certificates:\t{location.absolute()}")
 
 
-if __name__ == "__main__":
-    import argparse
+def main():
+    global debug
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--dry_run",
@@ -255,7 +264,7 @@ if __name__ == "__main__":
         help="Make the operation more talkative",
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[1:])
 
     debug = args.debug if args.debug else False
 
@@ -293,3 +302,8 @@ if __name__ == "__main__":
     create_certificaties_files(args.path, creator, args)
 
     print("\nEnjoy...")
+    exit(0)
+
+
+if __name__ == "__main__":
+    main()

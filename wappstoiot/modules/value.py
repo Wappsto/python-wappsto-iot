@@ -166,19 +166,19 @@ class Value:
 
             self._createStates(permission)
 
-    def __print(self, element):
-        self.log.debug(
-            type(self.element)
-        )
-        self.log.debug(
-            self.element
-        )
-        self.log.debug(
-            type(element)
-        )
-        self.log.debug(
-            element
-        )
+    # def __print(self, element):
+    #     self.log.debug(
+    #         type(self.element)
+    #     )
+    #     self.log.debug(
+    #         self.element
+    #     )
+    #     self.log.debug(
+    #         type(element)
+    #     )
+    #     self.log.debug(
+    #         element
+    #     )
 
     def getControlData(self) -> Optional[Union[float, str]]:
         """
@@ -188,6 +188,8 @@ class Value:
         unless there isn't one, then it will return None.
         """
         if self.value_type == ValueBaseType.NUMBER:
+            if self.control_state.data == "NA":
+                return None
             return float(self.control_state.data)
         return self.control_state.data
 
@@ -208,7 +210,9 @@ class Value:
         unless there isn't one, then it will return None.
         """
         if self.value_type == ValueBaseType.NUMBER:
-            return float(self.control_state.data)
+            if self.report_state.data == "NA":
+                return None
+            return float(self.report_state.data)
         return self.report_state.data
 
     def getReportTimestamp(self) -> Optional[datetime]:
@@ -289,21 +293,30 @@ class Value:
 
     def __update_self(self, element):
         old_type = type(element)
+        new_type = type(self.element)
 
         new_dict = element.copy(update=self.element.dict(exclude_none=True))
         new_dict.meta = element.meta.copy(update=new_dict.meta)
 
-        if old_type is WSchema.NumberValue:
-            new_dict.number = element.number.copy(update=new_dict.number)
-        elif old_type is WSchema.StringValue:
-            new_dict.string = element.string.copy(update=new_dict.string)
-        elif old_type is WSchema.BlobValue:
-            new_dict.blob = element.blob.copy(update=new_dict.blob)
-        elif old_type is WSchema.XmlValue:
-            new_dict.xml = element.xml.copy(update=new_dict.xml)
-
-        if type(self.element) is old_type:
+        if new_type is old_type:
             self.element = new_dict
+
+            if old_type is WSchema.NumberValue:
+                new_dict.number = element.number.copy(
+                    update=new_dict.number
+                )
+            elif old_type is WSchema.StringValue:
+                new_dict.string = element.string.copy(
+                    update=new_dict.string
+                )
+            elif old_type is WSchema.BlobValue:
+                new_dict.blob = element.blob.copy(
+                    update=new_dict.blob
+                )
+            elif old_type is WSchema.XmlValue:
+                new_dict.xml = element.xml.copy(
+                    update=new_dict.xml
+                )
         else:
             new_dict = new_dict.dict(exclude_none=True)
             if old_type is WSchema.StringValue:
@@ -600,12 +613,12 @@ class Value:
             timestamp=timestamp if timestamp else Timestamp.timestamp()
         )
         if (
-            data.timestamp and self.report_state.timestamp and
-            data.timestamp > self.report_state.timestamp or
+            data.timestamp and self.report_state.timestamp or
             not self.report_state.timestamp
         ):
             self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
-
+            if self.report_state.timestamp:
+                self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             data=data
@@ -630,12 +643,12 @@ class Value:
             timestamp=timestamp if timestamp else Timestamp.timestamp()
         )
         if (
-            data.timestamp and self.report_state.timestamp and
-            data.timestamp > self.report_state.timestamp or
-            not self.report_state.timestamp
+            data.timestamp and self.control_state.timestamp or
+            not self.control_state.timestamp
         ):
-            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
-
+            self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
+            if self.control_state.timestamp:
+                self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
             data=data
@@ -682,12 +695,13 @@ class Value:
             try:
                 if method == WappstoMethod.PUT:
                     if (
-                        obj.timestamp and self.report_state.timestamp and
-                        obj.timestamp > self.report_state.timestamp or
-                        not self.report_state.timestamp
+                        obj.timestamp and self.control_state.timestamp or
+                        not self.control_state.timestamp
                     ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
                         self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+                        if self.control_state.timestamp:
+                            self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
             except Exception:
                 self.log.exception("onCreateControl callback error.")
                 raise

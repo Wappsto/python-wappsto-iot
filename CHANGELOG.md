@@ -1,3 +1,11 @@
+v0.6.3 (Apr 21 2022)
+===============================================================================
+
+## Fixed
+ * Fixed a issue with the control method, there it broke if it got out of sink with the report.
+ * `getReportData` now returns the Report data instead of control.
+ * Fixed a issue that prevented in report/control values with old timestamps.
+
 v0.6.2 (Mar 10 2022)
 ===============================================================================
 
