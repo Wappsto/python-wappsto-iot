@@ -1442,88 +1442,88 @@ class TestValue(BaseValue):
             fast_send=fast_send
         )
 
-    @pytest.mark.parametrize(
-        "fast_send",
-        [
-            True,
-            False
-        ]
-    )
-    @pytest.mark.parametrize(
-        "data_value",
-        [
-            "Testing",
-        ]
-    )
-    def test_on_control_cancel(
-        self,
-        mock_value_string_server,
-        fast_send: bool,
-        data_value: Union[int, float, str]
-    ):
+    # @pytest.mark.parametrize(
+    #     "fast_send",
+    #     [
+    #         True,
+    #         False
+    #     ]
+    # )
+    # @pytest.mark.parametrize(
+    #     "data_value",
+    #     [
+    #         "Testing",
+    #     ]
+    # )
+    # def test_on_control_cancel(
+    #     self,
+    #     mock_value_string_server,
+    #     fast_send: bool,
+    #     data_value: Union[int, float, str]
+    # ):
 
-        device_obj = mock_value_string_server.get_obj(name="the_device")
-        value_obj = mock_value_string_server.get_obj(name="the_value")
+    #     device_obj = mock_value_string_server.get_obj(name="the_device")
+    #     value_obj = mock_value_string_server.get_obj(name="the_value")
 
-        the_control_value = None
-        timestamp = datetime.datetime.utcnow()
+    #     the_control_value = None
+    #     timestamp = datetime.datetime.utcnow()
 
-        try:
-            wappstoiot.config(
-                config_folder=self.temp,
-                fast_send=fast_send
-            )
+    #     try:
+    #         wappstoiot.config(
+    #             config_folder=self.temp,
+    #             fast_send=fast_send
+    #         )
 
-            network = wappstoiot.createNetwork(name=mock_value_string_server.network_name)
+    #         network = wappstoiot.createNetwork(name=mock_value_string_server.network_name)
 
-            device = network.createDevice(name=device_obj.name)
+    #         device = network.createDevice(name=device_obj.name)
 
-            value = device.createValue(
-                name=value_obj.name,
-                permission=wappstoiot.PermissionType.READWRITE,
-                value_template=wappstoiot.ValueTemplate.STRING
-            )
+    #         value = device.createValue(
+    #             name=value_obj.name,
+    #             permission=wappstoiot.PermissionType.READWRITE,
+    #             value_template=wappstoiot.ValueTemplate.STRING
+    #         )
 
-            @value.onControl
-            def control_test(obj, value):
-                nonlocal the_control_value
-                the_control_value = value
-                print(f"OnControl: {value}")
+    #         @value.onControl
+    #         def control_test(obj, value):
+    #             nonlocal the_control_value
+    #             the_control_value = value
+    #             print(f"OnControl: {value}")
 
-            value.cancelOnControl()
+    #         value.cancelOnControl()
 
-            state = server_utils.get_state_obj(
-                server=mock_value_string_server,
-                value_uuid=value_obj.uuid,
-                state_type="Control"
-            )
+    #         state = server_utils.get_state_obj(
+    #             server=mock_value_string_server,
+    #             value_uuid=value_obj.uuid,
+    #             state_type="Control"
+    #         )
 
-            mock_value_string_server.send_control(
-                obj_uuid=state.uuid,
-                data=data_value,
-                timestamp=timestamp,
-            )
-            # Rework the Wait.
-            server_utils.wait_until_or(lambda: the_control_value, 1)
+    #         mock_value_string_server.send_control(
+    #             obj_uuid=state.uuid,
+    #             data=data_value,
+    #             timestamp=timestamp,
+    #         )
+    #         # Rework the Wait.
+    #         server_utils.wait_until_or(lambda: the_control_value, 1)
 
-        finally:
-            wappstoiot.close()
+    #     finally:
+    #         wappstoiot.close()
 
-        mock_value_string_server.fail_check()
+    #     mock_value_string_server.fail_check()
 
-        assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+    #     assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
 
-        assert the_control_value == data_value  # , "Did not receive the expected data."
-        # assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
-        assert value.getControlData() == data_value  # , "'getControlData' did not return expected data."
+    #     assert the_control_value == data_value  # , "Did not receive the expected data."
+    #     # assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+    #     assert value.getControlData() == data_value  # , "'getControlData' did not return expected data."
 
-        assert state.extra_info.get('timestamp') == timestamp
-        assert value.getControlTimestamp() == timestamp
+    #     assert state.extra_info.get('timestamp') == timestamp
+    #     assert value.getControlTimestamp() == timestamp
 
-        server_utils.fast_send_check(
-            pkg_list=mock_value_string_server.data_in,
-            fast_send=fast_send
-        )
+    #     server_utils.fast_send_check(
+    #         pkg_list=mock_value_string_server.data_in,
+    #         fast_send=fast_send
+    #     )
 
     # def test_receive_report_value(self):
     #     pass
