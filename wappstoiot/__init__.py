@@ -7,10 +7,10 @@
 
 import __main__
 import atexit
-# import netrc
 import json
 import logging
 import threading
+import uuid
 
 from pathlib import Path
 from enum import Enum
@@ -42,7 +42,7 @@ from .service import template as service
 from .connections import protocol as connection
 
 from .utils.offline_storage import OfflineStorage
-from .utils.certificateread import CertificateRead
+from .utils.certificateread import certificate_info_extraction
 from .utils.offline_storage import OfflineStorageFiles
 
 from .utils import observer
@@ -311,15 +311,15 @@ def createNetwork(
     if not __config_folder:
         __config_folder = Path('.')
 
-    cer = CertificateRead(crt=__config_folder / "client.crt")
-    uuid = cer.network
+    cer = certificate_info_extraction(crt_path=__config_folder / "client.crt")
+    network_uuid = uuid.UUID(cer.get('subject', {}).get('commonName'))
 
     atexit.register(close)
 
     return Network(
         name=name,
         connection=__the_connection,
-        network_uuid=uuid,
+        network_uuid=network_uuid,
         description=description
     )
 

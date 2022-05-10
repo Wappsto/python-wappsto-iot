@@ -38,7 +38,7 @@ from ..schema.iot_schema import Success
 from ..schema.iot_schema import WappstoMethod
 # from ..schema.iot_scgema import WappstoObjectType
 
-from ..utils.certificateread import CertificateRead
+from ..utils.certificateread import certificate_info_extraction
 from ..utils import observer
 from ..utils import tracer
 
@@ -153,12 +153,13 @@ class IoTAPI(ServiceClass):
     # #########################################################################
 
     def _url_gen(self, crt):
-        cer = CertificateRead(crt=crt)
-        port = self.wappstoPort.get(cer.endpoint.split('.')[0], 443)
-        if cer.endpoint.split('.')[0] in self.wappstoPort.keys():
-            addr = cer.endpoint
+        cer = certificate_info_extraction(crt_path=crt)
+        endpoint = cer.get('issuer', {}).get('commonName')
+        port = self.wappstoPort.get(endpoint.split('.')[0], 443)
+        if endpoint.split('.')[0] in self.wappstoPort.keys():
+            addr = endpoint
         else:
-            addr = f"collector.{cer.endpoint}"
+            addr = f"collector.{endpoint}"
 
         if re.search(r'^[A-Za-z0-9+.-]+://', addr):
             addr = addr.split("://", maxsplit=1)[-1]
