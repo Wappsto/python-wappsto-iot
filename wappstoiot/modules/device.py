@@ -67,6 +67,8 @@ class Device:
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
+        self.__callbacks: Dict[str, Callable] = {}
+
         self.parent = parent
         self.element: WSchema.Device
 
@@ -162,9 +164,17 @@ class Device:
                 self.log.exception("onDelete callback error.")
                 raise
 
+        self.__callbacks['onDelete'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnDelete(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onDelete']
         )
 
     def onRefresh(
@@ -187,9 +197,17 @@ class Device:
                 self.log.exception("onRefresh callback error.")
                 raise
 
+        self.__callbacks['onRefresh'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnRefresh(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onRefresh']
         )
 
     def onChange(
@@ -207,10 +225,17 @@ class Device:
                 self.log.exception("OnChange callback error.")
                 raise
 
-        # UNSURE (MBK): on all state & value?
+        self.__callbacks['onChange'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnChange(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onChange']
         )
 
     def onCreate(
@@ -228,10 +253,17 @@ class Device:
                 self.log.exception("onCreate callback error.")
                 raise
 
-        # UNSURE (MBK): on all state & value?
+        self.__callbacks['onCreate'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnCreate(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onCreate']
         )
 
     # -------------------------------------------------------------------------

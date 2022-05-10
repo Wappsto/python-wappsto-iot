@@ -98,6 +98,8 @@ class Value:
 
         self.value_type = value_type
 
+        self.__callbacks: Dict[str, Callable] = {}
+
         self.schema = self.__value_type_2_Schema[value_type]
         self.report_state: WSchema.State
         self.control_state: WSchema.State
@@ -409,10 +411,18 @@ class Value:
                 self.log.exception("OnChange callback error.")
                 raise
 
+        self.__callbacks['onChange'] = _cb
+
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_value_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnChange(self):
+        self.connection.unsubscribe_value_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onChange']
         )
 
     def onReport(
@@ -446,9 +456,17 @@ class Value:
 
         _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
+        self.__callbacks['onReport'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=_cb
+        )
+
+    def cancelOnReport(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            callback=self.__callbacks['onReport']
         )
 
     def onControl(
@@ -487,9 +505,17 @@ class Value:
 
         _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
+        self.__callbacks['onControl'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
             callback=_cb
+        )
+
+    def cancelOnControl(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
+            callback=self.__callbacks['onControl']
         )
 
     def onCreate(
@@ -513,9 +539,17 @@ class Value:
                 self.log.exception("onCreate callback error.")
                 raise
 
+        self.__callbacks['onCreate'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnCreate(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onCreate']
         )
 
     def onRefresh(
@@ -541,9 +575,17 @@ class Value:
                 self.log.exception("onRefresh callback error.")
                 raise
 
+        self.__callbacks['onRefresh'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=_cb
+        )
+
+    def cancelOnRefresh(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            callback=self.__callbacks['onRefresh']
         )
 
     def onDelete(
@@ -559,9 +601,17 @@ class Value:
                 self.log.exception("onDelete callback error.")
                 raise
 
+        self.__callbacks['onDelete'] = _cb
+
         self.connection.subscribe_value_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnDelete(self):
+        self.connection.unsubscribe_value_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onDelete']
         )
 
     # -------------------------------------------------------------------------

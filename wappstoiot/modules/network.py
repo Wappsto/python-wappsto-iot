@@ -39,6 +39,8 @@ class Network(object):
         self.__uuid: uuid.UUID = network_uuid
         self.element: WSchema.Network = self.schema()
 
+        self.__callbacks: Dict[str, Callable] = {}
+
         self.children_uuid_mapping: Dict[uuid.UUID, Device] = {}
         self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
@@ -121,9 +123,17 @@ class Network(object):
                 self.log.exception("OnChange callback error.")
                 raise
 
+        self.__callbacks['onChange'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnChange(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onChange']
         )
 
     def onCreate(
@@ -141,9 +151,17 @@ class Network(object):
                 self.log.exception("onCreate callback error.")
                 raise
 
+        self.__callbacks['onCreate'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnCreate(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onCreate']
         )
 
     def onRefresh(
@@ -165,9 +183,17 @@ class Network(object):
                 self.log.exception("onRefresh callback error.")
                 raise
 
+        self.__callbacks['onRefresh'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnRefresh(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onRefresh']
         )
 
     def onDelete(
@@ -190,9 +216,17 @@ class Network(object):
                 self.log.exception("onDelete callback error.")
                 raise
 
+        self.__callbacks['onDelete'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+    def cancelOnDelete(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onDelete']
         )
 
     # -------------------------------------------------------------------------
