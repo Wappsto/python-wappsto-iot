@@ -259,7 +259,7 @@ def _setup_offline_storage(
 
     observer.subscribe(
         service.StatusID.SENDERROR,
-        lambda _, data: offline_storage.save(data.json(exclude_none=True))
+        lambda _, data: offline_storage.save(data.json(exclude_none=True)) if data else None
     )
 
     def _resend_logic(status, status_data):

@@ -97,6 +97,35 @@ class TestOfflineStorage(BaseNetwork):
         )
         self.remove_temps()
 
+    @pytest.mark.parametrize(
+        "fast_send",
+        [True, False]
+    )
+    def test_old_storage(
+        self,
+        mock_network_server,
+        fast_send: bool,
+    ):
+        server_utils.generate_storage()
+
+        pass
+
+        self.remove_temps()
+
+
+class TestTracer(BaseNetwork):
+    ...
+    # @pytest.mark.parametrize(
+    #     "fast_send",
+    #     [True, False]
+    # )
+    # def test_active(
+    #     self,
+    #     mock_network_server,
+    #     fast_send: bool,
+    # ):
+    #     pass
+
 
 class TestNetwork(BaseNetwork):
 
