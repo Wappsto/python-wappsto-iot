@@ -269,7 +269,7 @@ class TlsSocket(Connection):
         if not self.socket:
             return False
 
-        self.log.info("Reconnection...")
+        self.log.warning("Reconnection...")
 
         while retry_limit is None or retry_limit > 0:
             if retry_limit:
@@ -278,10 +278,11 @@ class TlsSocket(Connection):
             self._socket_setup()
             try:
                 if self.connect():
+                    self.log.warning("Reconnected...")
                     return True
             except OSError:
                 pass  # NOTE: Happens if it have forgotten the IP for the url.
-            self.log.info("Trying to reconnect in 5 seconds")
+            self.log.warning("Trying to reconnect in 5 seconds")
             time.sleep(5)
         return False
 
