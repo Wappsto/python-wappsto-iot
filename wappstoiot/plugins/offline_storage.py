@@ -119,6 +119,9 @@ class OfflineStorageFiles(PlugInTemplate):
             raise
 
     def save(self, event_name: Any, pydantic_data: BaseModel) -> None:
+        if not pydantic_data:
+            return
+
         data = pydantic_data.json(exclude_none=True)
         self.log.debug(f"Saving data: {data}")
         datafile = self.loc / (str(time.perf_counter_ns()) + self.suffix)
