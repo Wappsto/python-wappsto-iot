@@ -90,6 +90,17 @@ class Network(object):
         """Returns the name of the value."""
         return self.__uuid
 
+    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+        """
+        Check if the requeried Argument count for given function fits.
+        """
+        allArgument: int = callback.__code__.co_argcount
+        mandatoryArguments: int = callback.__code__.co_argcount - len(callback.__defaults__)
+        return (
+            requiredArgumentCount <= allArgument and
+            requiredArgumentCount >= mandatoryArguments
+        )
+
     # -------------------------------------------------------------------------
     #   Save/Load helper methods
     # -------------------------------------------------------------------------
@@ -115,6 +126,9 @@ class Network(object):
 
         # UNSURE(MBK): How should it get the data back?
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onChange callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.PUT:
@@ -143,6 +157,9 @@ class Network(object):
         """
         Configure a callback for when a create have been make for the Device.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onCreate callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.POST:
@@ -175,6 +192,9 @@ class Network(object):
         ...
         # It can not! there is no '{"status":"update"}' that can be set.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onRefresh callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.GET:
@@ -208,6 +228,9 @@ class Network(object):
         unclaimed. Which mean that all the devices & value have to be
         recreated, and/or the program have to close.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onDelete callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.DELETE:

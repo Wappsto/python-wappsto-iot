@@ -138,6 +138,17 @@ class Device:
         for nr, value in enumerate(self.element.value):
             self.cloud_id_mapping[nr] = value
 
+    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+        """
+        Check if the requeried Argument count for given function fits.
+        """
+        allArgument: int = callback.__code__.co_argcount
+        mandatoryArguments: int = callback.__code__.co_argcount - len(callback.__defaults__)
+        return (
+            requiredArgumentCount <= allArgument and
+            requiredArgumentCount >= mandatoryArguments
+        )
+
     # -------------------------------------------------------------------------
     #   Device 'on-' methods
     # -------------------------------------------------------------------------
@@ -156,6 +167,9 @@ class Device:
         This could result in the same device are created again, or if the
         device was not found, it will just be removed.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onDelete callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.DELETE:
@@ -189,6 +203,9 @@ class Device:
         Callback:
             ValueObj: This object that have had a refresh request for.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onRefresh callback, are called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.GET:
@@ -217,6 +234,9 @@ class Device:
         """
         Configure a callback for when a change to the Device have occurred.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onChange callback, are called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.PUT:
@@ -245,6 +265,9 @@ class Device:
         """
         Configure a callback for when a request have been make for the Value.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onCreate callback, are called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.POST:

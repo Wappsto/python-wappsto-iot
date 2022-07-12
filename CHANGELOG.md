@@ -5,6 +5,9 @@ v0.6.4 (--- -- ----)
  * onControlCancel
  * onReportCancel
 
+## Fixed
+ * Check on the argument count on callbacks on adding them.
+
 v0.6.3 (May 5 2022)
 ===============================================================================
 

@@ -240,6 +240,17 @@ class Value:
     #   Helper methods
     # -------------------------------------------------------------------------
 
+    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+        """
+        Check if the requeried Argument count for given function fits.
+        """
+        allArgument: int = callback.__code__.co_argcount
+        mandatoryArguments: int = callback.__code__.co_argcount - len(callback.__defaults__)
+        return (
+            requiredArgumentCount <= allArgument and
+            requiredArgumentCount >= mandatoryArguments
+        )
+
     def __parseValueTemplate(
         self,
         ValueBaseType,
@@ -403,6 +414,9 @@ class Value:
             ValueObj: The Object that have had a change to it.
             ChangeType: Name of what have change in the object.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The OnChange callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.PUT:
@@ -438,6 +452,9 @@ class Value:
             Value: the Object that have had a Report for.
             Union[str, int, float]: The Value of the Report change.
         """
+        if not self.__argumentCountCheck(callback, 2):
+            raise TypeError("The OnReport callback, is called with 2 argument.")
+
         def _cb_float(obj, method):
             try:
                 if method == WappstoMethod.PUT:
@@ -483,6 +500,9 @@ class Value:
             ValueObj: This object that have had a request for.
             any: The Data.
         """
+        if not self.__argumentCountCheck(callback, 2):
+            raise TypeError("The OnControl callback, is called with 2 argument.")
+
         def _cb_float(obj, method):
             try:
                 if method == WappstoMethod.PUT:
@@ -530,6 +550,8 @@ class Value:
         Callback:
             ValueObj: This object that have had a refresh request for.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onCreate callback, is called with 1 argument.")
 
         def _cb(obj, method):
             try:
@@ -566,6 +588,8 @@ class Value:
         Callback:
             ValueObj: This object that have had a refresh request for.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onRefresh callback, is called with 1 argument.")
 
         def _cb(obj, method):
             try:
@@ -593,6 +617,10 @@ class Value:
         callback: Callable[['Value'], None],
     ) -> None:
         """For when a 'DELETE' request have been called on this element."""
+
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onDelete callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.DELETE:
