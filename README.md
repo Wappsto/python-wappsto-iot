@@ -47,13 +47,16 @@ Working examples of usage can be found in the [example folder](./example).
 The needed certificates can be downloaded with: `python -m wappstoiot --path echo`
 Where path is the path to the config-folder, given in the following code example.
 
+There is also a Wapp avaliable called: [IoT Certificate Manager](https://wappsto.com/store/wapp=iot_certificate_manager) on wappsto,
+that given you a GUI to do the same and more.
+
 ### Echo example
 
 The following explains the example code found in [echo.py](./example/echo.py).
 
 
 ```python
-network = wappstoiot.config(
+wappstoiot.config(
     config_Folder="echo"
 )
 ```
