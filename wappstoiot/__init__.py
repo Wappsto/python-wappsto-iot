@@ -1,7 +1,7 @@
 """This the the Simple Wappsto Python user-interface to the Wappsto devices."""
 
 # #############################################################################
-#                             MOdules Import Stuff
+#                             Modules Import Stuff
 # #############################################################################
 
 

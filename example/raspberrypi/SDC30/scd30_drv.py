@@ -146,7 +146,7 @@ if __name__ == "__main__":
     try:
         scd30 = SCD30(1, 5, 1, None)
 
-        while(1):
+        while (1):
             if scd30.data_ready():
                 print("ready")
                 print(list(scd30.get_scd30_measurements()))
