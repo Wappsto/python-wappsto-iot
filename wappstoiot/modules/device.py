@@ -143,7 +143,8 @@ class Device:
         Check if the requeried Argument count for given function fits.
         """
         allArgument: int = callback.__code__.co_argcount
-        mandatoryArguments: int = callback.__code__.co_argcount - len(callback.__defaults__)
+        the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
+        mandatoryArguments: int = callback.__code__.co_argcount - the_default_count
         return (
             requiredArgumentCount <= allArgument and
             requiredArgumentCount >= mandatoryArguments
