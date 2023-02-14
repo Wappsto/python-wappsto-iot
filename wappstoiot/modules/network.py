@@ -121,7 +121,7 @@ class Network(object):
     def onChange(
         self,
         callback: Callable[['Network'], None],
-    ) -> None:
+    ) -> Callable[['Network'], None]:
         """
         Configure a callback for when a change to the Network have occurred.
 
@@ -145,6 +145,8 @@ class Network(object):
             callback=_cb
         )
 
+        return callback
+
     def cancelOnChange(self):
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
@@ -154,7 +156,7 @@ class Network(object):
     def onCreate(
         self,
         callback: Callable[['Network'], None],
-    ) -> None:
+    ) -> Callable[['Network'], None]:
         """
         Configure a callback for when a create have been make for the Device.
         """
@@ -176,6 +178,8 @@ class Network(object):
             callback=_cb
         )
 
+        return callback
+
     def cancelOnCreate(self):
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
@@ -184,8 +188,8 @@ class Network(object):
 
     def onRefresh(
         self,
-        callback: Callable[['Network'], None]
-    ):
+        callback: Callable[['Network'], None],
+    ) -> Callable[['Network'], None]:
         """
         Configure an action when a refresh Network have been Requested.
 
@@ -211,6 +215,8 @@ class Network(object):
             callback=_cb
         )
 
+        return callback
+
     def cancelOnRefresh(self):
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
@@ -219,8 +225,8 @@ class Network(object):
 
     def onDelete(
         self,
-        callback: Callable[['Network'], None]
-    ):
+        callback: Callable[['Network'], None],
+    ) -> Callable[['Network'], None]:
         """
         Configure an action when a Delete Network have been Requested.
 
@@ -246,6 +252,8 @@ class Network(object):
             uuid=self.uuid,
             callback=_cb
         )
+
+        return callback
 
     def cancelOnDelete(self):
         self.connection.unsubscribe_network_event(

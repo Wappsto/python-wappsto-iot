@@ -157,7 +157,7 @@ class Device:
     def onDelete(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Configure an action when a Delete on this Device have been Requested.
 
@@ -186,6 +186,8 @@ class Device:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnDelete(self):
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
@@ -195,7 +197,7 @@ class Device:
     def onRefresh(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Add trigger for when a Refresh where requested.
 
@@ -222,6 +224,8 @@ class Device:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnRefresh(self):
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
@@ -231,7 +235,7 @@ class Device:
     def onChange(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Configure a callback for when a change to the Device have occurred.
         """
@@ -253,6 +257,8 @@ class Device:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnChange(self):
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
@@ -262,7 +268,7 @@ class Device:
     def onCreate(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Configure a callback for when a request have been make for the Value.
         """
@@ -283,6 +289,8 @@ class Device:
             uuid=self.uuid,
             callback=_cb
         )
+
+        return callback
 
     def cancelOnCreate(self):
         self.connection.unsubscribe_device_event(

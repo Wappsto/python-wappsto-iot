@@ -403,7 +403,7 @@ class Value:
     def onChange(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """
         Add a trigger on when change have been make.
 
@@ -434,6 +434,8 @@ class Value:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnChange(self):
         self.connection.unsubscribe_value_event(
             uuid=self.uuid,
@@ -443,7 +445,7 @@ class Value:
     def onReport(
         self,
         callback: Callable[['Value', Union[str, float]], None],
-    ) -> None:
+    ) -> Callable[['Value', Union[str, float]], None]:
         """
         Add a trigger on when Report data change have been make.
 
@@ -481,6 +483,8 @@ class Value:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnReport(self):
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
@@ -490,7 +494,7 @@ class Value:
     def onControl(
         self,
         callback: Callable[['Value', Union[str, float]], None],
-    ) -> None:
+    ) -> Callable[['Value', Union[str, float]], None]:
         """
         Add trigger for when a Control request have been make.
 
@@ -533,6 +537,8 @@ class Value:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnControl(self):
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
@@ -542,7 +548,7 @@ class Value:
     def onCreate(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """
         Add trigger for when a state was created.
 
@@ -569,6 +575,8 @@ class Value:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnCreate(self):
         self.connection.unsubscribe_state_event(
             uuid=self.uuid,
@@ -578,7 +586,7 @@ class Value:
     def onRefresh(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """
         Add trigger for when a Refresh where requested.
 
@@ -607,6 +615,8 @@ class Value:
             callback=_cb
         )
 
+        return callback
+
     def cancelOnRefresh(self):
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
@@ -616,7 +626,7 @@ class Value:
     def onDelete(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """For when a 'DELETE' request have been called on this element."""
 
         if not self.__argumentCountCheck(callback, 1):
@@ -636,6 +646,8 @@ class Value:
             uuid=self.uuid,
             callback=_cb
         )
+
+        return callback
 
     def cancelOnDelete(self):
         self.connection.unsubscribe_value_event(
