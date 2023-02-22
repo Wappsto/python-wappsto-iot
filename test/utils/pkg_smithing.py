@@ -34,9 +34,10 @@ def str_to_datetime(timestamp: str) -> datetime.datetime:
     Returns:
         The converted timestamp.
     """
-    return dateutil.parser.parse(
-        timestamp
-    ).replace(tzinfo=None)
+    return datetime.datetime.strptime(
+        timestamp,
+        '%Y-%m-%dT%H:%M:%S.%fZ'
+    )
 
 
 def convert_timestamp(timestamp: Optional[datetime.datetime] = None) -> str:

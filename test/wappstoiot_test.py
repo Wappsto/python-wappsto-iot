@@ -97,6 +97,7 @@ class TestOfflineStorage(BaseNetwork):
         )
         self.remove_temps()
 
+    @pytest.mark.skip("WIP!")
     @pytest.mark.parametrize(
         "fast_send",
         [True, False]
@@ -106,6 +107,11 @@ class TestOfflineStorage(BaseNetwork):
         mock_network_server,
         fast_send: bool,
     ):
+        """
+        Test with already saved data in the storage.
+
+        The result should be it sends the data, and removes it afterward.
+        """
         server_utils.generate_storage()
 
         pass
