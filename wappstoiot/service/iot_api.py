@@ -146,7 +146,7 @@ class IoTAPI(ServiceClass):
         self.connection.close()
         self.log.debug("Closing Workers")
         self.workers.shutdown()
-        self.log.debug("IoTAPI Colsed.")
+        self.log.debug("IoTAPI Closed.")
 
     # #########################################################################
     #                              Helper Methods
