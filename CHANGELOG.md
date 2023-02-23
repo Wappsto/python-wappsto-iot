@@ -8,6 +8,7 @@ v0.6.4 (--- -- ----)
 ## Fixed
  * Check on the argument count on callbacks on adding them.
  * Now the on-function returns the callback it was given.
+ * Should now covert the timestamp correctly.
 
 
 v0.6.3 (May 5 2022)
