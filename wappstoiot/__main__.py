@@ -204,10 +204,10 @@ def get_network(session, base_url, network_uuid):
     return rjson
 
 
-def create_certificaties_files(location, creator, args):
+def create_certificaties_files(location, creator, dry_run):
     creator["ca"], creator["certificate"], creator["private_key"]
 
-    if not args.dry_run:
+    if not dry_run:
         location.mkdir(exist_ok=True)
         try:
             with open(location / "ca.crt", "w") as file:
@@ -299,7 +299,7 @@ def main():
 
     args.path.mkdir(exist_ok=True)
 
-    create_certificaties_files(args.path, creator, args)
+    create_certificaties_files(args.path, creator, args.dry_run)
 
     print("\nEnjoy...")
     exit(0)
