@@ -31,7 +31,7 @@ def timestamp_converter(dt: datetime) -> str:
     Returns:
         The UTC time string in ISO format.
     """
-    return dt.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    return dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
 
 class WappstoMethods(str, Enum):
