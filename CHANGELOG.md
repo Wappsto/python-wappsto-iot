@@ -10,6 +10,8 @@ v0.6.4 (--- -- ----)
  * Now the on-function returns the callback it was given.
  * Should now covert the timestamp correctly.
 
+## Changed
+ * Updated the `wappstoiot.ValueTemplate` to version 0.0.3
 
 v0.6.3 (May 5 2022)
 ===============================================================================
