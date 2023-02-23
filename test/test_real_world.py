@@ -7,6 +7,8 @@ import wappstoiot
 
 from typing import Optional
 
+from utils import file_utils
+
 from wappstoiot.__main__ import start_session
 from wappstoiot.__main__ import create_network
 from wappstoiot.__main__ import claim_network
@@ -66,15 +68,14 @@ class TestWithOutMocking(BaseTestClassWithCertificateFiles):
     def setup_class(cls):
         """Setting up all the needed stuff for the test class."""
         if cls.token is None:
-            raise ValueError('The QA-Token was not set.')
+            pytest.skip("Token was not given.")
         cls.generate_certificates(cls, token=cls.token)
 
     @classmethod
     def teardown_class(cls):
         """tearing down all the generated stuff by the setup_class function."""
-        pass
+        file_utils.rm_all(cls.temp)
 
-    @pytest.mark.skipif(token is None, reason="Token was not given.")
     @pytest.mark.parametrize(
         "fast_send",
         [True, False]
@@ -93,6 +94,6 @@ class TestWithOutMocking(BaseTestClassWithCertificateFiles):
                 value_template=wappstoiot.ValueTemplate.STRING
             )
             value.report(value=5)
-            value.report(value=5, timestamp=datetime.datetime.now())
+            value.report(value=1337, timestamp=datetime.datetime.now())
         finally:
             wappstoiot.close()
