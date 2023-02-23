@@ -18,7 +18,9 @@ from ..schema import base_schema as WSchema
 from ..schema.base_schema import PermissionType
 from ..schema.iot_schema import WappstoMethod
 
-from ..utils import Timestamp
+from ..schema.base_schema import timestamp_converter
+
+from ..utils.Timestamp import str_to_datetime
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -696,18 +698,23 @@ class Value:
         The Report value is typical a measured value from a sensor,
         whether it is a GPIO pin, a analog temperature sensor or a
         device over a I2C bus.
+
+        ERROR: https://github.com/pydantic/pydantic/issues/4852
+
         """
         # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
+        the_timestamp = timestamp if timestamp is not None else datetime.now()
         data = WSchema.State(
             data=value,
-            timestamp=timestamp if timestamp else Timestamp.timestamp()
+            timestamp=timestamp_converter(the_timestamp)
         )
         if (
             data.timestamp and self.report_state.timestamp or
             not self.report_state.timestamp
         ):
             self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+            self.report_state.timestamp = the_timestamp
             if self.report_state.timestamp:
                 self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
@@ -726,18 +733,22 @@ class Value:
         A Control value is typical only changed if a target wanted value,
         have changed, whether it is because of an on device user controller,
         or the target was outside a given range.
+
+        ERROR: https://github.com/pydantic/pydantic/issues/4852
+
         """
         self.log.info(f"Sending Control for: {self.control_state.meta.id}")
-
+        the_timestamp = timestamp if timestamp is not None else datetime.now()
         data = WSchema.State(
             data=value,
-            timestamp=timestamp if timestamp else Timestamp.timestamp()
+            timestamp=timestamp_converter(the_timestamp)
         )
         if (
             data.timestamp and self.control_state.timestamp or
             not self.control_state.timestamp
         ):
             self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
+            self.control_state.timestamp = the_timestamp
             if self.control_state.timestamp:
                 self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
@@ -792,6 +803,7 @@ class Value:
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
                         self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
                         if self.control_state.timestamp:
+                            self.control_state.timestamp = str_to_datetime(self.control_state.timestamp)
                             self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
             except Exception:
                 self.log.exception("onCreateControl callback error.")
