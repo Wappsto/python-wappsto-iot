@@ -67,6 +67,8 @@ class Device:
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
+        self.__callbacks: Dict[str, Callable] = {}
+
         self.parent = parent
         self.element: WSchema.Device
 
@@ -136,6 +138,18 @@ class Device:
         for nr, value in enumerate(self.element.value):
             self.cloud_id_mapping[nr] = value
 
+    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+        """
+        Check if the requeried Argument count for given function fits.
+        """
+        allArgument: int = callback.__code__.co_argcount
+        the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
+        mandatoryArguments: int = callback.__code__.co_argcount - the_default_count
+        return (
+            requiredArgumentCount <= allArgument and
+            requiredArgumentCount >= mandatoryArguments
+        )
+
     # -------------------------------------------------------------------------
     #   Device 'on-' methods
     # -------------------------------------------------------------------------
@@ -143,7 +157,7 @@ class Device:
     def onDelete(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Configure an action when a Delete on this Device have been Requested.
 
@@ -154,6 +168,9 @@ class Device:
         This could result in the same device are created again, or if the
         device was not found, it will just be removed.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onDelete callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.DELETE:
@@ -162,15 +179,25 @@ class Device:
                 self.log.exception("onDelete callback error.")
                 raise
 
+        self.__callbacks['onDelete'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnDelete(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onDelete']
+        )
+
     def onRefresh(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Add trigger for when a Refresh where requested.
 
@@ -179,6 +206,9 @@ class Device:
         Callback:
             ValueObj: This object that have had a refresh request for.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onRefresh callback, are called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.GET:
@@ -187,18 +217,31 @@ class Device:
                 self.log.exception("onRefresh callback error.")
                 raise
 
+        self.__callbacks['onRefresh'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnRefresh(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onRefresh']
+        )
+
     def onChange(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Configure a callback for when a change to the Device have occurred.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onChange callback, are called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.PUT:
@@ -207,19 +250,31 @@ class Device:
                 self.log.exception("OnChange callback error.")
                 raise
 
-        # UNSURE (MBK): on all state & value?
+        self.__callbacks['onChange'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnChange(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onChange']
+        )
+
     def onCreate(
         self,
         callback: Callable[['Device'], None],
-    ) -> None:
+    ) -> Callable[['Device'], None]:
         """
         Configure a callback for when a request have been make for the Value.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onCreate callback, are called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.POST:
@@ -228,10 +283,19 @@ class Device:
                 self.log.exception("onCreate callback error.")
                 raise
 
-        # UNSURE (MBK): on all state & value?
+        self.__callbacks['onCreate'] = _cb
+
         self.connection.subscribe_device_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+        return callback
+
+    def cancelOnCreate(self):
+        self.connection.unsubscribe_device_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onCreate']
         )
 
     # -------------------------------------------------------------------------

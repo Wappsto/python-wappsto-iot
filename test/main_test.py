@@ -28,7 +28,7 @@ class TestCLI:
         rich.print(f"{print_out}")
 
         # UNSURE: How should I test the print_out output?
-        assert "optional arguments:" in print_out
+        assert "usage: " in print_out
         assert "-h, --help" in print_out
 
     @pytest.mark.parametrize(

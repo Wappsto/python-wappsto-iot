@@ -191,7 +191,7 @@ Future Ideas:
 
 Known Bugs {icon bug color=red}
 ===============================================================================
-* [ ] Wrong format for all datetime's.
+* [ ] Somethign Wappsto do not reply on a 'lookup' request, so a duplicate is make.
 
 
 Unsure {icon question-circle color=blue}

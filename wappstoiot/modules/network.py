@@ -39,6 +39,8 @@ class Network(object):
         self.__uuid: uuid.UUID = network_uuid
         self.element: WSchema.Network = self.schema()
 
+        self.__callbacks: Dict[str, Callable] = {}
+
         self.children_uuid_mapping: Dict[uuid.UUID, Device] = {}
         self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
@@ -88,6 +90,18 @@ class Network(object):
         """Returns the name of the value."""
         return self.__uuid
 
+    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+        """
+        Check if the requeried Argument count for given function fits.
+        """
+        allArgument: int = callback.__code__.co_argcount
+        the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
+        mandatoryArguments: int = callback.__code__.co_argcount - the_default_count
+        return (
+            requiredArgumentCount <= allArgument and
+            requiredArgumentCount >= mandatoryArguments
+        )
+
     # -------------------------------------------------------------------------
     #   Save/Load helper methods
     # -------------------------------------------------------------------------
@@ -107,12 +121,15 @@ class Network(object):
     def onChange(
         self,
         callback: Callable[['Network'], None],
-    ) -> None:
+    ) -> Callable[['Network'], None]:
         """
         Configure a callback for when a change to the Network have occurred.
 
         # UNSURE(MBK): How should it get the data back?
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onChange callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.PUT:
@@ -121,18 +138,31 @@ class Network(object):
                 self.log.exception("OnChange callback error.")
                 raise
 
+        self.__callbacks['onChange'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnChange(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onChange']
+        )
+
     def onCreate(
         self,
         callback: Callable[['Network'], None],
-    ) -> None:
+    ) -> Callable[['Network'], None]:
         """
         Configure a callback for when a create have been make for the Device.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onCreate callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.POST:
@@ -141,15 +171,25 @@ class Network(object):
                 self.log.exception("onCreate callback error.")
                 raise
 
+        self.__callbacks['onCreate'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnCreate(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onCreate']
+        )
+
     def onRefresh(
         self,
-        callback: Callable[['Network'], None]
-    ):
+        callback: Callable[['Network'], None],
+    ) -> Callable[['Network'], None]:
         """
         Configure an action when a refresh Network have been Requested.
 
@@ -157,6 +197,9 @@ class Network(object):
         ...
         # It can not! there is no '{"status":"update"}' that can be set.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onRefresh callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.GET:
@@ -165,15 +208,25 @@ class Network(object):
                 self.log.exception("onRefresh callback error.")
                 raise
 
+        self.__callbacks['onRefresh'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnRefresh(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onRefresh']
+        )
+
     def onDelete(
         self,
-        callback: Callable[['Network'], None]
-    ):
+        callback: Callable[['Network'], None],
+    ) -> Callable[['Network'], None]:
         """
         Configure an action when a Delete Network have been Requested.
 
@@ -182,6 +235,9 @@ class Network(object):
         unclaimed. Which mean that all the devices & value have to be
         recreated, and/or the program have to close.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onDelete callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.DELETE:
@@ -190,9 +246,19 @@ class Network(object):
                 self.log.exception("onDelete callback error.")
                 raise
 
+        self.__callbacks['onDelete'] = _cb
+
         self.connection.subscribe_network_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+        return callback
+
+    def cancelOnDelete(self):
+        self.connection.unsubscribe_network_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onDelete']
         )
 
     # -------------------------------------------------------------------------

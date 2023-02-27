@@ -18,7 +18,9 @@ from ..schema import base_schema as WSchema
 from ..schema.base_schema import PermissionType
 from ..schema.iot_schema import WappstoMethod
 
-from ..utils import Timestamp
+from ..schema.base_schema import timestamp_converter
+
+from ..utils.Timestamp import str_to_datetime
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -97,6 +99,8 @@ class Value:
         self.log.addHandler(logging.NullHandler())
 
         self.value_type = value_type
+
+        self.__callbacks: Dict[str, Callable] = {}
 
         self.schema = self.__value_type_2_Schema[value_type]
         self.report_state: WSchema.State
@@ -237,6 +241,18 @@ class Value:
     # -------------------------------------------------------------------------
     #   Helper methods
     # -------------------------------------------------------------------------
+
+    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+        """
+        Check if the requeried Argument count for given function fits.
+        """
+        allArgument: int = callback.__code__.co_argcount
+        the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
+        mandatoryArguments: int = callback.__code__.co_argcount - the_default_count
+        return (
+            requiredArgumentCount <= allArgument and
+            requiredArgumentCount >= mandatoryArguments
+        )
 
     def __parseValueTemplate(
         self,
@@ -389,7 +405,7 @@ class Value:
     def onChange(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """
         Add a trigger on when change have been make.
 
@@ -401,6 +417,9 @@ class Value:
             ValueObj: The Object that have had a change to it.
             ChangeType: Name of what have change in the object.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The OnChange callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method in WappstoMethod.PUT:
@@ -409,16 +428,26 @@ class Value:
                 self.log.exception("OnChange callback error.")
                 raise
 
+        self.__callbacks['onChange'] = _cb
+
         # UNSURE (MBK): on all state & value?
         self.connection.subscribe_value_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnChange(self):
+        self.connection.unsubscribe_value_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onChange']
+        )
+
     def onReport(
         self,
         callback: Callable[['Value', Union[str, float]], None],
-    ) -> None:
+    ) -> Callable[['Value', Union[str, float]], None]:
         """
         Add a trigger on when Report data change have been make.
 
@@ -428,6 +457,9 @@ class Value:
             Value: the Object that have had a Report for.
             Union[str, int, float]: The Value of the Report change.
         """
+        if not self.__argumentCountCheck(callback, 2):
+            raise TypeError("The OnReport callback, is called with 2 argument.")
+
         def _cb_float(obj, method):
             try:
                 if method == WappstoMethod.PUT:
@@ -446,15 +478,25 @@ class Value:
 
         _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
+        self.__callbacks['onReport'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnReport(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            callback=self.__callbacks['onReport']
+        )
+
     def onControl(
         self,
         callback: Callable[['Value', Union[str, float]], None],
-    ) -> None:
+    ) -> Callable[['Value', Union[str, float]], None]:
         """
         Add trigger for when a Control request have been make.
 
@@ -465,6 +507,9 @@ class Value:
             ValueObj: This object that have had a request for.
             any: The Data.
         """
+        if not self.__argumentCountCheck(callback, 2):
+            raise TypeError("The OnControl callback, is called with 2 argument.")
+
         def _cb_float(obj, method):
             try:
                 if method == WappstoMethod.PUT:
@@ -487,15 +532,25 @@ class Value:
 
         _cb = _cb_float if self.value_type == ValueBaseType.NUMBER else _cb_str
 
+        self.__callbacks['onControl'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnControl(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
+            callback=self.__callbacks['onControl']
+        )
+
     def onCreate(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """
         Add trigger for when a state was created.
 
@@ -504,6 +559,8 @@ class Value:
         Callback:
             ValueObj: This object that have had a refresh request for.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onCreate callback, is called with 1 argument.")
 
         def _cb(obj, method):
             try:
@@ -513,15 +570,25 @@ class Value:
                 self.log.exception("onCreate callback error.")
                 raise
 
+        self.__callbacks['onCreate'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.uuid,
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnCreate(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onCreate']
+        )
+
     def onRefresh(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """
         Add trigger for when a Refresh where requested.
 
@@ -532,6 +599,8 @@ class Value:
         Callback:
             ValueObj: This object that have had a refresh request for.
         """
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onRefresh callback, is called with 1 argument.")
 
         def _cb(obj, method):
             try:
@@ -541,16 +610,30 @@ class Value:
                 self.log.exception("onRefresh callback error.")
                 raise
 
+        self.__callbacks['onRefresh'] = _cb
+
         self.connection.subscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=_cb
         )
 
+        return callback
+
+    def cancelOnRefresh(self):
+        self.connection.unsubscribe_state_event(
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            callback=self.__callbacks['onRefresh']
+        )
+
     def onDelete(
         self,
         callback: Callable[['Value'], None],
-    ) -> None:
+    ) -> Callable[['Value'], None]:
         """For when a 'DELETE' request have been called on this element."""
+
+        if not self.__argumentCountCheck(callback, 1):
+            raise TypeError("The onDelete callback, is called with 1 argument.")
+
         def _cb(obj, method):
             try:
                 if method == WappstoMethod.DELETE:
@@ -559,9 +642,19 @@ class Value:
                 self.log.exception("onDelete callback error.")
                 raise
 
+        self.__callbacks['onDelete'] = _cb
+
         self.connection.subscribe_value_event(
             uuid=self.uuid,
             callback=_cb
+        )
+
+        return callback
+
+    def cancelOnDelete(self):
+        self.connection.unsubscribe_value_event(
+            uuid=self.uuid,
+            callback=self.__callbacks['onDelete']
         )
 
     # -------------------------------------------------------------------------
@@ -605,18 +698,23 @@ class Value:
         The Report value is typical a measured value from a sensor,
         whether it is a GPIO pin, a analog temperature sensor or a
         device over a I2C bus.
+
+        ERROR: https://github.com/pydantic/pydantic/issues/4852
+
         """
         # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
+        the_timestamp = timestamp if timestamp is not None else datetime.now()
         data = WSchema.State(
             data=value,
-            timestamp=timestamp if timestamp else Timestamp.timestamp()
+            timestamp=timestamp_converter(the_timestamp)
         )
         if (
             data.timestamp and self.report_state.timestamp or
             not self.report_state.timestamp
         ):
             self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+            self.report_state.timestamp = the_timestamp
             if self.report_state.timestamp:
                 self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
@@ -635,18 +733,22 @@ class Value:
         A Control value is typical only changed if a target wanted value,
         have changed, whether it is because of an on device user controller,
         or the target was outside a given range.
+
+        ERROR: https://github.com/pydantic/pydantic/issues/4852
+
         """
         self.log.info(f"Sending Control for: {self.control_state.meta.id}")
-
+        the_timestamp = timestamp if timestamp is not None else datetime.now()
         data = WSchema.State(
             data=value,
-            timestamp=timestamp if timestamp else Timestamp.timestamp()
+            timestamp=timestamp_converter(the_timestamp)
         )
         if (
             data.timestamp and self.control_state.timestamp or
             not self.control_state.timestamp
         ):
             self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
+            self.control_state.timestamp = the_timestamp
             if self.control_state.timestamp:
                 self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
@@ -701,6 +803,7 @@ class Value:
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
                         self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
                         if self.control_state.timestamp:
+                            self.control_state.timestamp = str_to_datetime(self.control_state.timestamp)
                             self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
             except Exception:
                 self.log.exception("onCreateControl callback error.")

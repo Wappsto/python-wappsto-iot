@@ -22,7 +22,7 @@ from pydantic import root_validator
 from pydantic import UUID4
 
 
-def timestamp(dt: datetime) -> str:
+def timestamp_converter(dt: datetime) -> str:
     """
     Return The default timestamp used for Wappsto.
 
@@ -31,7 +31,7 @@ def timestamp(dt: datetime) -> str:
     Returns:
         The UTC time string in ISO format.
     """
-    return dt.utcnow().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    return dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
 
 class WappstoMethods(str, Enum):
@@ -169,7 +169,7 @@ class Connection(BaseModel):
 
     class Config:
         json_encoders = {
-            datetime: timestamp
+            datetime: timestamp_converter
         }
 
 
@@ -230,7 +230,7 @@ class BaseMeta(BaseModel):  # Base Meta
 
     class Config:
         json_encoders = {
-            datetime: timestamp
+            datetime: timestamp_converter
         }
 
 
@@ -294,7 +294,7 @@ class Status(BaseModel):
 
     class Config:
         json_encoders = {
-            datetime: timestamp
+            datetime: timestamp_converter
         }
 
 
@@ -309,12 +309,12 @@ class State(BaseModel):
     meta: Optional[StateMeta] = Field(None, title='meta-2.0:create')
     status: Optional[StateStatus] = None
     status_payment: Optional[str] = None
-    timestamp: Optional[datetime] = None
+    timestamp: Optional[str] = None
 
     class Config:
         extra = Extra.forbid
         json_encoders = {
-            datetime: timestamp,
+            datetime: timestamp_converter,
         }
 
 

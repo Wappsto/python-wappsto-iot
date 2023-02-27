@@ -1,16 +1,16 @@
 """This the the Simple Wappsto Python user-interface to the Wappsto devices."""
 
 # #############################################################################
-#                             MOdules Import Stuff
+#                             Modules Import Stuff
 # #############################################################################
 
 
 import __main__
 import atexit
-# import netrc
 import json
 import logging
 import threading
+import uuid
 
 from pathlib import Path
 from enum import Enum
@@ -42,7 +42,7 @@ from .service import template as service
 from .connections import protocol as connection
 
 from .utils.offline_storage import OfflineStorage
-from .utils.certificateread import CertificateRead
+from .utils.certificateread import certificate_info_extraction
 from .utils.offline_storage import OfflineStorageFiles
 
 from .utils import observer
@@ -52,7 +52,7 @@ from .utils import name_check
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.6.3"
+__version__ = "v0.6.4"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -259,7 +259,7 @@ def _setup_offline_storage(
 
     observer.subscribe(
         service.StatusID.SENDERROR,
-        lambda _, data: offline_storage.save(data.json(exclude_none=True))
+        lambda _, data: offline_storage.save(data.json(exclude_none=True)) if data else None
     )
 
     def _resend_logic(status, status_data):
@@ -311,15 +311,15 @@ def createNetwork(
     if not __config_folder:
         __config_folder = Path('.')
 
-    cer = CertificateRead(crt=__config_folder / "client.crt")
-    uuid = cer.network
+    cer = certificate_info_extraction(crt_path=__config_folder / "client.crt")
+    network_uuid = uuid.UUID(cer.get('subject', {}).get('commonName'))
 
     atexit.register(close)
 
     return Network(
         name=name,
         connection=__the_connection,
-        network_uuid=uuid,
+        network_uuid=network_uuid,
         description=description
     )
 

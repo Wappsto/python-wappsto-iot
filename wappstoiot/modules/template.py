@@ -43,39 +43,62 @@ class ValueSettinsSchema(BaseModel):
 
 class ValueTemplate(str, Enum):
     """
-    Predefined ValueTypes.
+    Predefined ValueTemplate.
 
-    Each of the predefined ValueTypes, have default
+    Each of the predefined ValueTemplate, have default
     value parameters set, which include BaseType, name,
     permission, range, step and the unit.
     """
+    __version__ = "0.0.3"
 
-    __version__ = "0.0.1"
-
+    ADDRESS_NAME = "ADDRESS_NAME"
+    ALTITUDE_M = "ALTITUDE_M"
     ANGLE = "ANGLE"
+    APPARENT_POWER_VA = "APPARENT_POWER_VA"
     BLOB = "BLOB"
     BOOLEAN_ONOFF = "BOOLEAN_ONOFF"
+    BOOLEAN_TRUEFALSE = "BOOLEAN_TRUEFALSE"
     CITY = "CITY"
-    CO2 = "CO2"
+    CO2_PPM = "CO2_PPM"
     COLOR_HEX = "COLOR_HEX"
     COLOR_INT = "COLOR_INT"
     COLOR_TEMPERATURE = "COLOR_TEMPERATURE"
+    CONCENTRATION_PPM = "CONCENTRATION_PPM"
+    CONNECTION_STATUS = "CONNECTION_STATUS"
+    COUNT = "COUNT"
     COUNTRY = "COUNTRY"
     COUNTRY_CODE = "COUNTRY_CODE"
+    CURRENT_A = "CURRENT_A"
+    DISTANCE_M = "DISTANCE_M"
+    DURATION_MIN = "DURATION_MIN"
+    DURATION_MSEC = "DURATION_MSEC"
+    DURATION_SEC = "DURATION_SEC"
+    EMAIL = "EMAIL"
     ENERGY_KWH = "ENERGY_KWH"
+    ENERGY_MWH = "ENERGY_MWH"
     ENERGY_WH = "ENERGY_WH"
+    FREQUENCY_HZ = "FREQUENCY_HZ"
     HUMIDITY = "HUMIDITY"
+    IDENTIFIER = "IDENTIFIER"
     IMAGE_JPG = "IMAGE_JPG"
+    IMAGE_PNG = "IMAGE_PNG"
+    IMPULSE_KWH = "IMPULSE_KWH"
+    INTEGER = "INTEGER"
+    JSON = "JSON"
     LATITUDE = "LATITUDE"
     LONGITUDE = "LONGITUDE"
     LUMINOUSITY_LX = "LUMINOUSITY_LX"
     NUMBER = "NUMBER"
+    ORGANISATION = "ORGANISATION"
     PERCENTAGE = "PERCENTAGE"
+    PHONE = "PHONE"
     POSTCODE = "POSTCODE"
     POWER_KW = "POWER_KW"
     POWER_WATT = "POWER_WATT"
     PRECIPITATION_MM = "PRECIPITATION_MM"
     PRESSURE_HPA = "PRESSURE_HPA"
+    REACTIVE_ENERGY_KVARH = "REACTIVE_ENERGY_KVARH"
+    REACTIVE_POWER_KVAR = "REACTIVE_POWER_KVAR"
     SPEED_MS = "SPEED_MS"
     STREET = "STREET"
     STRING = "STRING"
@@ -83,22 +106,84 @@ class ValueTemplate(str, Enum):
     TEMPERATURE_FAHRENHEIT = "TEMPERATURE_FAHRENHEIT"
     TEMPERATURE_KELVIN = "TEMPERATURE_KELVIN"
     TIMESTAMP = "TIMESTAMP"
+    UNIT_TIME = "UNIT_TIME"
     VOLTAGE_V = "VOLTAGE_V"
+    VOLUME_M3 = "VOLUME_M3"
     XML = "XML"
 
 
 valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
 
+    ValueTemplate.BOOLEAN_TRUEFALSE: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="boolean",
+        mapping={'0': 'false', '1': 'true'},
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1",
+        step="1",
+        unit=None,
+        si_conversion=None,
+    ),
     ValueTemplate.BOOLEAN_ONOFF: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="boolean",
         mapping={'0': 'off', '1': 'on'},
         ordered_mapping=None,
-        meaningful_zero=True,
+        meaningful_zero=None,
         min="0",
         max="1",
         step="1",
         unit=None,
+        si_conversion=None,
+    ),
+    ValueTemplate.CONNECTION_STATUS: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="connection",
+        mapping={'0': 'offline', '1': 'online'},
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1",
+        step="1",
+        unit=None,
+        si_conversion=None,
+    ),
+    ValueTemplate.INTEGER: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="integer",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-255",
+        max="255",
+        step="1",
+        unit=None,
+        si_conversion=None,
+    ),
+    ValueTemplate.COUNT: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="count",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="255",
+        step="1",
+        unit=None,
+        si_conversion=None,
+    ),
+    ValueTemplate.IMPULSE_KWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="impulse_resolution",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="1",
+        max="50000",
+        step="1",
+        unit="imp/kWh",
         si_conversion=None,
     ),
     ValueTemplate.VOLTAGE_V: ValueSettinsSchema(
@@ -109,7 +194,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         meaningful_zero=None,
         min="0",
         max="250",
-        step="1",
+        step="0.1",
         unit="V",
         si_conversion=None,
     ),
@@ -121,7 +206,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         meaningful_zero=None,
         min="0",
         max="2500",
-        step="1",
+        step="0.1",
         unit="W",
         si_conversion=None,
     ),
@@ -133,7 +218,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         meaningful_zero=None,
         min="0",
         max="1000000",
-        step="1",
+        step="0.1",
         unit="kW",
         si_conversion="[W] = 1000 * [kW]",
     ),
@@ -145,7 +230,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         meaningful_zero=None,
         min="0",
         max="100000",
-        step="1",
+        step="0.1",
         unit="Wh",
         si_conversion=None,
     ),
@@ -157,9 +242,81 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         meaningful_zero=None,
         min="0",
         max="1000000",
-        step="1",
+        step="0.1",
         unit="kWh",
-        si_conversion="[J] = 3600000 * [kWh]  ",
+        si_conversion="[J] = 3600000 * [kWh]",
+    ),
+    ValueTemplate.ENERGY_MWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1000000",
+        step="0.1",
+        unit="MWh",
+        si_conversion="[J] = 3600000000 * [MWh]",
+    ),
+    ValueTemplate.CURRENT_A: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="electric_current",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-5000",
+        max="5000",
+        step="0.001",
+        unit="A",
+        si_conversion=None,
+    ),
+    ValueTemplate.APPARENT_POWER_VA: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="apparent_power",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-5000",
+        max="5000",
+        step="0.001",
+        unit="VA",
+        si_conversion=None,
+    ),
+    ValueTemplate.FREQUENCY_HZ: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="frequency",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="30000",
+        step="0.01",
+        unit="Hz",
+        si_conversion=None,
+    ),
+    ValueTemplate.REACTIVE_POWER_KVAR: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="reactive_power",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-5000",
+        max="5000",
+        step="0.001",
+        unit="kvar",
+        si_conversion=None,
+    ),
+    ValueTemplate.REACTIVE_ENERGY_KVARH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="reactive_energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-5000",
+        max="5000",
+        step="0.001",
+        unit="kvarh",
+        si_conversion=None,
     ),
     ValueTemplate.TEMPERATURE_CELSIUS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
@@ -257,7 +414,19 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="%",
         si_conversion="[1] = 100 * [%]",
     ),
-    ValueTemplate.CO2: ValueSettinsSchema(
+    ValueTemplate.CO2_PPM: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="co2",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="0",
+        max="3000",
+        step="1",
+        unit="ppm",
+        si_conversion="1000000 * [ppm]",
+    ),
+    ValueTemplate.CONCENTRATION_PPM: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="concentration",
         mapping=None,
@@ -281,11 +450,83 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="hPa",
         si_conversion="[Pa] = [hPa]/100",
     ),
+    ValueTemplate.VOLUME_M3: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="Volume",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="0",
+        max="1000000000",
+        step="0.001",
+        unit="m³",
+        si_conversion="[m³] = [m³]",
+    ),
+    ValueTemplate.UNIT_TIME: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="timestamp",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="0",
+        max="2147483647",
+        step="1",
+        unit="s",
+        si_conversion="[s] = [s]",
+    ),
     ValueTemplate.TIMESTAMP: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="timestamp",
         max="27",
         encoding="ISO 8601",
+    ),
+    ValueTemplate.DURATION_MIN: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="duration",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1440",
+        step="0.1",
+        unit="min",
+        si_conversion="[s] = [min] / 60",
+    ),
+    ValueTemplate.DURATION_SEC: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="duration",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="3600",
+        step="0.001",
+        unit="s",
+        si_conversion="[s] = [s]",
+    ),
+    ValueTemplate.DURATION_MSEC: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="duration",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="5000",
+        step="0.001",
+        unit="ms",
+        si_conversion="[s] = [ms]/1000",
+    ),
+    ValueTemplate.DISTANCE_M: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="distance",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1000",
+        step="1",
+        unit="m",
+        si_conversion=None,
     ),
     ValueTemplate.LUMINOUSITY_LX: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
@@ -326,8 +567,14 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
     ValueTemplate.IMAGE_JPG: ValueSettinsSchema(
         value_type=ValueBaseType.BLOB,
         type="image",
-        max="255",
-        encoding="base64",
+        max="10485100",
+        encoding="base64;jpg",
+    ),
+    ValueTemplate.IMAGE_PNG: ValueSettinsSchema(
+        value_type=ValueBaseType.BLOB,
+        type="image",
+        max="10485100",
+        encoding="base64;png",
     ),
     ValueTemplate.LATITUDE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
@@ -353,16 +600,28 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="°E",
         si_conversion=None,
     ),
+    ValueTemplate.ALTITUDE_M: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="altitude",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-10000",
+        max="10000",
+        step="0.01",
+        unit="m",
+        si_conversion=None,
+    ),
     ValueTemplate.STREET: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="street",
-        max="100",
+        max="85",
         encoding="",
     ),
     ValueTemplate.CITY: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="city",
-        max="100",
+        max="85",
         encoding="",
     ),
     ValueTemplate.POSTCODE: ValueSettinsSchema(
@@ -374,7 +633,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
     ValueTemplate.COUNTRY: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
         type="country",
-        max="20",
+        max="56",
         encoding="",
     ),
     ValueTemplate.COUNTRY_CODE: ValueSettinsSchema(
@@ -382,6 +641,42 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         type="country_code",
         max="2",
         encoding="ISO 3166-1 Alpha-2",
+    ),
+    ValueTemplate.ADDRESS_NAME: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="address_name",
+        max="85",
+        encoding="",
+    ),
+    ValueTemplate.ORGANISATION: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="organisation",
+        max="85",
+        encoding="",
+    ),
+    ValueTemplate.EMAIL: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="email",
+        max="128",
+        encoding="",
+    ),
+    ValueTemplate.PHONE: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="phone",
+        max="32",
+        encoding="",
+    ),
+    ValueTemplate.IDENTIFIER: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="identifier",
+        max="50",
+        encoding="",
+    ),
+    ValueTemplate.JSON: ValueSettinsSchema(
+        value_type=ValueBaseType.BLOB,
+        type="json",
+        max="20000",
+        encoding="json",
     ),
     ValueTemplate.NUMBER: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
@@ -399,7 +694,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         value_type=ValueBaseType.STRING,
         type="string",
         max="64",
-        encoding="utf-8",
+        encoding="",
     ),
     ValueTemplate.BLOB: ValueSettinsSchema(
         value_type=ValueBaseType.BLOB,

@@ -38,7 +38,7 @@ from ..schema.iot_schema import Success
 from ..schema.iot_schema import WappstoMethod
 # from ..schema.iot_scgema import WappstoObjectType
 
-from ..utils.certificateread import CertificateRead
+from ..utils.certificateread import certificate_info_extraction
 from ..utils import observer
 from ..utils import tracer
 
@@ -146,19 +146,20 @@ class IoTAPI(ServiceClass):
         self.connection.close()
         self.log.debug("Closing Workers")
         self.workers.shutdown()
-        self.log.debug("IoTAPI Colsed.")
+        self.log.debug("IoTAPI Closed.")
 
     # #########################################################################
     #                              Helper Methods
     # #########################################################################
 
     def _url_gen(self, crt):
-        cer = CertificateRead(crt=crt)
-        port = self.wappstoPort.get(cer.endpoint.split('.')[0], 443)
-        if cer.endpoint.split('.')[0] in self.wappstoPort.keys():
-            addr = cer.endpoint
+        cer = certificate_info_extraction(crt_path=crt)
+        endpoint = cer.get('issuer', {}).get('commonName')
+        port = self.wappstoPort.get(endpoint.split('.')[0], 443)
+        if endpoint.split('.')[0] in self.wappstoPort.keys():
+            addr = endpoint
         else:
-            addr = f"collector.{cer.endpoint}"
+            addr = f"collector.{endpoint}"
 
         if re.search(r'^[A-Za-z0-9+.-]+://', addr):
             addr = addr.split("://", maxsplit=1)[-1]
@@ -458,6 +459,13 @@ class IoTAPI(ServiceClass):
     ):
         self.subscribers.setdefault(uuid, []).append(callback)
 
+    def unsubscribe_network_event(
+        self,
+        uuid: UUID,
+        callback: Callable[[Network, WappstoMethod], None]
+    ):
+        self.subscribers.get(uuid, []).remove(callback)
+
     def post_network(self, data: Network) -> bool:
         # url=f"/services/2.0/network",
         return self._no_reply_send(
@@ -500,6 +508,13 @@ class IoTAPI(ServiceClass):
         callback: Callable[[Device, WappstoMethod], None]
     ):
         self.subscribers.setdefault(uuid, []).append(callback)
+
+    def unsubscribe_device_event(
+        self,
+        uuid: UUID,
+        callback: Callable[[Device, WappstoMethod], None]
+    ):
+        self.subscribers.get(uuid, []).remove(callback)
 
     def post_device(self, network_uuid: UUID, data: Device) -> bool:
         # url=f"/services/2.0/{uuid}/device",
@@ -559,6 +574,13 @@ class IoTAPI(ServiceClass):
     ):
         self.subscribers.setdefault(uuid, []).append(callback)
 
+    def unsubscribe_value_event(
+        self,
+        uuid: UUID,
+        callback: Callable[[Device, WappstoMethod], None]
+    ):
+        self.subscribers.get(uuid, []).remove(callback)
+
     def post_value(self, device_uuid: UUID, data: ValueUnion) -> bool:
         # url=f"/services/2.0/{uuid}/value",
         return self._no_reply_send(
@@ -616,6 +638,13 @@ class IoTAPI(ServiceClass):
         callback: Callable[[State, WappstoMethod], None]
     ):
         self.subscribers.setdefault(uuid, []).append(callback)
+
+    def unsubscribe_state_event(
+        self,
+        uuid: UUID,
+        callback: Callable[[Device, WappstoMethod], None]
+    ):
+        self.subscribers.get(uuid, []).remove(callback)
 
     def post_state(self, value_uuid: UUID, data: State) -> bool:
         # url=f"/services/2.0/{uuid}/state",
