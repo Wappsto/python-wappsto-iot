@@ -52,7 +52,7 @@ from .utils import name_check
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.6.3"
+__version__ = "v0.6.4"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
