@@ -39,6 +39,7 @@ class TlsSocket(Connection):
         self.port = port
         self.socket_timeout = 30_000
         self.RECEIVE_SIZE = 2048
+        self.killed = threading.Event()
 
         self.log.debug(f"Address: {self.address}")
         self.log.debug(f"Port: {self.port}")
@@ -47,6 +48,8 @@ class TlsSocket(Connection):
         self.ssl_context.check_hostname = True
         self.ssl_context.verify_flags = ssl.OP_NO_TLSv1_1
         self.ssl_context.verify_mode = ssl.CERT_REQUIRED
+        # if logging.root.level <= logging.DEBUG:  # NOTE: Only works after 3.8
+        #     self.ssl_context.keylog_filename = "keylog_file.log"
 
         self.ssl_context.load_cert_chain(certfile=crt, keyfile=key)
         self.ssl_context.load_verify_locations(cafile=ca)
@@ -192,7 +195,7 @@ class TlsSocket(Connection):
 
         """
         data = []
-        while self.socket:
+        while self.socket or not self.killed.is_set():
             try:
                 data_chunk = self.socket.recv(self.RECEIVE_SIZE)
             except socket.timeout:
@@ -202,6 +205,8 @@ class TlsSocket(Connection):
                 # UNSURE:
                 if not self.socket:
                     # Socket Closed.
+                    return
+                if self.killed.is_set():
                     return
                 self.log.warning(f"Receive -> OSError: {err}")
                 self.reconnect()
@@ -218,9 +223,11 @@ class TlsSocket(Connection):
 
             try:
                 parsed_data = parser(b"".join(data))
-            except ValueError:  # parentClass for JSONDecodeError.
+            except ValueError as err:  # parentClass for JSONDecodeError.
+                self.log.debug(f'Parsing Error: {err}')
                 pass
-            except TypeError:  # parentClass for pydantic.ValidationError
+            except TypeError as err:  # parentClass for pydantic.ValidationError
+                self.log.debug(f'Parsing Error: {err}')
                 pass
             else:
                 self.log.debug(f"Raw Data Received: {data}")
@@ -235,6 +242,9 @@ class TlsSocket(Connection):
         Returns:
             'True' if the connection was successful.
         """
+
+        if self.killed.is_set():
+            return False
 
         try:
             self.log.info("Trying to Connect.")
@@ -266,6 +276,9 @@ class TlsSocket(Connection):
             'True' if the connection was successful else
             'False'
         """
+        if self.killed.is_set():
+            return False
+
         if not self.socket:
             return False
 
@@ -297,6 +310,7 @@ class TlsSocket(Connection):
 
         Closes the socket object connection.
         """
+        self.killed.set()
         self.log.info("Closing connection...")
         self.observer.post(StatusID.DISCONNECTING, None)
         if self.socket:
