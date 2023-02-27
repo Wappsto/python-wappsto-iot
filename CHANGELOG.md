@@ -1,4 +1,4 @@
-v0.6.4 (--- -- ----)
+v0.6.4 (Feb 27 2023)
 ===============================================================================
 
 ## Added
@@ -9,6 +9,7 @@ v0.6.4 (--- -- ----)
  * Check on the argument count on callbacks on adding them.
  * Now the on-function returns the callback it was given.
  * Should now covert the timestamp correctly.
+ * Fix an issue where it could not close the socket.
 
 ## Changed
  * Updated the `wappstoiot.ValueTemplate` to version 0.0.3
