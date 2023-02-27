@@ -5,6 +5,7 @@ TEST_PATH=./test
 clean: clean-pyc clean-build
 
 clean-all: clean-pyc clean-build clean-env
+	rm wappsto_iot_test.log
 
 clean-pyc:
 	find -name __pycache__ -exec rm -rf {} +

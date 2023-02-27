@@ -78,9 +78,14 @@ class TestWithOutMocking(BaseTestClassWithCertificateFiles):
 
     @pytest.mark.parametrize(
         "fast_send",
-        [True, False]
+        [
+            True,
+            False,
+        ]
     )
     def test_pytest_usage(self, fast_send: bool):
+        # TODO: Hock into the observer, to check for communication error.
+        # TODO: Go through the Rest-API to check if value was set.
         try:
             wappstoiot.config(
                 config_folder=self.temp,
