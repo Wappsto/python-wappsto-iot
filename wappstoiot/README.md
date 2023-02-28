@@ -191,7 +191,7 @@ Future Ideas:
 
 Known Bugs {icon bug color=red}
 ===============================================================================
-* [ ] Somethign Wappsto do not reply on a 'lookup' request, so a duplicate is make.
+* [ ] Sometimes Wappsto do not reply on a 'lookup' request, so a duplicate is make.
 
 
 Unsure {icon question-circle color=blue}
@@ -205,5 +205,6 @@ TODO List {icon cog spin}
 * [x] Batch the packages.
 * [x] Save Offline data.
 * [x] Writing the System.
+* [ ] Make a test to ensure that the timezones are right.
 * [ ] Documentation.
 * [ ] System Test.
