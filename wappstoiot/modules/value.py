@@ -704,7 +704,7 @@ class Value:
         """
         # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
-        the_timestamp = timestamp if timestamp is not None else datetime.now()
+        the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
         data = WSchema.State(
             data=value,
             timestamp=timestamp_converter(the_timestamp)
@@ -738,7 +738,7 @@ class Value:
 
         """
         self.log.info(f"Sending Control for: {self.control_state.meta.id}")
-        the_timestamp = timestamp if timestamp is not None else datetime.now()
+        the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
         data = WSchema.State(
             data=value,
             timestamp=timestamp_converter(the_timestamp)
