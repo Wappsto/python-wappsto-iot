@@ -208,3 +208,4 @@ TODO List {icon cog spin}
 * [ ] Make a test to ensure that the timezones are right.
 * [ ] Documentation.
 * [ ] System Test.
+* [ ] If connection issue doing creation, reconnect or raise Error.
