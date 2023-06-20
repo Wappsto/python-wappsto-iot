@@ -351,7 +351,7 @@ class Device:
 
         if not name_check.legal_name(name):
             raise ValueError(
-                "Given name contain a ilegal character."
+                "Given name contain a illegal character."
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
