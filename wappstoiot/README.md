@@ -192,7 +192,6 @@ Future Ideas:
 Known Bugs {icon bug color=red}
 ===============================================================================
 * [ ] Sometimes Wappsto do not reply on a 'lookup' request, so a duplicate is make.
-* [ ] `.getReportTimestamp()` are not consistent with return type.
 
 
 Unsure {icon question-circle color=blue}
@@ -211,4 +210,6 @@ TODO List {icon cog spin}
 * [ ] System Test.
 * [ ] If connection issue doing creation, reconnect or raise Error.
 * [x] Autogen code Stub with: [Tool](https://mypy.readthedocs.io/en/stable/stubgen.html)
-* [ ] Change `legal_name` to return the illegal sign(s), so it can be printed.
+* [x] Change `legal_name` to return the illegal sign(s), so it can be printed.
+* [x] `.getReportTimestamp()` now ensures the return type is datetime.
+
