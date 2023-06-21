@@ -349,9 +349,11 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        if not name_check.legal_name(name):
+        illegal_chars: str = name_check.illegal_characters(name)
+
+        if illegal_chars:
             raise ValueError(
-                "Given name contain a illegal character."
+                f"Given name contain a illegal character: {illegal_chars}"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -385,9 +387,11 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        if not name_check.legal_name(name):
+        illegal_chars: str = name_check.illegal_characters(name)
+
+        if illegal_chars:
             raise ValueError(
-                "Given name contain a ilegal character."
+                f"Given name contain a illegal character: {illegal_chars}"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -421,9 +425,11 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        if not name_check.legal_name(name):
+        illegal_chars: str = name_check.illegal_characters(name)
+
+        if illegal_chars:
             raise ValueError(
-                "Given name contain a ilegal character."
+                f"Given name contain a illegal character: {illegal_chars}"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -457,9 +463,11 @@ class Device:
         kwargs = locals()
         kwargs.pop('self')
 
-        if not name_check.legal_name(name):
+        illegal_chars: str = name_check.illegal_characters(name)
+
+        if illegal_chars:
             raise ValueError(
-                "Given name contain a ilegal character."
+                f"Given name contain a illegal character: {illegal_chars}"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -496,9 +504,11 @@ class Device:
         still change it, if you choose sow.
         """
 
-        if not name_check.legal_name(name):
+        illegal_chars: str = name_check.illegal_characters(name)
+
+        if illegal_chars:
             raise ValueError(
-                "Given name contain a ilegal character."
+                f"Given name contain a illegal character: {illegal_chars}"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
