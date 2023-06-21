@@ -64,6 +64,9 @@ setup(
     #     'pytest',
     #     'tox'
     # ],
+    package_data={
+        'wappstoiot': ["py.typed", "*.pyi", "**/*.pyi"]
+    },
     install_requires=[
         'slxjsonrpc>=0.8.1',
         'pydantic>=1.6.1',
