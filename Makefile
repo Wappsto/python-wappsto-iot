@@ -31,6 +31,9 @@ clean-env:
 	rm --force --recursive share/
 	rm --force --recursive include/
 
+gen-stub:
+	stubgen wappstoiot/{*,**/*}.py --out .
+
 build: clean-pyc clean-build
 	pip install wheel twine
 	python3 setup.py sdist bdist_wheel
