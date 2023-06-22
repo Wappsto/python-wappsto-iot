@@ -93,7 +93,6 @@ def onStatusChange(
     Configure an action when the Status have changed.
 
     def callback(StatusID: StatusID, newStatus: Any):
-
     """
     observer.subscribe(
         event_name=StatusID,
@@ -198,9 +197,7 @@ def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
 
 
 def _certificate_check(path) -> Dict[str, Path]:
-    """
-    Check if the right certificates are at the given path.
-    """
+    """Check if the right certificates are at the given path."""
     certi_path = {
         "ca": "ca.crt",
         "crt": "client.crt",
@@ -296,6 +293,12 @@ def createNetwork(
     name: str,
     description: str = "",
 ) -> Network:
+    """
+    Create a new Wappsto Network.
+
+    A Wappsto Network is references to the main grouping, of which multiple
+    device are connected.
+    """
     global __config_folder
     global __the_connection
 
@@ -331,15 +334,17 @@ def createNetwork(
 
 
 def connect():
+    """NOT Implemented yet."""
     pass
 
 
 def disconnect():
+    """NOT Implemented yet."""
     pass
 
 
 def close():
-    """."""
+    """Close down the connection to wappsto."""
     atexit.unregister(close)
     __ping_pong_thread_killed.set()
     __offline_storage_thread_killed.set()

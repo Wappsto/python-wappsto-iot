@@ -1,3 +1,4 @@
+"""Contain name checking functions."""
 import string
 
 

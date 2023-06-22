@@ -1,3 +1,8 @@
+"""
+Contain the Observer functionality.
+
+The Observer Pattern, is as design pattern, that 
+"""
 import logging
 import threading
 
@@ -25,11 +30,11 @@ def subscribe(event_name: str, callback: Callable[[str, Any], None]) -> None:
 
     Note: If lambda was used to subscribe with, it need to be the same
     instance that is used to unsubscribe with. So if it is needed to
-    unsubscibe, save the instance.
+    unsubscribe, save the instance.
 
     Args:
         event_name: The Unique name for the wanted event.
-        callback: The function that need triggeret on the given event.
+        callback: The function that need triggered on the given event.
             The function will be called with the 'event_name', and 'data',
             that the event generate.
     """
@@ -65,12 +70,12 @@ def unsubscribe(event_name: str, callback: Callable[[str, Any], None]) -> bool:
 
     Args:
         event_name: The Unique name for the wanted event.
-        callback: The function that need triggeret on the given event.
+        callback: The function that need triggered on the given event.
             The function will be called with the 'event_name', and 'data',
             that the event generate.
 
     Returns:
-        True, is the function was removed from the subcriber list.
+        True, is the function was removed from the subscriber list.
         False, if it could not be, as in could not find it.
     """
     obs_log.debug(f"Unsubscribing: {event_name}, {callback}")
