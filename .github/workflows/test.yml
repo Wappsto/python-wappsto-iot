@@ -21,7 +21,7 @@ jobs:
       run: tox -e py
 
     - name: Check .coverage file.
-      run: file .coverage
+      run: find ../. -name '.coverage'
 
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v3
