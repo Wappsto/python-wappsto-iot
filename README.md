@@ -4,7 +4,7 @@ Wappsto IoT
 [![python](https://img.shields.io/badge/Python-3.6%203.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![Test Status](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/test.yml/badge.svg)](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/test.yml)
 [![Lint Status](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/lint.yml/badge.svg)](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/lint.yml)
-[![Coverage](https://codecov.io/gh/Wappsto/python-wappsto-iot/branch/main/graph/badge.svg?token=Y7SPYV4G97)](https://codecov.io/gh/Wappsto/python-wappsto-iot)
+[![Coverage](https://codecov.io/github/wappsto/python-wappsto-iot/branch/main/graph/badge.svg)](https://codecov.io/github/wappsto/python-wappsto-iot)
 
 The wappstoiot module provide a simple python interface to [wappsto.com](https://wappsto.com/) for easy prototyping.
 
