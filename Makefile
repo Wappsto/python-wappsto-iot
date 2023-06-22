@@ -31,6 +31,10 @@ clean-env:
 	rm --force --recursive share/
 	rm --force --recursive include/
 
+lint:
+	flake8 --docstring-convention google --ignore D212,W503  wappstoiot/*.py wappstoiot/**/*.py
+	mypy --strict --python-version 3.7  wappstoiot/*.py wappstoiot/**/*.py
+
 gen-stub:
 	stubgen wappstoiot/{*,**/*}.py --out .
 
