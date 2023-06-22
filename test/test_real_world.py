@@ -9,10 +9,10 @@ from typing import Optional
 
 from utils import file_utils
 
-from wappstoiot.__main__ import start_session
-from wappstoiot.__main__ import create_network
-from wappstoiot.__main__ import claim_network
-from wappstoiot.__main__ import create_certificaties_files
+from wappstoiot.__main__ import _start_session
+from wappstoiot.__main__ import _create_network
+from wappstoiot.__main__ import _claim_network
+from wappstoiot.__main__ import _create_certificaties_files
 
 
 def pytest_generate_tests(metafunc):
@@ -35,7 +35,7 @@ class BaseTestClassWithCertificateFiles:
         """Generate the needed certificates for a 'real' world test."""
         base_url: str = "qa.wappsto.com"
         if not token:
-            session = start_session(
+            session = _start_session(
                 base_url=base_url,
                 username=username,
                 password=password,
@@ -43,12 +43,12 @@ class BaseTestClassWithCertificateFiles:
         else:
             session = token
 
-        creator = create_network(
+        creator = _create_network(
             session=session,
             base_url=base_url,
             dry_run=False
         )
-        claim_network(
+        _claim_network(
             session=session,
             base_url=base_url,
             network_uuid=creator.get('network', {}).get('id'),
@@ -57,7 +57,7 @@ class BaseTestClassWithCertificateFiles:
 
         self.temp.mkdir(exist_ok=True)
 
-        create_certificaties_files(self.temp, creator, dry_run=False)
+        _create_certificaties_files(self.temp, creator, dry_run=False)
 
 
 class TestWithOutMocking(BaseTestClassWithCertificateFiles):
