@@ -1,3 +1,4 @@
+"""Contain name checking functions."""
 import string
 
 
@@ -13,6 +14,18 @@ def legal_name(name: str) -> bool:
         name: the name to check.
     Return:
         True, if it is legal,
-        False, if it is ilegal.
+        False, if it is illegal.
     """
     return not set(name) - __wappsto_letter_set
+
+
+def illegal_characters(name: str) -> str:
+    """
+    Check if the given name is illegal.
+
+    Args:
+        name: the name to check.
+    Return:
+        string with all the illegal characters in the name.
+    """
+    return ''.join(set(name) - __wappsto_letter_set)

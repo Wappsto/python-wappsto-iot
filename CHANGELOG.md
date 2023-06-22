@@ -1,3 +1,14 @@
+v0.6.6 (Jun 22 2023)
+===============================================================================
+## Added
+ * Code Stub.
+
+## Changed
+ * Now inform which characters are illegal in the given name.
+
+## Fixed
+ * The `getReportTimestamp` & `getControlTimestamp` now ensures the return is `None` or of type datetime.
+
 v0.6.5 (Feb 28 2023)
 ===============================================================================
 ## Fixed

@@ -204,7 +204,10 @@ class Value:
         The returned timestamp will be the last time Control value was updated,
         unless there isn't one, then it will return None.
         """
-        return self.control_state.timestamp
+        if isinstance(self.control_state.timestamp, datetime):
+            return self.control_state.timestamp
+        if isinstance(self.control_state.timestamp, str):
+            return str_to_datetime(self.control_state.timestamp)
 
     def getReportData(self) -> Optional[Union[float, str]]:
         """
@@ -226,7 +229,10 @@ class Value:
         The returned timestamp will be the last time Control value was updated,
         unless there isn't one, then it will return None.
         """
-        return self.report_state.timestamp
+        if isinstance(self.report_state.timestamp, datetime):
+            return self.report_state.timestamp
+        if isinstance(self.report_state.timestamp, str):
+            return str_to_datetime(self.report_state.timestamp)
 
     @property
     def name(self) -> str:

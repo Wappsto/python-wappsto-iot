@@ -1,8 +1,10 @@
 Wappsto IoT
 ===============================================================================
 
-[![Build Status](https://travis-ci.com/Wappsto/python-wappsto-iot.svg?branch=master)](https://travis-ci.com/Wappsto/python-wappsto-iot)
-[![Coverage Status](https://coveralls.io/repos/github/Wappsto/python-wappsto-iot/badge.svg?branch=master)](https://coveralls.io/github/Wappsto/python-wappsto-iot?branch=master)
+[![python](https://img.shields.io/badge/Python-3.6%203.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![Test Status](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/test.yml/badge.svg)](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/test.yml)
+[![Lint Status](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/lint.yml/badge.svg)](https://github.com/Wappsto/python-wappsto-iot/actions/workflows/lint.yml)
+[![Coverage](https://codecov.io/github/wappsto/python-wappsto-iot/branch/main/graph/badge.svg)](https://codecov.io/github/wappsto/python-wappsto-iot)
 
 The wappstoiot module provide a simple python interface to [wappsto.com](https://wappsto.com/) for easy prototyping.
 
@@ -47,7 +49,7 @@ Working examples of usage can be found in the [example folder](./example).
 The needed certificates can be downloaded with: `python -m wappstoiot --path echo`
 Where path is the path to the config-folder, given in the following code example.
 
-There is also a Wapp avaliable called: [IoT Certificate Manager](https://wappsto.com/store/wapp=iot_certificate_manager) on wappsto,
+There is also a Wapp avaliable called: [IoT Certificate Manager](https://wappsto.com/store/application/iot_certificate_manager) on wappsto,
 that given you a GUI to do the same and more.
 
 ### Echo example

@@ -1,5 +1,5 @@
-pyOpenSSL==23.0.0
-cryptography==39.0.1
+pyOpenSSL==23.2.0
+cryptography
 rich==10.9.0
 python-dateutil==2.7.3
 pytest-mock==3.6.1

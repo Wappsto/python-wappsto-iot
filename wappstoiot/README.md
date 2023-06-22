@@ -106,7 +106,7 @@ OnRequest == POST, GET & DELETE  + Control
 |        |         |                                                | device.onDelete          |
 |        |
 | POST   | VALUE   | Request a creation of Value. Can be refused.   | device.onRequest         |
-|        |         |                                                | value.onChnage           |
+|        |         |                                                | value.onChange           |
 | GET    | VALUE   | Used to trigger a report state refresh.        | value.onRequest          |
 |        |         |                                                | value.onRefresh          |
 | PUT    | VALUE   | Change a parameter (like Delta/period)         | value.onChange           |
@@ -159,7 +159,7 @@ OnRequest == POST, GET & DELETE  + Control
 **Updates behind the Screen:**
 
 ---
-Control data should be the only value, that are updated & save by the Librery.
+Control data should be the only value, that are updated & save by the Library.
 
 
 **Trace:**
@@ -173,7 +173,7 @@ child of that request, even duo it is through the user code.
 A way of setting this up, will be to alway give a object to the callback, that
 is the object that have been changed, but also the object that should be used
 to send a reply, if any, back to the server. That Object should ba a "Shadow"
-object of the existen object, with the only change that, it enforces a trace,
+object of the existing object, with the only change that, it enforces a trace,
 on whatever are send from it, that are a child from the request.
 
 
@@ -197,7 +197,7 @@ Known Bugs {icon bug color=red}
 Unsure {icon question-circle color=blue}
 ===============================================================================
 * [ ] What should be send back on a JsonRpc Success, with trace?
-* [ ] How should a trace throung the system, (->control->reply) be handled?
+* [ ] How should a trace through the system, (->control->reply) be handled?
 
 
 TODO List {icon cog spin}
@@ -208,3 +208,8 @@ TODO List {icon cog spin}
 * [ ] Make a test to ensure that the timezones are right.
 * [ ] Documentation.
 * [ ] System Test.
+* [ ] If connection issue doing creation, reconnect or raise Error.
+* [x] Autogen code Stub with: [Tool](https://mypy.readthedocs.io/en/stable/stubgen.html)
+* [x] Change `legal_name` to return the illegal sign(s), so it can be printed.
+* [x] `.getReportTimestamp()` now ensures the return type is datetime.
+* [ ] Make a github-test for "3.6.7".

@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+A helper script to generate the needed certificates for wappsto.
+
+Certificates are use for the Wappsto IoT library to identify itself on
+the wappsto platform, through a secure connection.
+"""
 import argparse
 import getpass
 import json
@@ -53,7 +59,7 @@ def _log_request_error(data):
     exit(-2)
 
 
-def start_session(base_url, username, password):
+def _start_session(base_url, username, password):
     session_json = {
         "username": username,
         "password": password,
@@ -81,7 +87,7 @@ def start_session(base_url, username, password):
     return rjson["meta"]["id"]
 
 
-def create_network(
+def _create_network(
     session,
     base_url,
     # network_uuid=None,
@@ -128,7 +134,7 @@ def create_network(
     return rjson
 
 
-def claim_network(session, base_url, network_uuid, dry_run=False):
+def _claim_network(session, base_url, network_uuid, dry_run=False):
     url = f"https://{base_url}/services/2.0/network/{network_uuid}"
 
     headers = {
@@ -162,7 +168,7 @@ def claim_network(session, base_url, network_uuid, dry_run=False):
     return rjson
 
 
-def get_network(session, base_url, network_uuid):
+def _get_network(session, base_url, network_uuid):
     url = f"https://{base_url}/services/2.1/creator?this_network.id={network_uuid}"
     headers = {
         "Content-type": "application/json",
@@ -204,7 +210,7 @@ def get_network(session, base_url, network_uuid):
     return rjson
 
 
-def create_certificaties_files(location, creator, dry_run):
+def _create_certificaties_files(location, creator, dry_run):
     creator["ca"], creator["certificate"], creator["private_key"]
 
     if not dry_run:
@@ -227,6 +233,11 @@ def create_certificaties_files(location, creator, dry_run):
 
 
 def main():
+    """
+    Main logic of the program.
+
+    Parses the terminal argument, and execute the thereby given commands.
+    """
     global debug
 
     parser = argparse.ArgumentParser()
@@ -271,7 +282,7 @@ def main():
     base_url = wappstoUrl[args.env]
 
     if not args.token:
-        session = start_session(
+        session = _start_session(
             base_url=base_url,
             username=input("Wappsto Username: "),
             password=getpass.getpass(prompt="Wappsto Password: "),
@@ -279,19 +290,19 @@ def main():
     else:
         session = args.token
     if not args.recreate:
-        creator = create_network(
+        creator = _create_network(
             session=session,
             base_url=base_url,
             dry_run=args.dry_run
         )
-        claim_network(
+        _claim_network(
             session=session,
             base_url=base_url,
             network_uuid=creator.get('network', {}).get('id'),
             dry_run=args.dry_run
         )
     else:
-        creator = get_network(
+        creator = _get_network(
             session=session,
             base_url=base_url,
             network_uuid=args.recreate,
@@ -299,7 +310,7 @@ def main():
 
     args.path.mkdir(exist_ok=True)
 
-    create_certificaties_files(args.path, creator, args.dry_run)
+    _create_certificaties_files(args.path, creator, args.dry_run)
 
     print("\nEnjoy...")
     exit(0)
