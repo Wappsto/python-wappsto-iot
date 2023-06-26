@@ -39,7 +39,7 @@ class Network(object):
         self.__uuid: uuid.UUID = network_uuid
         self.element: WSchema.Network = self.schema()
 
-        self.__callbacks: Dict[str, Callable] = {}
+        self.__callbacks: Dict[str, Callable[[...], ...]] = {}
 
         self.children_uuid_mapping: Dict[uuid.UUID, Device] = {}
         self.children_name_mapping: Dict[str, uuid.UUID] = {}
@@ -90,7 +90,7 @@ class Network(object):
         """Returns the name of the value."""
         return self.__uuid
 
-    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable[[...], ...], requiredArgumentCount: int) -> bool:
         """
         Check if the requeried Argument count for given function fits.
         """

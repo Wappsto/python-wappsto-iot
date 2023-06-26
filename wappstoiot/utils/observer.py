@@ -52,7 +52,7 @@ def post(event_name: str, data: Any) -> None:
         event_name: An unique name for the given event.
         data: The given event subscriber might want.
     """
-    def executer():
+    def executer() -> None:
         for fn in subscriber.get(event_name, default_subscriber):
             fn(event_name, data)
 

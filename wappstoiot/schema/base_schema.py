@@ -342,9 +342,9 @@ class BaseValue(BaseModel):
 
 
 class Number(BaseModel):
-    min: float
-    max: float
-    step: float
+    min: Union[float, int]
+    max: Union[float, int]
+    step: Union[float, int]
     mapping: Optional[Dict[str, Any]] = None
     meaningful_zero: Optional[bool] = None
     ordered_mapping: Optional[bool] = None
@@ -492,13 +492,17 @@ class DeleteList(BaseModel):
     meta: ApiMetaInfo
 
 
-WappstoObject = Union[
-    Network,
-    Device,
+Value = Union[
     StringValue,
     NumberValue,
     BlobValue,
     XmlValue,
+]
+
+WappstoObject = Union[
+    Network,
+    Device,
+    Value,
     State,
     IdList,
     DeleteList,

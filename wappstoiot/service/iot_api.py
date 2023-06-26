@@ -441,7 +441,7 @@ class IoTAPI(ServiceClass):
     #                               Helper API
     # #########################################################################
 
-    def ping(self):
+    def ping(self) -> None:
         return self._no_reply_send(
             data=None,
             url="/network",
@@ -456,14 +456,14 @@ class IoTAPI(ServiceClass):
         self,
         uuid: UUID,
         callback: Callable[[Network, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_network_event(
         self,
         uuid: UUID,
         callback: Callable[[Network, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_network(self, data: Network) -> bool:
@@ -506,14 +506,14 @@ class IoTAPI(ServiceClass):
         self,
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_device_event(
         self,
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_device(self, network_uuid: UUID, data: Device) -> bool:
@@ -571,14 +571,14 @@ class IoTAPI(ServiceClass):
         self,
         uuid: UUID,
         callback: Callable[[ValueUnion, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_value_event(
         self,
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_value(self, device_uuid: UUID, data: ValueUnion) -> bool:
@@ -636,14 +636,14 @@ class IoTAPI(ServiceClass):
         self,
         uuid: UUID,
         callback: Callable[[State, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_state_event(
         self,
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
-    ):
+    ) -> None:
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_state(self, value_uuid: UUID, data: State) -> bool:

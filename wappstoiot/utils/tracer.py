@@ -5,6 +5,7 @@ import string
 from contextlib import contextmanager
 from enum import Enum
 
+from typing import Any
 from typing import List
 from typing import Optional
 
@@ -38,11 +39,11 @@ class TraceWrapper:
         self.tracer = tracer
         self.tracing_obj = tracing_obj
 
-    def __getattr__(self, attr_name):
+    def __getattr__(self, attr_name) -> Any:
         if attr_name not in self.tracing_obj:
             return getattr(self.class_obj, attr_name)
 
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> None:
             with self.tracer.tracing():
                 getattr(self.class_obj, attr_name)(*args, **kwargs)
 
@@ -80,7 +81,7 @@ class Trace:
         ))
 
     @staticmethod
-    def _find_parent_id(jsonrpc_elemt) -> Optional[str]:
+    def _find_parent_id(jsonrpc_elemt: dict) -> Optional[str]:
         """
         Check if a trace package should be send if so it returns the parent ID.
         """

@@ -90,7 +90,7 @@ class Value:
         delta: Optional[Union[int, float]] = None,
         description: Optional[str] = None,
         meaningful_zero: Optional[str] = None,
-        mapping: Optional[bool] = None,
+        mapping: Optional[Dict[str, Any]] = None,
         ordered_mapping: Optional[bool] = None,
         si_conversion: Optional[str] = None,
         unit: Optional[str] = None,
@@ -208,6 +208,7 @@ class Value:
             return self.control_state.timestamp
         if isinstance(self.control_state.timestamp, str):
             return str_to_datetime(self.control_state.timestamp)
+        return None
 
     def getReportData(self) -> Optional[Union[float, str]]:
         """
@@ -233,6 +234,7 @@ class Value:
             return self.report_state.timestamp
         if isinstance(self.report_state.timestamp, str):
             return str_to_datetime(self.report_state.timestamp)
+        return None
 
     @property
     def name(self) -> str:
@@ -262,19 +264,19 @@ class Value:
 
     def __parseValueTemplate(
         self,
-        ValueBaseType,
-        encoding,
-        mapping,
-        max_range,
-        meaningful_zero,
-        min_range,
-        namespace,
-        ordered_mapping,
-        si_conversion,
-        step,
-        unit,
-        xsd,
-    ):
+        ValueBaseType: ValueBaseType,
+        max_range: float,
+        min_range: Optional[float] = None,
+        step: Optional[float] = None,
+        encoding: Optional[str] = None,
+        mapping: Optional[Dict[str, Any]] = None,
+        meaningful_zero: Optional[bool] = None,
+        namespace: Optional[str] = None,
+        ordered_mapping: Optional[bool] = None,
+        si_conversion: Optional[str] = None,
+        unit: Optional[str] = None,
+        xsd: Optional[str] = None,
+    ) -> None:
 
         if ValueBaseType == ValueBaseType.NUMBER:
             subValue = {
@@ -313,7 +315,7 @@ class Value:
 
         return subValue
 
-    def __update_self(self, element):
+    def __update_self(self, element: WSchema.Value) -> None:
         old_type = type(element)
         new_type = type(self.element)
 
@@ -354,7 +356,7 @@ class Value:
 
         # TODO: Check for the Difference Value-types & ensure that it is right.
 
-    def __update_state(self):
+    def __update_state(self) -> None:
         state_count = len(self.element.state)
         if self.element.permission == PermissionType.NONE:
             return
@@ -444,7 +446,7 @@ class Value:
 
         return callback
 
-    def cancelOnChange(self):
+    def cancelOnChange(self) -> None:
         self.connection.unsubscribe_value_event(
             uuid=self.uuid,
             callback=self.__callbacks['onChange']
@@ -493,7 +495,7 @@ class Value:
 
         return callback
 
-    def cancelOnReport(self):
+    def cancelOnReport(self) -> None:
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=self.__callbacks['onReport']
@@ -547,7 +549,7 @@ class Value:
 
         return callback
 
-    def cancelOnControl(self):
+    def cancelOnControl(self) -> None:
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
             callback=self.__callbacks['onControl']
@@ -585,7 +587,7 @@ class Value:
 
         return callback
 
-    def cancelOnCreate(self):
+    def cancelOnCreate(self) -> None:
         self.connection.unsubscribe_state_event(
             uuid=self.uuid,
             callback=self.__callbacks['onCreate']
@@ -625,7 +627,7 @@ class Value:
 
         return callback
 
-    def cancelOnRefresh(self):
+    def cancelOnRefresh(self) -> None:
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=self.__callbacks['onRefresh']
@@ -657,7 +659,7 @@ class Value:
 
         return callback
 
-    def cancelOnDelete(self):
+    def cancelOnDelete(self) -> None:
         self.connection.unsubscribe_value_event(
             uuid=self.uuid,
             callback=self.__callbacks['onDelete']
@@ -667,7 +669,7 @@ class Value:
     #   Value methods
     # -------------------------------------------------------------------------
 
-    def refresh(self):
+    def refresh(self) -> None:
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
 
     def change(self, name: str, value: Any) -> None:
@@ -686,7 +688,7 @@ class Value:
         # raise NotImplementedError("Method: 'change' is not Implemented.")
         pass
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Request a delete of the Device, & all it's Children.
         """
@@ -766,13 +768,13 @@ class Value:
     #   Other methods
     # -------------------------------------------------------------------------
 
-    def _createStates(self, permission: PermissionType):
+    def _createStates(self, permission: PermissionType) -> None:
         if permission in [PermissionType.READ, PermissionType.READWRITE]:
             self._CreateReport()
         if permission in [PermissionType.WRITE, PermissionType.READWRITE]:
             self._CreateControl()
 
-    def _CreateReport(self):
+    def _CreateReport(self) -> None:
         if not self.children_name_mapping.get(WSchema.StateType.REPORT.name):
             self.children_name_mapping[WSchema.StateType.REPORT.name] = uuid.uuid4()
 
@@ -786,7 +788,7 @@ class Value:
 
             self.connection.post_state(value_uuid=self.uuid, data=self.report_state)
 
-    def _CreateControl(self):
+    def _CreateControl(self) -> None:
         if not self.children_name_mapping.get(WSchema.StateType.CONTROL.name):
             self.children_name_mapping[WSchema.StateType.CONTROL.name] = uuid.uuid4()
 
@@ -799,7 +801,7 @@ class Value:
             )
             self.connection.post_state(value_uuid=self.uuid, data=self.control_state)
 
-        def _cb(obj, method):
+        def _cb(obj, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     if (
@@ -820,5 +822,5 @@ class Value:
             callback=_cb
         )
 
-    def close(self):
+    def close(self) -> None:
         pass

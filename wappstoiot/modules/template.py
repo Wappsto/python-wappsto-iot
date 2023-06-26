@@ -28,7 +28,7 @@ class ValueBaseType(str, Enum):
 class ValueSettinsSchema(BaseModel):
     value_type: ValueBaseType
     type: str
-    mapping: Optional[Dict]  # Number only
+    mapping: Optional[Dict[str, Any]]  # Number only
     ordered_mapping: Optional[bool]  # Number only
     meaningful_zero: Optional[bool]  # Number only
     si_conversion: Optional[str]  # Number only

@@ -9,6 +9,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import Union
@@ -52,13 +53,13 @@ class OfflineStorageFiles(OfflineStorage):
             if x.is_file() and x.suffixes and x.suffixes[-1] == self.suffix
         )
 
-    def _sort_files(self, count) -> List[Path]:
+    def _sort_files(self, count: int) -> List[Path]:
         temp = self._files[:count]
         del self._files[:count]
         return temp
 
     @contextmanager
-    def auto_save(self, data: str):
+    def auto_save(self, data: str) -> Generator:
         """Used when replying on a trace."""
         # self.send_pending(name=name)  # Are send on class creation.
         try:

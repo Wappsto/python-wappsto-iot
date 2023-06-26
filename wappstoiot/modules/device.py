@@ -67,7 +67,7 @@ class Device:
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
-        self.__callbacks: Dict[str, Callable] = {}
+        self.__callbacks: Dict[str, Callable[[...], ...]] = {}
 
         self.parent = parent
         self.element: WSchema.Device
@@ -138,7 +138,7 @@ class Device:
         for nr, value in enumerate(self.element.value):
             self.cloud_id_mapping[nr] = value
 
-    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable[[...], ...], requiredArgumentCount: int) -> bool:
         """
         Check if the requeried Argument count for given function fits.
         """
