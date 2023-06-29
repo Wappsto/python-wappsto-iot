@@ -212,4 +212,5 @@ TODO List {icon cog spin}
 * [x] Autogen code Stub with: [Tool](https://mypy.readthedocs.io/en/stable/stubgen.html)
 * [x] Change `legal_name` to return the illegal sign(s), so it can be printed.
 * [x] `.getReportTimestamp()` now ensures the return type is datetime.
-* [ ] Make a github-test for "3.6.7".
+* [ ] Make a github-test for Python v3.6.7
+* [ ] Detect if multiple is using same Certificate. (it disconnects Multiple times if it is the case)
