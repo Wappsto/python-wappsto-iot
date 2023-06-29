@@ -115,6 +115,8 @@ doc/
 *.sublime-project
 *.sublime-workspace
 
+# Vs-Code Editor
+*.code-workspace
 
 # Manuel Stuff
 manual_test/
