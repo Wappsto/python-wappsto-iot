@@ -3,6 +3,9 @@ v0.6.7 (--- -- 2023)
 ## Added
  * Scandinavian special letters to the legal list
 
+## Changed
+ * Updated the `wappstoiot.ValueTemplate` to version v0.0.5
+
 v0.6.6 (Jun 22 2023)
 ===============================================================================
 ## Added

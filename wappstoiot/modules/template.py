@@ -28,7 +28,7 @@ class ValueBaseType(str, Enum):
 class ValueSettinsSchema(BaseModel):
     value_type: ValueBaseType
     type: str
-    mapping: Optional[Dict[str, Any]]  # Number only
+    mapping: Optional[Dict]  # Number only
     ordered_mapping: Optional[bool]  # Number only
     meaningful_zero: Optional[bool]  # Number only
     si_conversion: Optional[str]  # Number only
@@ -49,7 +49,7 @@ class ValueTemplate(str, Enum):
     value parameters set, which include BaseType, name,
     permission, range, step and the unit.
     """
-    __version__ = "0.0.3"
+    __version__ = "0.0.5"
 
     ADDRESS_NAME = "ADDRESS_NAME"
     ALTITUDE_M = "ALTITUDE_M"
@@ -76,6 +76,10 @@ class ValueTemplate(str, Enum):
     EMAIL = "EMAIL"
     ENERGY_KWH = "ENERGY_KWH"
     ENERGY_MWH = "ENERGY_MWH"
+    ENERGY_PRICE_DKK_KWH = "ENERGY_PRICE_DKK_KWH"
+    ENERGY_PRICE_DKK_MWH = "ENERGY_PRICE_DKK_MWH"
+    ENERGY_PRICE_EUR_KWH = "ENERGY_PRICE_EUR_KWH"
+    ENERGY_PRICE_EUR_MWH = "ENERGY_PRICE_EUR_MWH"
     ENERGY_WH = "ENERGY_WH"
     FREQUENCY_HZ = "FREQUENCY_HZ"
     HUMIDITY = "HUMIDITY"
@@ -86,10 +90,13 @@ class ValueTemplate(str, Enum):
     INTEGER = "INTEGER"
     JSON = "JSON"
     LATITUDE = "LATITUDE"
+    LOAD_CURVE_ENERGY_KWH = "LOAD_CURVE_ENERGY_KWH"
+    LOAD_CURVE_ENERGY_MWH = "LOAD_CURVE_ENERGY_MWH"
+    LOAD_CURVE_ENERGY_WH = "LOAD_CURVE_ENERGY_WH"
     LONGITUDE = "LONGITUDE"
-    LUMINOUSITY_LX = "LUMINOUSITY_LX"
+    LUMINOSITY_LX = "LUMINOSITY_LX"
     NUMBER = "NUMBER"
-    ORGANISATION = "ORGANISATION"
+    ORGANIZATION = "ORGANIZATION"
     PERCENTAGE = "PERCENTAGE"
     PHONE = "PHONE"
     POSTCODE = "POSTCODE"
@@ -99,6 +106,7 @@ class ValueTemplate(str, Enum):
     PRESSURE_HPA = "PRESSURE_HPA"
     REACTIVE_ENERGY_KVARH = "REACTIVE_ENERGY_KVARH"
     REACTIVE_POWER_KVAR = "REACTIVE_POWER_KVAR"
+    SPEED_KMH = "SPEED_KMH"
     SPEED_MS = "SPEED_MS"
     STREET = "STREET"
     STRING = "STRING"
@@ -106,6 +114,11 @@ class ValueTemplate(str, Enum):
     TEMPERATURE_FAHRENHEIT = "TEMPERATURE_FAHRENHEIT"
     TEMPERATURE_KELVIN = "TEMPERATURE_KELVIN"
     TIMESTAMP = "TIMESTAMP"
+    TIME_OF_DAY = "TIME_OF_DAY"
+    TOTAL_ENERGY_KWH = "TOTAL_ENERGY_KWH"
+    TOTAL_ENERGY_MWH = "TOTAL_ENERGY_MWH"
+    TOTAL_ENERGY_WH = "TOTAL_ENERGY_WH"
+    TRIGGER = "TRIGGER"
     UNIT_TIME = "UNIT_TIME"
     VOLTAGE_V = "VOLTAGE_V"
     VOLUME_M3 = "VOLUME_M3"
@@ -114,6 +127,18 @@ class ValueTemplate(str, Enum):
 
 valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
 
+    ValueTemplate.TRIGGER: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="trigger",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="0",
+        step="0",
+        unit=None,
+        si_conversion=None,
+    ),
     ValueTemplate.BOOLEAN_TRUEFALSE: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="boolean",
@@ -141,7 +166,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
     ValueTemplate.CONNECTION_STATUS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="connection",
-        mapping={'0': 'offline', '1': 'online'},
+        mapping={'0':'offline','1':'online'},
         ordered_mapping=None,
         meaningful_zero=None,
         min="0",
@@ -204,7 +229,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
-        min="0",
+        min="-1000000",
         max="2500",
         step="0.1",
         unit="W",
@@ -216,7 +241,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
-        min="0",
+        min="-1000000",
         max="1000000",
         step="0.1",
         unit="kW",
@@ -228,11 +253,11 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
-        min="0",
+        min="-1000000",
         max="100000",
         step="0.1",
         unit="Wh",
-        si_conversion=None,
+        si_conversion="[J] = 3600 * [Wh]",
     ),
     ValueTemplate.ENERGY_KWH: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
@@ -240,7 +265,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
-        min="0",
+        min="-1000000",
         max="1000000",
         step="0.1",
         unit="kWh",
@@ -252,7 +277,79 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
+        min="-1000000",
+        max="1000000",
+        step="0.1",
+        unit="MWh",
+        si_conversion="[J] = 3600000000 * [MWh]",
+    ),
+    ValueTemplate.TOTAL_ENERGY_WH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="total_energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
         min="0",
+        max="1000000",
+        step="0.1",
+        unit="Wh",
+        si_conversion="[J] = 3600 * [Wh]",
+    ),
+    ValueTemplate.TOTAL_ENERGY_KWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="total_energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1000000",
+        step="0.1",
+        unit="kWh",
+        si_conversion="[J] = 3600000 * [kWh]  ",
+    ),
+    ValueTemplate.TOTAL_ENERGY_MWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="total_energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="0",
+        max="1000000",
+        step="0.1",
+        unit="MWh",
+        si_conversion="[J] = 3600000000 * [MWh]",
+    ),
+    ValueTemplate.LOAD_CURVE_ENERGY_WH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="load_curve_energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-1000000",
+        max="1000000",
+        step="0.1",
+        unit="Wh",
+        si_conversion="[J] = 3600 * [Wh]",
+    ),
+    ValueTemplate.LOAD_CURVE_ENERGY_KWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="load_curve_energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-1000000",
+        max="1000000",
+        step="0.1",
+        unit="kWh",
+        si_conversion="[J] = 3600000 * [kWh]  ",
+    ),
+    ValueTemplate.LOAD_CURVE_ENERGY_MWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="load_curve_energy",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=None,
+        min="-1000000",
         max="1000000",
         step="0.1",
         unit="MWh",
@@ -282,16 +379,16 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="VA",
         si_conversion=None,
     ),
-    ValueTemplate.FREQUENCY_HZ: ValueSettinsSchema(
+    ValueTemplate.REACTIVE_ENERGY_KVARH: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="frequency",
+        type="reactive_energy",
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
-        min="0",
-        max="30000",
-        step="0.01",
-        unit="Hz",
+        min="-5000",
+        max="5000",
+        step="0.001",
+        unit="kvarh",
         si_conversion=None,
     ),
     ValueTemplate.REACTIVE_POWER_KVAR: ValueSettinsSchema(
@@ -306,16 +403,64 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="kvar",
         si_conversion=None,
     ),
-    ValueTemplate.REACTIVE_ENERGY_KVARH: ValueSettinsSchema(
+    ValueTemplate.ENERGY_PRICE_EUR_KWH: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="reactive_energy",
+        type="energy_price",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=False,
+        min="-10000",
+        max="10000",
+        step="0.01",
+        unit="EUR/kWh",
+        si_conversion=None,
+    ),
+    ValueTemplate.ENERGY_PRICE_EUR_MWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="energy_price",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=False,
+        min="-10000",
+        max="10000",
+        step="0.001",
+        unit="EUR/MWh",
+        si_conversion=None,
+    ),
+    ValueTemplate.ENERGY_PRICE_DKK_KWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="energy_price",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=False,
+        min="-10000",
+        max="10000",
+        step="0.01",
+        unit="DKK/kWh",
+        si_conversion=None,
+    ),
+    ValueTemplate.ENERGY_PRICE_DKK_MWH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="energy_price",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=False,
+        min="-10000",
+        max="10000",
+        step="0.001",
+        unit="DKK/MWh",
+        si_conversion=None,
+    ),
+    ValueTemplate.FREQUENCY_HZ: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="frequency",
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
-        min="-5000",
-        max="5000",
-        step="0.001",
-        unit="kvarh",
+        min="0",
+        max="30000",
+        step="0.01",
+        unit="Hz",
         si_conversion=None,
     ),
     ValueTemplate.TEMPERATURE_CELSIUS: ValueSettinsSchema(
@@ -390,6 +535,18 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="m/s",
         si_conversion=None,
     ),
+    ValueTemplate.SPEED_KMH: ValueSettinsSchema(
+        value_type=ValueBaseType.NUMBER,
+        type="speed",
+        mapping=None,
+        ordered_mapping=None,
+        meaningful_zero=True,
+        min="0",
+        max="400",
+        step="0.1",
+        unit="km/h",
+        si_conversion="[ms] = [kmh]*1000/3600",
+    ),
     ValueTemplate.PRECIPITATION_MM: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="precipitation",
@@ -452,7 +609,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
     ),
     ValueTemplate.VOLUME_M3: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="Volume",
+        type="volume",
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=True,
@@ -516,6 +673,12 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="ms",
         si_conversion="[s] = [ms]/1000",
     ),
+    ValueTemplate.TIME_OF_DAY: ValueSettinsSchema(
+        value_type=ValueBaseType.STRING,
+        type="time",
+        max="100",
+        encoding="",
+    ),
     ValueTemplate.DISTANCE_M: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="distance",
@@ -528,9 +691,9 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         unit="m",
         si_conversion=None,
     ),
-    ValueTemplate.LUMINOUSITY_LX: ValueSettinsSchema(
+    ValueTemplate.LUMINOSITY_LX: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
-        type="luminousity",
+        type="luminosity",
         mapping=None,
         ordered_mapping=None,
         meaningful_zero=None,
@@ -648,9 +811,9 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
         max="85",
         encoding="",
     ),
-    ValueTemplate.ORGANISATION: ValueSettinsSchema(
+    ValueTemplate.ORGANIZATION: ValueSettinsSchema(
         value_type=ValueBaseType.STRING,
-        type="organisation",
+        type="organization",
         max="85",
         encoding="",
     ),

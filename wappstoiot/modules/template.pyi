@@ -55,6 +55,10 @@ class ValueTemplate(str, Enum):
     EMAIL: str
     ENERGY_KWH: str
     ENERGY_MWH: str
+    ENERGY_PRICE_DKK_KWH: str
+    ENERGY_PRICE_DKK_MWH: str
+    ENERGY_PRICE_EUR_KWH: str
+    ENERGY_PRICE_EUR_MWH: str
     ENERGY_WH: str
     FREQUENCY_HZ: str
     HUMIDITY: str
@@ -65,10 +69,13 @@ class ValueTemplate(str, Enum):
     INTEGER: str
     JSON: str
     LATITUDE: str
+    LOAD_CURVE_ENERGY_KWH: str
+    LOAD_CURVE_ENERGY_MWH: str
+    LOAD_CURVE_ENERGY_WH: str
     LONGITUDE: str
-    LUMINOUSITY_LX: str
+    LUMINOSITY_LX: str
     NUMBER: str
-    ORGANISATION: str
+    ORGANIZATION: str
     PERCENTAGE: str
     PHONE: str
     POSTCODE: str
@@ -78,6 +85,7 @@ class ValueTemplate(str, Enum):
     PRESSURE_HPA: str
     REACTIVE_ENERGY_KVARH: str
     REACTIVE_POWER_KVAR: str
+    SPEED_KMH: str
     SPEED_MS: str
     STREET: str
     STRING: str
@@ -85,6 +93,11 @@ class ValueTemplate(str, Enum):
     TEMPERATURE_FAHRENHEIT: str
     TEMPERATURE_KELVIN: str
     TIMESTAMP: str
+    TIME_OF_DAY: str
+    TOTAL_ENERGY_KWH: str
+    TOTAL_ENERGY_MWH: str
+    TOTAL_ENERGY_WH: str
+    TRIGGER: str
     UNIT_TIME: str
     VOLTAGE_V: str
     VOLUME_M3: str
