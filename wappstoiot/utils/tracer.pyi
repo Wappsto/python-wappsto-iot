@@ -1,7 +1,7 @@
 from . import Timestamp as Timestamp
 from _typeshed import Incomplete
 from enum import Enum
-from typing import List, Optional
+from typing import Any, List, Optional
 
 force_trace: bool
 
@@ -16,7 +16,7 @@ class TraceWrapper:
     tracer: Incomplete
     tracing_obj: Incomplete
     def __init__(self, class_obj: object, tracer: object, tracing_obj: List[str]) -> None: ...
-    def __getattr__(self, attr_name): ...
+    def __getattr__(self, attr_name) -> Any: ...
 
 class Trace:
     log: Incomplete
