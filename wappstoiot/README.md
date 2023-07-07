@@ -214,3 +214,4 @@ TODO List {icon cog spin}
 * [x] `.getReportTimestamp()` now ensures the return type is datetime.
 * [ ] Make a github-test for Python v3.6.7
 * [ ] Detect if multiple is using same Certificate. (it disconnects Multiple times if it is the case)
+* [ ] [Pydantic Migrate to v2](https://docs.pydantic.dev/2.0/migration/)
