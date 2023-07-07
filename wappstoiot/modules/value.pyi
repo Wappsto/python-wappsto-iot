@@ -8,7 +8,7 @@ from .template import ValueBaseType as ValueBaseType
 from _typeshed import Incomplete
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Dict, Optional, Union
 
 class Period(str, Enum):
     PERIODIC_REFRESH: str
@@ -45,7 +45,7 @@ class Value:
     element: Incomplete
     children_name_mapping: Incomplete
     connection: Incomplete
-    def __init__(self, parent: Device, value_type: ValueBaseType, name: str, value_uuid: Optional[uuid.UUID], type: Optional[str] = ..., permission: PermissionType = ..., min: Optional[Union[int, float]] = ..., max: Optional[Union[int, float]] = ..., step: Optional[Union[int, float]] = ..., encoding: Optional[str] = ..., xsd: Optional[str] = ..., namespace: Optional[str] = ..., period: Optional[int] = ..., delta: Optional[Union[int, float]] = ..., description: Optional[str] = ..., meaningful_zero: Optional[str] = ..., mapping: Optional[bool] = ..., ordered_mapping: Optional[bool] = ..., si_conversion: Optional[str] = ..., unit: Optional[str] = ...) -> None: ...
+    def __init__(self, parent: Device, value_type: ValueBaseType, name: str, value_uuid: Optional[uuid.UUID], type: Optional[str] = ..., permission: PermissionType = ..., min: Optional[Union[int, float]] = ..., max: Optional[Union[int, float]] = ..., step: Optional[Union[int, float]] = ..., encoding: Optional[str] = ..., xsd: Optional[str] = ..., namespace: Optional[str] = ..., period: Optional[int] = ..., delta: Optional[Union[int, float]] = ..., description: Optional[str] = ..., meaningful_zero: Optional[str] = ..., mapping: Optional[Dict[str, Any]] = ..., ordered_mapping: Optional[bool] = ..., si_conversion: Optional[str] = ..., unit: Optional[str] = ...) -> None: ...
     def getControlData(self) -> Optional[Union[float, str]]: ...
     def getControlTimestamp(self) -> Optional[datetime]: ...
     def getReportData(self) -> Optional[Union[float, str]]: ...
