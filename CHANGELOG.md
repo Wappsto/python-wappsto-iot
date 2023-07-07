@@ -5,6 +5,7 @@ v0.6.7 (--- -- 2023)
 
 ## Changed
  * Updated the `wappstoiot.ValueTemplate` to version v0.0.5
+ * Set Pydantic version to be `v1.10.11` until migration to `v2` is done.
 
 v0.6.6 (Jun 22 2023)
 ===============================================================================
