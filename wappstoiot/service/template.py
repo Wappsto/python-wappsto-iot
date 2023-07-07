@@ -45,7 +45,7 @@ class ServiceClass(ABC):
     def unsubscribe_network_event(
         self,
         uuid: UUID,
-        callback: Callable[[Network, WappstoMethod], None]
+        callback: Callable[[Network, WappstoMethods], None]
     ) -> None:
         pass
 
@@ -82,7 +82,7 @@ class ServiceClass(ABC):
     def unsubscribe_device_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[Device, WappstoMethods], None]
     ) -> None:
         pass
 
@@ -125,7 +125,7 @@ class ServiceClass(ABC):
     def unsubscribe_value_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[Device, WappstoMethods], None]
     ) -> None:
         pass
 
@@ -166,7 +166,7 @@ class ServiceClass(ABC):
     def unsubscribe_state_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[Device, WappstoMethods], None]
     ) -> None:
         pass
 

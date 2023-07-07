@@ -1,7 +1,10 @@
 import logging
 import uuid
 
-from typing import Dict, Optional, Callable
+from typing import Any
+from typing import Dict
+from typing import Callable
+from typing import Optional
 
 from ..service.template import ServiceClass
 # from .service.rest_api import RestAPI
@@ -90,9 +93,9 @@ class Network(object):
         """Returns the name of the value."""
         return self.__uuid
 
-    def __argumentCountCheck(self, callback: Callable[[...], ...], requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
         """
-        Check if the requeried Argument count for given function fits.
+        Check if the required Argument count for given function fits.
         """
         allArgument: int = callback.__code__.co_argcount
         the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1

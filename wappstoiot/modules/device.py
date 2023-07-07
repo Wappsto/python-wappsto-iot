@@ -3,6 +3,7 @@ import logging
 
 from enum import Enum
 
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import Optional
@@ -138,7 +139,7 @@ class Device:
         for nr, value in enumerate(self.element.value):
             self.cloud_id_mapping[nr] = value
 
-    def __argumentCountCheck(self, callback: Callable[[...], ...], requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
         """
         Check if the requeried Argument count for given function fits.
         """

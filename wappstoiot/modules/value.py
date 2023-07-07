@@ -250,7 +250,7 @@ class Value:
     #   Helper methods
     # -------------------------------------------------------------------------
 
-    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
         """
         Check if the requeried Argument count for given function fits.
         """
