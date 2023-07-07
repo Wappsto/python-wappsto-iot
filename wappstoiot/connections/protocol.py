@@ -52,9 +52,9 @@ class Connection(ABC):
                       On Parsing Error, it should raise a
                       ValueError TypeError or any subClasses of those.
                       (Like 'JSONDecodeError' & 'pydantic.ValidationError' is)
+
         Returns:
             The Parsers output.
-
         """
         pass
 

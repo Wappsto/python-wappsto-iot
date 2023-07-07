@@ -140,15 +140,12 @@ class Device:
             self.cloud_id_mapping[nr] = value
 
     def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
-        """
-        Check if the requeried Argument count for given function fits.
-        """
+        """Check if the required Argument count for given function fits."""
         allArgument: int = callback.__code__.co_argcount
         the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
         mandatoryArguments: int = callback.__code__.co_argcount - the_default_count
         return (
-            requiredArgumentCount <= allArgument and
-            requiredArgumentCount >= mandatoryArguments
+            requiredArgumentCount <= allArgument and requiredArgumentCount >= mandatoryArguments
         )
 
     # -------------------------------------------------------------------------
@@ -237,9 +234,7 @@ class Device:
         self,
         callback: Callable[['Device'], None],
     ) -> Callable[['Device'], None]:
-        """
-        Configure a callback for when a change to the Device have occurred.
-        """
+        """Configure a callback for when a change to the Device have occurred."""
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onChange callback, are called with 1 argument.")
 
@@ -270,9 +265,7 @@ class Device:
         self,
         callback: Callable[['Device'], None],
     ) -> Callable[['Device'], None]:
-        """
-        Configure a callback for when a request have been make for the Value.
-        """
+        """Configure a callback for when a request have been make for the Value."""
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, are called with 1 argument.")
 
@@ -320,9 +313,7 @@ class Device:
         pass
 
     def delete(self) -> None:
-        """
-        Request a delete of the Device, & all it's Children.
-        """
+        """Request a delete of the Device, & all it's Children."""
         self.connection.delete_device(uuid=self.uuid)
 
     # -------------------------------------------------------------------------
@@ -504,7 +495,6 @@ class Device:
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
         """
-
         illegal_chars: str = name_check.illegal_characters(name)
 
         if illegal_chars:

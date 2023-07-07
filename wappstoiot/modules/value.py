@@ -118,18 +118,18 @@ class Value:
         self.connection: ServiceClass = parent.connection
 
         subValue = self.__parseValueTemplate(
-                ValueBaseType=value_type,
-                encoding=encoding,
-                mapping=mapping,
-                max_range=max,
-                meaningful_zero=meaningful_zero,
-                min_range=min,
-                namespace=namespace,
-                ordered_mapping=ordered_mapping,
-                si_conversion=si_conversion,
-                step=step,
-                unit=unit,
-                xsd=xsd,
+            ValueBaseType=value_type,
+            encoding=encoding,
+            mapping=mapping,
+            max_range=max,
+            meaningful_zero=meaningful_zero,
+            min_range=min,
+            namespace=namespace,
+            ordered_mapping=ordered_mapping,
+            si_conversion=si_conversion,
+            step=step,
+            unit=unit,
+            xsd=xsd,
         )
 
         element = self.connection.get_value(value_uuid) if value_uuid else None
@@ -251,15 +251,12 @@ class Value:
     # -------------------------------------------------------------------------
 
     def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
-        """
-        Check if the requeried Argument count for given function fits.
-        """
+        """Check if the requeried Argument count for given function fits."""
         allArgument: int = callback.__code__.co_argcount
         the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
         mandatoryArguments: int = callback.__code__.co_argcount - the_default_count
         return (
-            requiredArgumentCount <= allArgument and
-            requiredArgumentCount >= mandatoryArguments
+            requiredArgumentCount <= allArgument and requiredArgumentCount >= mandatoryArguments
         )
 
     def __parseValueTemplate(
@@ -638,7 +635,6 @@ class Value:
         callback: Callable[['Value'], None],
     ) -> Callable[['Value'], None]:
         """For when a 'DELETE' request have been called on this element."""
-
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
@@ -689,10 +685,7 @@ class Value:
         pass
 
     def delete(self) -> None:
-        """
-        Request a delete of the Device, & all it's Children.
-        """
-
+        """Request a delete of the Device, & all it's Children."""
         self.connection.delete_value(uuid=self.uuid)
 
     def report(
@@ -718,8 +711,7 @@ class Value:
             timestamp=timestamp_converter(the_timestamp)
         )
         if (
-            data.timestamp and self.report_state.timestamp or
-            not self.report_state.timestamp
+            data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
         ):
             self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
             self.report_state.timestamp = the_timestamp
@@ -752,8 +744,7 @@ class Value:
             timestamp=timestamp_converter(the_timestamp)
         )
         if (
-            data.timestamp and self.control_state.timestamp or
-            not self.control_state.timestamp
+            data.timestamp and self.control_state.timestamp or self.control_state.timestamp
         ):
             self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
             self.control_state.timestamp = the_timestamp
@@ -805,8 +796,7 @@ class Value:
             try:
                 if method == WappstoMethod.PUT:
                     if (
-                        obj.timestamp and self.control_state.timestamp or
-                        not self.control_state.timestamp
+                        obj.timestamp and self.control_state.timestamp or not self.control_state.timestamp
                     ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
                         self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))

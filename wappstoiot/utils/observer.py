@@ -1,7 +1,7 @@
 """
 Contain the Observer functionality.
 
-The Observer Pattern, is as design pattern, that 
+The Observer Pattern, is as design pattern, that
 """
 import logging
 import threading

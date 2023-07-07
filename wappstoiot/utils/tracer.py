@@ -82,9 +82,7 @@ class Trace:
 
     @staticmethod
     def _find_parent_id(jsonrpc_elemt: dict) -> Optional[str]:
-        """
-        Check if a trace package should be send if so it returns the parent ID.
-        """
+        """Check if a trace package should be send if so it returns the parent ID."""
         if isinstance(jsonrpc_elemt, dict):
             return jsonrpc_elemt.get(
                 'params', {}).get(

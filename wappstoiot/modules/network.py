@@ -32,9 +32,7 @@ class Network(object):
         network_uuid: uuid.UUID,
         description: str = "",
     ) -> None:
-        """
-        Configure the WappstoIoT settings.
-        """
+        """Configure the WappstoIoT settings."""
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
@@ -94,15 +92,12 @@ class Network(object):
         return self.__uuid
 
     def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
-        """
-        Check if the required Argument count for given function fits.
-        """
+        """Check if the required Argument count for given function fits."""
         allArgument: int = callback.__code__.co_argcount
         the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
         mandatoryArguments: int = callback.__code__.co_argcount - the_default_count
         return (
-            requiredArgumentCount <= allArgument and
-            requiredArgumentCount >= mandatoryArguments
+            requiredArgumentCount <= allArgument and requiredArgumentCount >= mandatoryArguments
         )
 
     # -------------------------------------------------------------------------
@@ -160,9 +155,7 @@ class Network(object):
         self,
         callback: Callable[['Network'], None],
     ) -> Callable[['Network'], None]:
-        """
-        Configure a callback for when a create have been make for the Device.
-        """
+        """Configure a callback for when a create have been make for the Device."""
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, is called with 1 argument.")
 

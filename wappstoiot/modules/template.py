@@ -166,7 +166,7 @@ valueSettings: Dict[ValueTemplate, ValueSettinsSchema] = {
     ValueTemplate.CONNECTION_STATUS: ValueSettinsSchema(
         value_type=ValueBaseType.NUMBER,
         type="connection",
-        mapping={'0':'offline','1':'online'},
+        mapping={'0': 'offline', '1': 'online'},
         ordered_mapping=None,
         meaningful_zero=None,
         min="0",

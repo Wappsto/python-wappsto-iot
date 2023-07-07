@@ -12,6 +12,7 @@ def legal_name(name: str) -> bool:
 
     Args:
         name: the name to check.
+
     Return:
         True, if it is legal,
         False, if it is illegal.
@@ -25,6 +26,7 @@ def illegal_characters(name: str) -> str:
 
     Args:
         name: the name to check.
+
     Return:
         string with all the illegal characters in the name.
     """

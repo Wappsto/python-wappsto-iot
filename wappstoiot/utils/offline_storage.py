@@ -1,5 +1,4 @@
-"""
-"""
+"""."""
 import logging
 import time
 
@@ -16,10 +15,14 @@ from typing import Union
 
 
 class OfflineStorage(ABC):
+
     @abstractmethod
-    def save(self, data: str) -> None: ...
+    def save(self, data: str) -> None:
+        ...
+
     @abstractmethod
-    def load(self, max_count: Optional[int] = None) -> List[str]: ...
+    def load(self, max_count: Optional[int] = None) -> List[str]:
+        ...
 
 
 class OfflineStorageFiles(OfflineStorage):

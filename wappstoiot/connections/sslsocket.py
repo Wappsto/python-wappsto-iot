@@ -138,14 +138,12 @@ class TlsSocket(Connection):
         Send the str/Bytes to the server.
 
         If given string, it is encoded as 'uft-8' & send.
-
         UNSURE(MBK): Should the encoding be moved outside this class?
 
         Returns:
             True, if the data could be send else
             False.
         """
-
         if isinstance(data, str):
             data = data.encode('utf-8')
 
@@ -190,9 +188,9 @@ class TlsSocket(Connection):
                       On Parsen Error, it should raise a
                       ValueError TypeError or any subClasses of those.
                       (Like 'JSONDecodeError' & 'pydantic.ValidationError' is)
+
         Returns:
             The "parser"'s output.
-
         """
         data = []
         while self.socket or not self.killed.is_set():
@@ -242,7 +240,6 @@ class TlsSocket(Connection):
         Returns:
             'True' if the connection was successful.
         """
-
         if self.killed.is_set():
             return False
 

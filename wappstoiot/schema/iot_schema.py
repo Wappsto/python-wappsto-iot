@@ -74,10 +74,10 @@ class WappstoObjectType(str, Enum):
 
 
 ObjectType2BaseModel: Dict[WappstoObjectType, Any] = {
-        WappstoObjectType.NETWORK: Network,
-        WappstoObjectType.DEVICE: Device,
-        WappstoObjectType.VALUE: ValueUnion,
-        WappstoObjectType.STATE: State,
+    WappstoObjectType.NETWORK: Network,
+    WappstoObjectType.DEVICE: Device,
+    WappstoObjectType.VALUE: ValueUnion,
+    WappstoObjectType.STATE: State,
 }
 
 
@@ -193,7 +193,8 @@ class JsonData(BaseModel):
     @validator("data", pre=True, always=True)
     def url_data_mapper(
         cls, v, values, **kwargs
-    ) -> Optional[Union[
+    ) -> Optional[
+        Union[
             Network,
             Device,
             ValueUnion,
