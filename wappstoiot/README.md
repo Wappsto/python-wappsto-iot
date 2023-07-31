@@ -203,15 +203,12 @@ Unsure {icon question-circle color=blue}
 TODO List {icon cog spin}
 ===============================================================================
 * [x] Batch the packages.
-* [x] Save Offline data.
-* [x] Writing the System.
 * [ ] Make a test to ensure that the timezones are right.
 * [ ] Documentation.
 * [ ] System Test.
 * [ ] If connection issue doing creation, reconnect or raise Error.
 * [x] Autogen code Stub with: [Tool](https://mypy.readthedocs.io/en/stable/stubgen.html)
-* [x] Change `legal_name` to return the illegal sign(s), so it can be printed.
-* [x] `.getReportTimestamp()` now ensures the return type is datetime.
 * [ ] Make a github-test for Python v3.6.7
 * [ ] Detect if multiple is using same Certificate. (it disconnects Multiple times if it is the case)
 * [ ] [Pydantic Migrate to v2](https://docs.pydantic.dev/2.0/migration/)
+* [ ] Enable `value.report` to take `LogValues` and/or `list[LogValues]`.

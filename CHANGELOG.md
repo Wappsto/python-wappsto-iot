@@ -1,5 +1,11 @@
 v0.6.7 (Jul 07 2023)
 ===============================================================================
+## Fixed
+ * Handle a rare error case from the server.
+
+
+v0.6.7 (Jul 07 2023)
+===============================================================================
 ## Added
  * Scandinavian special letters to the legal list
 

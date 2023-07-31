@@ -176,6 +176,10 @@ class IoTAPI(ServiceClass):
                 if not data:
                     continue
 
+                if isinstance(data, str):
+                    self.log.warning(f'Received non JSONRPC data: {data}')
+                    continue
+
                 if not isinstance(data, list):
                     data = [data]
                 for elemt in data:
