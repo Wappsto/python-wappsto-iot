@@ -1362,6 +1362,242 @@ class TestValue(BaseValue):
         "permission",
         [
             wappstoiot.PermissionType.READWRITE,
+            wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "timestamp_test",
+        [
+            True,
+            False
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [
+            True,
+            False
+        ]
+    )
+    @pytest.mark.parametrize(
+        "value_template,data",
+        [
+            (
+                wappstoiot.ValueTemplate.NUMBER,
+                wappstoiot.LogValue(data=3, timestamp=datetime.datetime(2012,8,1,15,19,42))
+            ),
+            (
+                wappstoiot.ValueTemplate.STRING,
+                wappstoiot.LogValue(data='test', timestamp=datetime.datetime(2012,8,1,15,19,42))
+            ),
+        ]
+    )
+    def test_report_log_Value(
+        self,
+        mock_device_server,
+        permission: wappstoiot.PermissionType,
+        value_template: wappstoiot.ValueTemplate,
+        timestamp_test: bool,
+        fast_send: bool,
+        data: Union[wappstoiot.LogValue]
+    ):
+        is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
+
+        data_value = float(data.data) if is_number_type else str(data.data)
+        timestamp = data.timestamp
+
+        device_obj = mock_device_server.get_obj(name="the_device")
+
+        value_uuid = uuid.uuid4()
+        value_name = "moeller"
+        extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
+            value_template=value_template,
+            permission=permission
+        )
+
+        mock_device_server.add_object(
+            this_uuid=value_uuid,
+            this_type='value',
+            this_name=value_name,
+            parent_uuid=device_obj.uuid,
+            extra_info=extra_info
+        )
+
+        wappstoiot.config(
+            config_folder=self.temp,
+            fast_send=fast_send
+        )
+
+        network = wappstoiot.createNetwork(name=mock_device_server.network_name)
+
+        device = network.createDevice(name=device_obj.name)
+
+        value = device.createValue(
+            name=value_name,
+            permission=permission,
+            value_template=value_template
+        )
+
+        try:
+            value.report(data_value, timestamp)
+            print(value.report_state)
+        finally:
+            wappstoiot.close()
+
+        mock_device_server.fail_check()
+        state = server_utils.get_state_obj(
+            server=mock_device_server,
+            value_uuid=value_uuid,
+            state_type="Report"
+        )
+
+        assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+        if data_value != data_value:  # Data is float('nan')
+            temp_control_value = value.getReportData()
+            assert temp_control_value != temp_control_value
+        else:
+            if data_value == 'NA' and is_number_type:
+                data_value = None
+            assert value.getReportData() == data_value  # , "'getControlData' did not return expected data."
+
+        if timestamp_test:
+            assert state.extra_info.get('timestamp') == timestamp
+            assert value.getReportTimestamp() == timestamp
+
+        server_utils.fast_send_check(
+            pkg_list=mock_device_server.data_in,
+            fast_send=fast_send
+        )
+
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
+            wappstoiot.PermissionType.READ,
+            # wappstoiot.PermissionType.WRITE,
+            # wappstoiot.PermissionType.NONE
+        ]
+    )
+    @pytest.mark.parametrize(
+        "value_template",
+        [
+            # *wappstoiot.ValueTemplate,
+            (wappstoiot.ValueTemplate.NUMBER),
+            # (wappstoiot.ValueTemplate.STRING),
+            # (wappstoiot.ValueTemplate.BLOB),
+            # (wappstoiot.ValueTemplate.XML),
+        ]
+    )
+    @pytest.mark.parametrize(
+        "timestamp_test",
+        [
+            True,
+            False
+        ]
+    )
+    @pytest.mark.parametrize(
+        "fast_send",
+        [
+            True,
+            False
+        ]
+    )
+    @pytest.mark.parametrize(
+        "data_value",
+        [
+            [
+                wappstoiot.LogValue(data=1, timestamp=datetime.datetime(2012,8,1,15,19,40)),
+                wappstoiot.LogValue(data=2, timestamp=datetime.datetime(2012,8,1,15,19,41)),
+                wappstoiot.LogValue(data=3, timestamp=datetime.datetime(2012,8,1,15,19,42)),
+            ],
+        ]
+    )
+    def test_report_bulk(
+        self,
+        mock_device_server,
+        permission: wappstoiot.PermissionType,
+        value_template: wappstoiot.ValueTemplate,
+        timestamp_test: bool,
+        fast_send: bool,
+        data_value: Union[int, float, str, wappstoiot.LogValue]
+    ):
+        device_obj = mock_device_server.get_obj(name="the_device")
+
+        value_uuid = uuid.uuid4()
+        value_name = "moeller"
+        extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
+            value_template=value_template,
+            permission=permission
+        )
+
+        mock_device_server.add_object(
+            this_uuid=value_uuid,
+            this_type='value',
+            this_name=value_name,
+            parent_uuid=device_obj.uuid,
+            extra_info=extra_info
+        )
+
+        wappstoiot.config(
+            config_folder=self.temp,
+            fast_send=fast_send
+        )
+
+        network = wappstoiot.createNetwork(name=mock_device_server.network_name)
+
+        device = network.createDevice(name=device_obj.name)
+
+        value = device.createValue(
+            name=value_name,
+            permission=permission,
+            value_template=value_template
+        )
+
+        timestamp = datetime.datetime.utcnow() if timestamp_test else None
+
+        try:
+            value.report(data_value, timestamp)
+            print(value.report_state)
+        finally:
+            wappstoiot.close()
+
+        mock_device_server.fail_check()
+        state = server_utils.get_state_obj(
+            server=mock_device_server,
+            value_uuid=value_uuid,
+            state_type="Report"
+        )
+
+        is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
+        if not is_number_type:
+            data_value = str(data_value)
+
+        # NOTE: Do not work with Bulk, since it only stores the last value.
+        # assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+
+        # if data_value != data_value:  # Data is float('nan')
+        #     temp_control_value = value.getReportData()
+        #     assert temp_control_value != temp_control_value
+        # else:
+        #     if data_value == 'NA' and is_number_type:
+        #         data_value = None
+        #     assert value.getReportData() == data_value  # , "'getControlData' did not return expected data."
+
+        # if timestamp_test:
+        #     assert state.extra_info.get('timestamp') == timestamp
+        #     assert value.getReportTimestamp() == timestamp
+
+        server_utils.fast_send_check(
+            pkg_list=mock_device_server.data_in,
+            fast_send=fast_send
+        )
+
+    @pytest.mark.parametrize(
+        "permission",
+        [
+            wappstoiot.PermissionType.READWRITE,
             # wappstoiot.PermissionType.READ,
             wappstoiot.PermissionType.WRITE,
             # wappstoiot.PermissionType.NONE
