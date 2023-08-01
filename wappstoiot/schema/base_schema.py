@@ -302,6 +302,17 @@ class Info(BaseModel):
     enabled: Optional[bool] = None
 
 
+class LogValue(BaseModel):
+    data: str
+    timestamp: Union[str, datetime]
+
+    class Config:
+        extra = Extra.forbid
+        json_encoders = {
+            datetime: timestamp_converter,
+        }
+
+
 class State(BaseModel):
     data: str
     type: Optional[StateType]

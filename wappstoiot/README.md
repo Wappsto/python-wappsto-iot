@@ -192,7 +192,7 @@ Future Ideas:
 Known Bugs {icon bug color=red}
 ===============================================================================
 * [ ] Sometimes Wappsto do not reply on a 'lookup' request, so a duplicate is make.
-
+* [ ] (Pydantic Issue)[https://github.com/pydantic/pydantic/issues/4852]
 
 Unsure {icon question-circle color=blue}
 ===============================================================================

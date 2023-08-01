@@ -1,5 +1,11 @@
 v0.6.7 (Jul 07 2023)
 ===============================================================================
+## Added
+ * `report` now take a `LogValue` or a list of `LogValue`s.
+
+## Changed
+ * It will now bulk data, if a list af `LogValue`s is given.
+
 ## Fixed
  * Handle a rare error case from the server.
 

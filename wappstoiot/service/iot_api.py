@@ -9,6 +9,7 @@ from pathlib import Path
 
 from concurrent.futures import ThreadPoolExecutor
 
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -30,6 +31,7 @@ from ..schema.base_schema import StringValue
 from ..schema.base_schema import XmlValue
 from ..schema.base_schema import WappstoObject
 from ..schema.base_schema import IdList
+from ..schema.base_schema import LogValue
 
 from ..schema.iot_schema import JsonData
 from ..schema.iot_schema import Identifier
@@ -284,6 +286,61 @@ class IoTAPI(ServiceClass):
     # -------------------------------------------------------------------------
     #                               API Helpers
     # -------------------------------------------------------------------------
+
+    def __create_json_data(self, data: List[Any], url, method):
+        _cb_event = threading.Event()
+        _err_data: Optional[ErrorModel] = None
+
+        def _err_callback(err_data: ErrorModel):
+            nonlocal _err_data
+            nonlocal _cb_event
+            _err_data = err_data
+            _cb_event.set()
+
+        with self.jsonrpc.batch():
+            for values in data:
+                j_data = JsonData(
+                    data=values,
+                    url=url,
+                    meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
+                )
+
+                self.log.debug(f"Sending for: {url}")
+
+                self.jsonrpc.create_request(
+                    method=method,
+                    callback=lambda data: _cb_event.set(),
+                    error_callback=_err_callback,
+                    params=j_data
+                )
+
+        rpc_data = self.jsonrpc.get_batch_data()
+
+        return rpc_data, _cb_event, _err_data
+
+    def _no_reply_bulk_send(self, data: List, url, method) -> bool:
+        rpc_data, _cb_event, _err_data = self.__create_json_data(
+            data=data, url=url, method=method,
+        )
+        rpc_id = "[" + ",".join(
+            [f'"{getattr(rpc_data, "id", None)}"' for rpc_d in rpc_data]
+        ) + "]"
+
+        self._send_logic(rpc_data)
+
+        self.log.debug(f"--CALLBACK Ready! {rpc_id}")
+        if _cb_event.wait(timeout=self.timeout):
+            if _err_data:
+                self.log.debug(f"--CALLBACK Error! {_err_data}")
+                observer.post(StatusID.ERROR, _err_data)
+                # raise ConnectionError(_err_data.message)
+                return False
+            self.log.debug(f"--CALLBACK EVENT! {rpc_id}")
+            observer.post(StatusID.SEND, rpc_data)
+            return True
+        observer.post(StatusID.SENDERROR, rpc_data)
+        self.log.debug(f"--CALLBACK None! {rpc_id}")
+        return False
 
     def _no_reply_send(self, data, url, method) -> bool:
         j_data = JsonData(
@@ -658,7 +715,15 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.POST
         )
 
-    def put_state(self, uuid: UUID, data: State) -> bool:
+    def put_bulk_state(self, uuid: UUID, data: List[LogValue]) -> bool:
+        # url=f"/services/2.0/state/{uuid}",
+        return self._no_reply_bulk_send(
+            data=data,
+            url=f"/state/{uuid}",
+            method=WappstoMethod.PUT
+        )
+
+    def put_state(self, uuid: UUID, data: Union[State, LogValue, List[LogValue]]) -> bool:
         # url=f"/services/2.0/state/{uuid}",
         return self._no_reply_send(
             data=data,

@@ -37,6 +37,8 @@ from .modules.value import Value
 from .modules.value import PermissionType
 from .modules.template import ValueTemplate
 
+from .schema.base_schema import LogValue
+
 from .service import template as service
 
 from .connections import protocol as connection
@@ -69,7 +71,8 @@ __all__ = [
     'service',
     'connection',
     'ValueTemplate',
-    'PermissionType'
+    'PermissionType',
+    'LogValue',
 ]
 
 
