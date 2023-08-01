@@ -723,7 +723,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.PUT
         )
 
-    def put_state(self, uuid: UUID, data: Union[State, LogValue, List[LogValue]]) -> bool:
+    def put_state(self, uuid: UUID, data: Union[State, LogValue]) -> bool:
         # url=f"/services/2.0/state/{uuid}",
         return self._no_reply_send(
             data=data,

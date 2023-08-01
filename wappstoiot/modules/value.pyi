@@ -1,5 +1,5 @@
 import uuid
-from ..schema.base_schema import PermissionType as PermissionType, timestamp_converter as timestamp_converter
+from ..schema.base_schema import LogValue as LogValue, PermissionType as PermissionType, timestamp_converter as timestamp_converter
 from ..schema.iot_schema import WappstoMethod as WappstoMethod
 from ..service.template import ServiceClass as ServiceClass
 from ..utils.Timestamp import str_to_datetime as str_to_datetime
@@ -8,7 +8,7 @@ from .template import ValueBaseType as ValueBaseType
 from _typeshed import Incomplete
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 
 class Period(str, Enum):
     PERIODIC_REFRESH: str
@@ -69,6 +69,6 @@ class Value:
     def refresh(self) -> None: ...
     def change(self, name: str, value: Any) -> None: ...
     def delete(self) -> None: ...
-    def report(self, value: Union[int, float, str, None], timestamp: Optional[datetime] = ...) -> None: ...
+    def report(self, value: Union[int, float, str, LogValue, List[LogValue], None], timestamp: Optional[datetime] = ...) -> None: ...
     def control(self, value: Union[int, float, str, None], timestamp: Optional[datetime] = ...) -> None: ...
     def close(self) -> None: ...

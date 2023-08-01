@@ -3,6 +3,7 @@ from .modules.device import Device as Device
 from .modules.network import Network as Network
 from .modules.template import ValueTemplate as ValueTemplate
 from .modules.value import PermissionType as PermissionType, Value as Value
+from .schema.base_schema import LogValue as LogValue
 from .service import template as service
 from .utils.offline_storage import OfflineStorage as OfflineStorage
 from enum import Enum
