@@ -1505,12 +1505,12 @@ class TestValue(BaseValue):
         ]
     )
     @pytest.mark.parametrize(
-        "data_value",
+        "data",
         [
             [
-                wappstoiot.LogValue(data=1, timestamp=datetime.datetime(2012,8,1,15,19,40)),
                 wappstoiot.LogValue(data=2, timestamp=datetime.datetime(2012,8,1,15,19,41)),
                 wappstoiot.LogValue(data=3, timestamp=datetime.datetime(2012,8,1,15,19,42)),
+                wappstoiot.LogValue(data=1, timestamp=datetime.datetime(2012,8,1,15,19,40)),
             ],
         ]
     )
@@ -1521,8 +1521,14 @@ class TestValue(BaseValue):
         value_template: wappstoiot.ValueTemplate,
         timestamp_test: bool,
         fast_send: bool,
-        data_value: Union[int, float, str, wappstoiot.LogValue]
+        data: Union[int, float, str, wappstoiot.LogValue]
     ):
+        is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
+
+        last_data = sorted(data, key=lambda x: x.timestamp)[-1]
+        last_data_value = float(last_data.data) if is_number_type else last_data.data
+        last_timestamp = last_data.timestamp
+
         device_obj = mock_device_server.get_obj(name="the_device")
 
         value_uuid = uuid.uuid4()
@@ -1555,10 +1561,8 @@ class TestValue(BaseValue):
             value_template=value_template
         )
 
-        timestamp = datetime.datetime.utcnow() if timestamp_test else None
-
         try:
-            value.report(data_value, timestamp)
+            value.report(data)
             print(value.report_state)
         finally:
             wappstoiot.close()
@@ -1570,10 +1574,6 @@ class TestValue(BaseValue):
             state_type="Report"
         )
 
-        is_number_type = wappstoiot.modules.template.valueSettings[value_template].value_type == wappstoiot.modules.template.ValueBaseType.NUMBER
-        if not is_number_type:
-            data_value = str(data_value)
-
         # NOTE: Do not work with Bulk, since it only stores the last value.
         # assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
 
@@ -1583,11 +1583,11 @@ class TestValue(BaseValue):
         # else:
         #     if data_value == 'NA' and is_number_type:
         #         data_value = None
-        #     assert value.getReportData() == data_value  # , "'getControlData' did not return expected data."
+        assert value.getReportData() == last_data_value  # , "'getControlData' did not return expected data."
 
         # if timestamp_test:
-        #     assert state.extra_info.get('timestamp') == timestamp
-        #     assert value.getReportTimestamp() == timestamp
+        assert state.extra_info.get('timestamp') == last_timestamp
+        assert value.getReportTimestamp() == last_timestamp
 
         server_utils.fast_send_check(
             pkg_list=mock_device_server.data_in,
