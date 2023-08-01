@@ -722,8 +722,8 @@ class Value:
                 return
 
             # TODO: Make sure the timestamps are set.
-            last_value = sorted(value, key=lambda r: r.timestamp)[-1]
-            self._update_local_report(last_value, last_value.timestamp)
+            sorted_values = sorted(value, key=lambda r: r.timestamp)
+            self._update_local_report(sorted_values[-1], sorted_values[-1].timestamp)
 
             self.connection.put_bulk_state(
                 uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
@@ -731,7 +731,7 @@ class Value:
                     LogValue(
                         data=x.data,
                         timestamp=timestamp_converter(x.timestamp) if isinstance(x.timestamp, datetime) else x.timestamp
-                    ) for x in value
+                    ) for x in sorted_values
                 ],
             )
             return
