@@ -68,7 +68,7 @@ setup(
         'wappstoiot': ["py.typed", "*.pyi", "**/*.pyi"]
     },
     install_requires=[
-        'slxjsonrpc>=0.8.1',
+        'slxjsonrpc==0.8.2',
         'pydantic==1.9.2',
         'requests>=2.25.1'
     ],
