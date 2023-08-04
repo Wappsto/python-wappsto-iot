@@ -207,6 +207,13 @@ class Status(BaseModel):
 class Info(BaseModel):
     enabled: Optional[bool]
 
+class LogValue(BaseModel):
+    data: str
+    timestamp: Union[str, datetime]
+    class Config:
+        extra: Incomplete
+        json_encoders: Incomplete
+
 class State(BaseModel):
     data: str
     type: Optional[StateType]

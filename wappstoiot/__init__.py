@@ -37,6 +37,8 @@ from .modules.value import Value
 from .modules.value import PermissionType
 from .modules.template import ValueTemplate
 
+from .schema.base_schema import LogValue
+
 from .service import template as service
 
 from .connections import protocol as connection
@@ -52,7 +54,7 @@ from .utils import name_check
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.6.7"
+__version__ = "v0.6.8"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -69,7 +71,8 @@ __all__ = [
     'service',
     'connection',
     'ValueTemplate',
-    'PermissionType'
+    'PermissionType',
+    'LogValue',
 ]
 
 

@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Any
 from typing import Callable
 from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -16,6 +17,7 @@ from .template import ValueBaseType
 # from .template import valueSettings
 from ..schema import base_schema as WSchema
 from ..schema.base_schema import PermissionType
+from ..schema.base_schema import LogValue
 from ..schema.iot_schema import WappstoMethod
 
 from ..schema.base_schema import timestamp_converter
@@ -688,9 +690,18 @@ class Value:
         """Request a delete of the Device, & all it's Children."""
         self.connection.delete_value(uuid=self.uuid)
 
+    def _update_local_report(self, data, timestamp):
+        if (
+            data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
+        ):
+            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+            self.report_state.timestamp = timestamp or data.timestamp
+            if self.report_state.timestamp:
+                self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
+
     def report(
         self,
-        value: Union[int, float, str, None],
+        value: Union[int, float, str, LogValue, List[LogValue], None],
         timestamp: Optional[datetime] = None
     ) -> None:
         """
@@ -705,22 +716,78 @@ class Value:
         """
         # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
-        the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
-        data = WSchema.State(
-            data=value,
-            timestamp=timestamp_converter(the_timestamp)
-        )
-        if (
-            data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
-        ):
-            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
-            self.report_state.timestamp = the_timestamp
-            if self.report_state.timestamp:
-                self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
+
+        if isinstance(value, list):
+            if not len(value):
+                return
+
+            # TODO: Make sure the timestamps are set.
+            sorted_values = sorted(value, key=lambda r: r.timestamp)
+            self._update_local_report(sorted_values[-1], sorted_values[-1].timestamp)
+
+            self.connection.put_bulk_state(
+                uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+                data=[
+                    LogValue(
+                        data=x.data,
+                        timestamp=timestamp_converter(x.timestamp) if isinstance(x.timestamp, datetime) else x.timestamp
+                    ) for x in sorted_values
+                ],
+            )
+            return
+
+        if not isinstance(value, LogValue):
+            the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
+            data = LogValue(
+                data=value,
+                timestamp=timestamp_converter(the_timestamp) if isinstance(the_timestamp, datetime) else the_timestamp,
+            )
+        else:
+            # TODO: Make sure the timestamp is set.
+            data = value
+
+        self._update_local_report(data, the_timestamp)
+
+        # NOTE: Single Report
         self.connection.put_state(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
-            data=data
+            data=data,
         )
+
+    # def report(
+    #     self,
+    #     value: Union[int, float, str, LogValue, List[LogValue], None],
+    #     timestamp: Optional[datetime] = None
+    # ) -> None:
+    #     """
+    #     Report the new current value to Wappsto.
+
+    #     The Report value is typical a measured value from a sensor,
+    #     whether it is a GPIO pin, a analog temperature sensor or a
+    #     device over a I2C bus.
+
+    #     ERROR: https://github.com/pydantic/pydantic/issues/4852
+
+    #     """
+    #     # TODO: Check if this value have a state that is read.
+    #     self.log.info(f"Sending Report for: {self.report_state.meta.id}")
+
+    #     the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
+    #     data = WSchema.State(
+    #         data=value,
+    #         timestamp=timestamp_converter(the_timestamp)
+    #     )
+    #     if (
+    #         data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
+    #     ):
+    #         self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+    #         self.report_state.timestamp = the_timestamp
+    #         if self.report_state.timestamp:
+    #             self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
+    #     self.connection.put_state(
+    #         uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+    #         data=data
+    #     )
 
     def control(
         self,

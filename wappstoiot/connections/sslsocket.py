@@ -185,7 +185,7 @@ class TlsSocket(Connection):
 
         Args:
             Callable: A parser, that returns the parsed data.
-                      On Parsen Error, it should raise a
+                      On Parsing Error, it should raise a
                       ValueError TypeError or any subClasses of those.
                       (Like 'JSONDecodeError' & 'pydantic.ValidationError' is)
 
@@ -235,7 +235,7 @@ class TlsSocket(Connection):
         """
         Connect to the server.
 
-        Attempts a connection to the server on the provided addres and port.
+        Attempts a connection to the server on the provided address and port.
 
         Returns:
             'True' if the connection was successful.
