@@ -17,7 +17,6 @@ from pydantic import RootModel
 from pydantic import ConfigDict
 from pydantic import field_validator
 from pydantic import FieldValidationInfo
-from pydantic import TypeAdapter
 
 from .base_schema import BlobValue
 from .base_schema import Device
@@ -37,7 +36,10 @@ def pair_wise(values):
 
 
 class ValueUnion(RootModel[Union[StringValue, NumberValue, BlobValue, XmlValue]]):
+    """A RootModel to collect all Wappsto Value Types."""
+
     root: Union[StringValue, NumberValue, BlobValue, XmlValue]
+
 
 JsonRpc_error_codes = {
     # Rpc Error Code: [HTTP Error Code, "Error String"]
