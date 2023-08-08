@@ -46,7 +46,7 @@ def find_auther(*file_paths):
 
 setup(
     name="wappstoiot",
-    python_requires='>=3.6.0',
+    python_requires='>=3.7.0',
     version=find_version("wappstoiot", "__init__.py"),
     author=find_auther("wappstoiot", "__init__.py"),
     author_email="support@seluxit.com",
@@ -68,8 +68,8 @@ setup(
         'wappstoiot': ["py.typed", "*.pyi", "**/*.pyi"]
     },
     install_requires=[
-        'slxjsonrpc==0.8.1',
-        'pydantic==1.9.2',
+        'slxjsonrpc>=0.9.1',
+        'pydantic>=2.1.1',
         'requests>=2.25.1'
     ],
     # entry_points={  # TODO: fix __main__.py to be optional.
