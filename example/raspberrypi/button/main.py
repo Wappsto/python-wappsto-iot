@@ -40,7 +40,7 @@ def main():
     led = device.createValue(
         name="LED",
         type="Light",
-        value_template=wappstoiot.ValueTemplate.BOOLEAN,
+        value_template=wappstoiot.ValueTemplate.BOOLEAN_ONOFF,
         permission=wappstoiot.PermissionType.WRITE,
     )
 
@@ -50,7 +50,7 @@ def main():
 
     bnt = device.createValue(
         name="Button",
-        value_template=wappstoiot.ValueTemplate.BOOLEAN,
+        value_template=wappstoiot.ValueTemplate.BOOLEAN_ONOFF,
         permission=wappstoiot.PermissionType.READ,
     )
 
