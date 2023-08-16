@@ -38,7 +38,7 @@ from ..schema.iot_schema import Identifier
 from ..schema.iot_schema import JsonReply
 from ..schema.iot_schema import Success
 from ..schema.iot_schema import WappstoMethod
-# from ..schema.iot_scgema import WappstoObjectType
+# from ..schema.iot_schema import WappstoObjectType
 
 from ..utils.certificateread import certificate_info_extraction
 from ..utils import observer
@@ -147,6 +147,8 @@ class IoTAPI(ServiceClass):
         self.log.debug("Closing Connection.")
         self.connection.close()
         self.log.debug("Closing Workers")
+        # while self.workers._work_queue.qsize() > 1:
+        #     time.sleep(0.02)
         self.workers.shutdown()
         self.log.debug("IoTAPI Closed.")
 
@@ -206,6 +208,7 @@ class IoTAPI(ServiceClass):
                 self._trace_send_logic(trace, reply)
 
             except Exception:
+                self.log.error(f"data: {data}")
                 self.log.exception("Receive Handler Error:")
         self.log.debug("Receive Handler Stopped!")
 
@@ -232,7 +235,7 @@ class IoTAPI(ServiceClass):
                     send_data = copy.copy(data)
 
                 if isinstance(send_data, slxjsonrpc.RpcBatch):
-                    _id = "; ".join(x.id for x in send_data.__root__)
+                    _id = "; ".join(x.id for x in send_data.root)
                 elif send_data:
                     _id = send_data.id
 
@@ -241,7 +244,7 @@ class IoTAPI(ServiceClass):
 
                 if send_data:
                     observer.post(StatusID.SENDING, send_data)
-                    self.connection.send(send_data.json(exclude_none=True))
+                    self.connection.send(send_data.model_dump_json(exclude_none=True))
 
     def _resend_data(self, data):
         j_data = json.loads(data)
@@ -302,7 +305,7 @@ class IoTAPI(ServiceClass):
                 j_data = JsonData(
                     data=values,
                     url=url,
-                    meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
+                    meta=Identifier(fast=True, identifier=None) if self.fast_send and method != WappstoMethod.GET else None
                 )
 
                 self.log.debug(f"Sending for: {url}")
@@ -346,7 +349,7 @@ class IoTAPI(ServiceClass):
         j_data = JsonData(
             data=data,
             url=url,
-            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
+            meta=Identifier(fast=True, identifier=None) if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
@@ -394,7 +397,7 @@ class IoTAPI(ServiceClass):
         j_data = JsonData(
             data=data,
             url=url,
-            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
+            meta=Identifier(fast=True, identifier=None) if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")

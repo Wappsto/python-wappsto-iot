@@ -318,30 +318,30 @@ class Value:
         old_type = type(element)
         new_type = type(self.element)
 
-        new_dict = element.copy(update=self.element.dict(exclude_none=True))
-        new_dict.meta = element.meta.copy(update=new_dict.meta)
+        new_dict = element.model_copy(update=self.element.model_dump(exclude_none=True))
+        new_dict.meta = element.meta.model_copy(update=new_dict.meta)
 
         if new_type is old_type:
             self.element = new_dict
 
             if old_type is WSchema.NumberValue:
-                new_dict.number = element.number.copy(
+                new_dict.number = element.number.model_copy(
                     update=new_dict.number
                 )
             elif old_type is WSchema.StringValue:
-                new_dict.string = element.string.copy(
+                new_dict.string = element.string.model_copy(
                     update=new_dict.string
                 )
             elif old_type is WSchema.BlobValue:
-                new_dict.blob = element.blob.copy(
+                new_dict.blob = element.blob.model_copy(
                     update=new_dict.blob
                 )
             elif old_type is WSchema.XmlValue:
-                new_dict.xml = element.xml.copy(
+                new_dict.xml = element.xml.model_copy(
                     update=new_dict.xml
                 )
         else:
-            new_dict = new_dict.dict(exclude_none=True)
+            new_dict = new_dict.model_dump(exclude_none=True)
             if old_type is WSchema.StringValue:
                 new_dict.pop('string')
             elif old_type is WSchema.NumberValue:
@@ -694,7 +694,7 @@ class Value:
         if (
             data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
         ):
-            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+            self.report_state = self.report_state.model_copy(update=data.model_dump(exclude_none=True))
             self.report_state.timestamp = timestamp or data.timestamp
             if self.report_state.timestamp:
                 self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
@@ -780,7 +780,7 @@ class Value:
     #     if (
     #         data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
     #     ):
-    #         self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+    #         self.report_state = self.report_state.copy(update=data.model_dump(exclude_none=True))
     #         self.report_state.timestamp = the_timestamp
     #         if self.report_state.timestamp:
     #             self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
@@ -813,7 +813,7 @@ class Value:
         if (
             data.timestamp and self.control_state.timestamp or self.control_state.timestamp
         ):
-            self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
+            self.control_state = self.control_state.model_copy(update=data.model_dump(exclude_none=True))
             self.control_state.timestamp = the_timestamp
             if self.control_state.timestamp:
                 self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
@@ -839,7 +839,7 @@ class Value:
             self.report_state = WSchema.State(
                 data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.REPORT,
-                meta=WSchema.BaseMeta(
+                meta=WSchema.StateMeta(
                     id=self.children_name_mapping.get(WSchema.StateType.REPORT.name)
                 )
             )
@@ -853,7 +853,7 @@ class Value:
             self.control_state = WSchema.State(
                 data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.CONTROL,
-                meta=WSchema.BaseMeta(
+                meta=WSchema.StateMeta(
                     id=self.children_name_mapping[WSchema.StateType.CONTROL.name]
                 )
             )
@@ -866,7 +866,7 @@ class Value:
                         obj.timestamp and self.control_state.timestamp or not self.control_state.timestamp
                     ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
-                        self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+                        self.control_state = self.control_state.model_copy(update=obj.model_dump(exclude_none=True))
                         if self.control_state.timestamp:
                             self.control_state.timestamp = str_to_datetime(self.control_state.timestamp)
                             self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)

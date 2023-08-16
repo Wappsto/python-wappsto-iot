@@ -221,7 +221,7 @@ def _setup_ping_pong(period_s: Optional[int] = None):
     if not period_s:
         return
 
-    # TODO: Need a close check so it do not hold wappstoiot open.
+    # TODO: Need a close check so it do not hold wappsto iot open.
     def _ping():
         __log.debug("Ping-Pong called!")
         nonlocal thread
@@ -259,7 +259,7 @@ def _setup_offline_storage(
 
     observer.subscribe(
         service.StatusID.SENDERROR,
-        lambda _, data: offline_storage.save(data.json(exclude_none=True)) if data else None
+        lambda _, data: offline_storage.save(data.model_dump_json(exclude_none=True)) if data else None
     )
 
     def _resend_logic(status, status_data):

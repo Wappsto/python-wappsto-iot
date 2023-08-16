@@ -6,17 +6,35 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Type
 from typing import Union
 
 from pydantic import BaseModel
-from pydantic import RootModel
-from pydantic import conint
-from pydantic import constr
-from pydantic import Field
-from pydantic import model_validator
 from pydantic import ConfigDict
+from pydantic import conint
+# from pydantic import constr
+from pydantic import Field
 from pydantic import field_serializer
+from pydantic import GenerateSchema
 from pydantic import UUID4
+
+from pydantic_core import CoreSchema
+from pydantic_core import core_schema
+
+
+class LaxStrGenerator(GenerateSchema):
+    """
+    A more relax converter, that make it work like Pydantic v1.
+
+    URL: https://github.com/pydantic/pydantic/issues/6045#issuecomment-1650443311
+    """
+
+    def str_schema(self) -> CoreSchema:
+        """Convert a string more relaxed."""
+        return core_schema.no_info_before_validator_function(str, core_schema.str_schema())
+
+
+BaseModel.model_config = ConfigDict(schema_generator=LaxStrGenerator)
 
 
 def timestamp_converter(dt: datetime) -> Optional[str]:
@@ -243,13 +261,15 @@ class BaseMeta(BaseModel):
 
     oem: Optional[Optional[str]] = None
     accept_manufacturer_as_owner: Optional[Optional[bool]] = None
-    redirect: Optional[  # type: ignore
-        constr(
-            regex=r'^[0-9a-zA-Z_-]+$',  # noqa: F722
-            min_length=1,
-            max_length=200
-        )
-    ] = None
+
+    # NOTE: patterns do not work while the `LaxStrGenerator` are in use.
+    # redirect: Optional[  # type: ignore
+    #     constr(
+    #         pattern=r'^[0-9a-zA-Z_-]+$',  # noqa: F722
+    #         min_length=1,
+    #         max_length=200
+    #     )
+    # ] = None
 
     error: Optional[UUID4] = None
     warning: Optional[List[WarningItem]] = None
@@ -366,7 +386,7 @@ class LogValue(BaseModel):
     """The required data for post of new values."""
 
     data: str
-    timestamp: Union[str, datetime]
+    timestamp: datetime
 
     model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
@@ -385,7 +405,7 @@ class State(BaseModel):
     meta: Optional[StateMeta] = Field(None, title='meta-2.0:create')
     status: Optional[StateStatus] = None
     status_payment: Optional[str] = None
-    timestamp: Optional[str] = None
+    timestamp: Optional[datetime] = None
 
     model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
@@ -425,6 +445,8 @@ class BaseValue(BaseModel):
     state: Optional[List[Union[State, UUID4]]] = None
     eventlog: Optional[List[Union[EventlogItem, UUID4]]] = None
     info: Optional[Info] = None
+
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
 
 class Number(BaseModel):
@@ -466,13 +488,15 @@ class StringValue(BaseValue):
 
     string: Optional[String] = None
 
-    @model_validator(mode='before')
-    def value_type_check(cls, values):
-        """Force the Validate for the value type."""
-        keys = ["number", "blob", "xml"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A string value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values):
+    #     """Force the Validate for the value type."""
+    #     keys = ["number", "blob", "xml"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto string value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class NumberValue(BaseValue):
@@ -480,13 +504,15 @@ class NumberValue(BaseValue):
 
     number: Optional[Number] = None
 
-    @model_validator(mode='before')
-    def value_type_check(cls, values):
-        """Force the Validate for the value type."""
-        keys = ["string", "blob", "xml"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A number value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values):
+    #     """Force the Validate for the value type."""
+    #     keys = ["string", "blob", "xml"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto number value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class BlobValue(BaseValue):
@@ -494,13 +520,15 @@ class BlobValue(BaseValue):
 
     blob: Optional[Blob] = None
 
-    @model_validator(mode='before')
-    def value_type_check(cls, values):
-        """Force the Validate for the value type."""
-        keys = ["number", "string", "xml"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A blob value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values):
+    #     """Force the Validate for the value type."""
+    #     keys = ["number", "string", "xml"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto blob value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class XmlValue(BaseValue):
@@ -508,13 +536,15 @@ class XmlValue(BaseValue):
 
     xml: Optional[Xml] = None
 
-    @model_validator(mode='before')
-    def value_type_check(cls, values):
-        """Force the Validate for the value type."""
-        keys = ["number", "blob", "blob"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A xml value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values):
+    #     """Force the Validate for the value type."""
+    #     keys = ["number", "blob", "string"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto xml value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class Device(BaseModel):
@@ -609,13 +639,8 @@ class DeleteList(BaseModel):
     meta: ApiMetaInfo
 
 
-class Value(RootModel[Union[StringValue, NumberValue, BlobValue, XmlValue]]):
-    """A RootModel to collect all Wappsto Value Types."""
+"""A collection of all Wappsto Value Types."""
+Value: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
-    root: Union[StringValue, NumberValue, BlobValue, XmlValue]
-
-
-class WappstoObject(RootModel[Union[Network, Device, Value, State, IdList, DeleteList]]):
-    """A RootModel to collect all Wappsto Types."""
-
-    root: Union[Network, Device, Value, State, IdList, DeleteList]
+"""A collection of all Wappsto Types."""
+WappstoObject = Union[Network, Device, Value, State, IdList, DeleteList]

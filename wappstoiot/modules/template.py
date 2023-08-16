@@ -28,17 +28,17 @@ class ValueBaseType(str, Enum):
 class ValueSettinsSchema(BaseModel):
     value_type: ValueBaseType
     type: str
-    mapping: Optional[Dict]  # Number only
-    ordered_mapping: Optional[bool]  # Number only
-    meaningful_zero: Optional[bool]  # Number only
-    si_conversion: Optional[str]  # Number only
-    min: Optional[float]  # Number only
-    max: Optional[float]  # Blob, number, str only.
-    step: Optional[float]  # Number only
-    encoding: Optional[str]  # Blob, str only.
-    xsd: Optional[str]  # XML only
-    namespace: Optional[str]  # XML only
-    unit: Optional[str]  # Number only
+    mapping: Optional[Dict] = None  # Number only
+    ordered_mapping: Optional[bool] = None  # Number only
+    meaningful_zero: Optional[bool] = None  # Number only
+    si_conversion: Optional[str] = None  # Number only
+    min: Optional[float] = None  # Number only
+    max: Optional[float] = None  # Blob, number, str only.
+    step: Optional[float] = None  # Number only
+    encoding: Optional[str] = None  # Blob, str only.
+    xsd: Optional[str] = None  # XML only
+    namespace: Optional[str] = None  # XML only
+    unit: Optional[str] = None  # Number only
 
 
 class ValueTemplate(str, Enum):

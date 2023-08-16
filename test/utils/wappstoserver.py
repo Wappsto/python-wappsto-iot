@@ -250,6 +250,7 @@ class SimuServer(object):
                     continue
 
                 temp_data, _ = mock_ssl_socket.return_value.sendall.call_args
+                print(f"temp_data: {temp_data}")
                 send_data = temp_data[0]
                 mock_ssl_socket.return_value.sendall.call_args = None
 
@@ -635,10 +636,10 @@ class SimuServer(object):
             key = param.left.replace("this_", "")
             for child in children:
                 if param.op == "==":
-                    if self.objects[child].dict()[key] == param.right:
+                    if self.objects[child].model_dump()[key] == param.right:
                         valid_children.append(child)
                 elif param.op == "!=":
-                    if self.objects[child].dict()[key] != param.right:
+                    if self.objects[child].model_dump()[key] != param.right:
                         valid_children.append(child)
                 # NOTE: We should not need more it this system test.
 

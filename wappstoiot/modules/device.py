@@ -134,8 +134,8 @@ class Device:
     def __update_self(self, element: WSchema.Device):
         # TODO(MBK): Check if new devices was added! & Check diff.
         # NOTE: If there was a diff, post local one.
-        self.element = element.copy(update=self.element.dict(exclude_none=True))
-        self.element.meta = element.meta.copy(update=self.element.meta)
+        self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
+        self.element.meta = element.meta.model_copy(update=self.element.meta)
         for nr, value in enumerate(self.element.value):
             self.cloud_id_mapping[nr] = value
 
@@ -513,7 +513,7 @@ class Device:
             name=name,
             value_uuid=value_uuid,
             permission=permission,
-            **valueSettings[value_template].dict()
+            **valueSettings[value_template].model_dump()
         )
 
         self.__add_value(value_obj, name)

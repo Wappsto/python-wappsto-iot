@@ -10,19 +10,21 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
+from typing import Type
 from typing import Union
 
 from pydantic import BaseModel
-from pydantic import RootModel
 from pydantic import ConfigDict
 from pydantic import field_validator
 from pydantic import FieldValidationInfo
+from pydantic import TypeAdapter
 
 from .base_schema import BlobValue
 from .base_schema import Device
 from .base_schema import Network
 from .base_schema import NumberValue
 from .base_schema import State
+from .base_schema import LogValue
 from .base_schema import StringValue
 from .base_schema import XmlValue
 from .base_schema import IdList
@@ -35,10 +37,7 @@ def pair_wise(values):
     return zip_longest(a, a)
 
 
-class ValueUnion(RootModel[Union[StringValue, NumberValue, BlobValue, XmlValue]]):
-    """A RootModel to collect all Wappsto Value Types."""
-
-    root: Union[StringValue, NumberValue, BlobValue, XmlValue]
+ValueUnion: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
 
 JsonRpc_error_codes = {
@@ -80,11 +79,11 @@ class WappstoObjectType(str, Enum):
     STATE = "state"
 
 
-ObjectType2BaseModel: Dict[WappstoObjectType, Union[type[Network], type[Device], type[ValueUnion], type[State]]] = {
+ObjectType2BaseModel: Dict[WappstoObjectType, Union[Type[Network], Type[Device], Type[ValueUnion], Type[State]]] = {
     WappstoObjectType.NETWORK: Network,
     WappstoObjectType.DEVICE: Device,
     WappstoObjectType.VALUE: ValueUnion,
-    WappstoObjectType.STATE: State,
+    WappstoObjectType.STATE: Union[State, LogValue],
 }
 
 
@@ -129,8 +128,8 @@ class Success(BaseModel):
 class Identifier(BaseModel):
     """The meta data structure for sending data."""
 
-    identifier: Optional[str]  # UNSURE: Should this always be there?
-    fast: Optional[bool]  # Default: False
+    identifier: Optional[str] = None  # UNSURE: Should this always be there?
+    fast: Optional[bool] = None  # Default: False
 
 
 class JsonMeta(BaseModel):
@@ -188,6 +187,7 @@ class JsonData(BaseModel):
             Device,
             ValueUnion,
             State,
+            LogValue,
             # IdList,
             # DeleteList,
         ]
@@ -206,4 +206,9 @@ class JsonData(BaseModel):
         model = ObjectType2BaseModel[obj_type]
         if model is None:
             raise ValueError('Unhandled Object type.')
-        return model.model_validate(v)
+
+        if isinstance(model, BaseModel):
+            return model.model_validate(v)
+
+        model_converter: TypeAdapter = TypeAdapter(model)  # type: ignore
+        return model_converter.validate_python(v)

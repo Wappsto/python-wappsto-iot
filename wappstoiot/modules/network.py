@@ -107,8 +107,8 @@ class Network(object):
     def __update_self(self, element: WSchema.Network):
         # TODO(MBK): Check if new devices was added! & Check diff.
         # NOTE: If there was a diff, post local one.
-        self.element = element.copy(update=self.element.dict(exclude_none=True))
-        self.element.meta = element.meta.copy(update=self.element.meta)
+        self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
+        self.element.meta = element.meta.model_copy(update=self.element.meta)
         for nr, device in enumerate(self.element.device):
             self.cloud_id_mapping[nr] = device
 
