@@ -1,9 +1,12 @@
 #! /bin/env python3
+"""
+This is a nonworking example, on a device that disconnect & reconnect.
 
-# This code is based on the assumption that there have been
-# created a 'black (custom)' in the 'IoT Rapid Prototyping' wapp.
-# The certificates, have then been downloaded
-# unpack and saved into the config-folder of you project.
+This code is based on the assumption that there have been
+created a 'certificate files' in the 'IoT Certificate Manager' wapp.
+The certificates, have then been downloaded
+unpack and saved into the config-folder of you project.
+"""
 
 import os
 import signal
@@ -18,10 +21,12 @@ import wappstoiot
 
 
 def requestGPS(timeout: int = 60) -> Tuple[Union[int, None], Union[int, None]]:
+    """Retrieve the GPS values."""
     ...
 
 
 def sleep(sec: int) -> None:
+    """Set the Computer to sleep."""
     if sec < 3600:  # Hour.
         os.system(f"rtcwake -m mem -s {sec}")  # Suspend
     else:
@@ -29,7 +34,7 @@ def sleep(sec: int) -> None:
 
 
 def main():
-
+    """."""
     killed = threading.Event()
     signal.signal(signal.SIGINT, killed.set)
     signal.signal(signal.SIGTERM, killed.set)
@@ -69,6 +74,7 @@ def main():
     )
 
     def temp2pwm(temp):
+        """Calculate the duty period for given temperature."""
         return period_ns*(temp/100)  # TODO: This should be rewriten!
 
     tempPWM = PWM(chip=0, pwm=0)

@@ -1,4 +1,5 @@
 #!/usr/bin/python3
+"""Contains a class to handle a SCD30 chip connected to a raspberry pi."""
 import struct
 import smbus2
 from smbus2 import i2c_msg
@@ -7,8 +8,10 @@ from collections import namedtuple
 
 
 class SCD30():
+    """SCD30 driver integration."""
+
     def __init__(self, i2cbus, measurement_interval, auto_calibration, pressure):
-        """Starts the scd30 driver."""
+        """Start the scd30 driver."""
         super(SCD30, self).__init__()
 
         self.i2c_address = 0x61
@@ -50,7 +53,7 @@ class SCD30():
 
     # Get Data ready
     def data_ready(self):
-        """Checks if data is ready."""
+        """Check if data is ready."""
         try:
             self.bus_number.write_byte_data(self.i2c_address, 0x02, 0x02)
             time.sleep(0.1)
@@ -65,7 +68,7 @@ class SCD30():
 
     # Read measurement buffer
     def get_scd30_measurements(self, ):
-        """Gets the scd30 measurement."""
+        """Get the scd30 measurement."""
         try:
             self.bus_number.write_byte_data(self.i2c_address, 0x03, 0x00)
             time.sleep(0.1)

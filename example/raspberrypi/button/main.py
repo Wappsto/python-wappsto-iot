@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 """
 This code is based on the assumption that there have been
 created a user on wappsto, and that it have been used to
@@ -18,6 +17,7 @@ from RPi import GPIO
 
 
 def main():
+    """."""
     bnt_pin = 6
     led_pin = 5
 
@@ -40,7 +40,7 @@ def main():
     led = device.createValue(
         name="LED",
         type="Light",
-        value_template=wappstoiot.ValueTemplate.BOOLEAN,
+        value_template=wappstoiot.ValueTemplate.BOOLEAN_ONOFF,
         permission=wappstoiot.PermissionType.WRITE,
     )
 
@@ -50,7 +50,7 @@ def main():
 
     bnt = device.createValue(
         name="Button",
-        value_template=wappstoiot.ValueTemplate.BOOLEAN,
+        value_template=wappstoiot.ValueTemplate.BOOLEAN_ONOFF,
         permission=wappstoiot.PermissionType.READ,
     )
 
