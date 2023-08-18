@@ -43,7 +43,7 @@ def update_temperature() -> bool:
     global temperature_reading
     diff: int = temperature_target - temperature_reading
     if diff:
-        temperature_reading += math.ceil(diff/3) or -1
+        temperature_reading += math.ceil(diff / 3) or -1
         return True
     return False
 # ##############################
