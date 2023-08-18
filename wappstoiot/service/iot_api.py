@@ -1,3 +1,4 @@
+"""Contain the IoT Api that handle the data conversion."""
 import copy
 import json
 import logging
@@ -38,11 +39,10 @@ from ..schema.iot_schema import Identifier
 from ..schema.iot_schema import JsonReply
 from ..schema.iot_schema import Success
 from ..schema.iot_schema import WappstoMethod
-# from ..schema.iot_scgema import WappstoObjectType
+# from ..schema.iot_schema import WappstoObjectType
 
 from ..utils.certificateread import certificate_info_extraction
 from ..utils import observer
-from ..utils import tracer
 
 from ..connections.sslsocket import TlsSocket
 from ..connections.protocol import Connection
@@ -63,6 +63,7 @@ ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
 
 class IoTAPI(ServiceClass):
+    """IoTAPI, handle the conversion of the data from the socket and UI."""
 
     wappstoPort = {
         "dev": 52005,
@@ -79,6 +80,7 @@ class IoTAPI(ServiceClass):
         worker_count: int = 2,
         fast_send: bool = False,
     ):
+        """."""
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
         self.ca = ca
@@ -143,6 +145,7 @@ class IoTAPI(ServiceClass):
         self.workers.submit(self._receive_handler)
 
     def close(self):
+        """Closes the IoTApi down."""
         self.killed.set()
         self.log.debug("Closing Connection.")
         self.connection.close()
@@ -188,11 +191,6 @@ class IoTAPI(ServiceClass):
                     _ids = [elemt.get('id', elemt) for elemt in data]
                     self.log.debug(f"Package received: {elemt.get('id', elemt)}")
 
-                trace = tracer.Trace.trace_list_check(
-                    jsonrpc_elemts=data,
-                    name="Wappsto IoT Receive Thread"
-                )
-
                 reply = self.jsonrpc.parser(data)
                 self.log.debug(f"Package ID: {_ids}; Reply: {reply}")
 
@@ -203,20 +201,9 @@ class IoTAPI(ServiceClass):
                 # UNSURE: How do we check if it was send?
                 observer.post(StatusID.SEND, reply)
 
-                self._trace_send_logic(trace, reply)
-
             except Exception:
                 self.log.exception("Receive Handler Error:")
         self.log.debug("Receive Handler Stopped!")
-
-    def _trace_send_logic(self, trace_list, reply_list) -> None:
-        if not trace_list:
-            return
-        for t, d in zip(trace_list, reply_list.__root__):
-            if not isinstance(d, ErrorModel):
-                t.send_ok(name="Wappsto IoT Receive Thread")
-            else:
-                t.send_failed(name="Wappsto IoT Receive Thread")
 
     def _send_logic(self, data, _id=None):
         # NOTE (MBK): Something do not work here!
@@ -287,7 +274,7 @@ class IoTAPI(ServiceClass):
     #                               API Helpers
     # -------------------------------------------------------------------------
 
-    def __create_json_data(self, data: List[Any], url, method):
+    def __create_json_data(self, data: List[Any], url, method) -> None:
         _cb_event = threading.Event()
         _err_data: Optional[ErrorModel] = None
 
@@ -446,14 +433,14 @@ class IoTAPI(ServiceClass):
     #                              Callback Helpers
     # -------------------------------------------------------------------------
 
-    def _cb_handler(self, data: JsonData, method: WappstoMethod):
+    def _cb_handler(self, data: JsonData, method: WappstoMethod) -> None:
         object_uuid = UUID(data.url.split("/")[-1])
         self.log.debug(f"Object UUID: {object_uuid}")
         for cb in self.subscribers.get(object_uuid, [self._default_cb]):
             self.workers.submit(cb, data.data, method)
             self.log.debug(f"Submitted to Worker: {cb}")
 
-    def _default_cb(self, data: WappstoObject, method: WappstoMethod):
+    def _default_cb(self, data: WappstoObject, method: WappstoMethod) -> None:
         self.log.warning(
             f"No callback found for method: {method}; data {data}"
         )
@@ -503,6 +490,7 @@ class IoTAPI(ServiceClass):
     # #########################################################################
 
     def ping(self) -> None:
+        """Sends a ping to check the connection."""
         return self._no_reply_send(
             data=None,
             url="/network",
@@ -518,6 +506,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Network, WappstoMethod], None]
     ) -> None:
+        """Subscribe a function to be call on Network changes."""
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_network_event(
@@ -525,10 +514,11 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Network, WappstoMethod], None]
     ) -> None:
+        """Unsubscribe a function from Network changes."""
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_network(self, data: Network) -> bool:
-        # url=f"/services/2.0/network",
+        """Create the network."""
         return self._no_reply_send(
             data=data,
             url="/network/",
@@ -536,7 +526,7 @@ class IoTAPI(ServiceClass):
         )
 
     def put_network(self, uuid: UUID, data: Network) -> bool:
-        # url=f"/services/2.0/network/{uuid}",
+        """Make changes to a network."""
         return self._no_reply_send(
             data=data,
             url=f"/network/{uuid}",
@@ -544,7 +534,7 @@ class IoTAPI(ServiceClass):
         )
 
     def get_network(self, uuid: UUID) -> Optional[Network]:
-        # url=f"/services/2.0/network/{uuid}",
+        """Request the network data."""
         return self._reply_send(
             data=None,  # NOTE: Should be nonexistent or Null.
             url=f"/network/{uuid}",
@@ -552,7 +542,7 @@ class IoTAPI(ServiceClass):
         )
 
     def delete_network(self, uuid: UUID) -> bool:
-        # url=f"/services/2.0/network/{uuid}",
+        """Remove the network."""
         return self._no_reply_send(
             data=None,  # NOTE: Should be nonexistent or Null.
             url=f"/network/{uuid}",
@@ -568,6 +558,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
+        """Subscribe a function to be call on given Device changes."""
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_device_event(
@@ -575,10 +566,11 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
+        """Unsubscribe a function from given Device changes."""
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_device(self, network_uuid: UUID, data: Device) -> bool:
-        # url=f"/services/2.0/{uuid}/device",
+        """Create given device."""
         return self._no_reply_send(
             data=data,
             url=f"/network/{network_uuid}/device/",
@@ -586,7 +578,7 @@ class IoTAPI(ServiceClass):
         )
 
     def put_device(self, uuid: UUID, data: Device) -> bool:
-        # url=f"/services/2.0/device/{uuid}",
+        """Make changes to a device."""
         return self._no_reply_send(
             data=data,
             url=f"/device/{uuid}",
@@ -594,6 +586,7 @@ class IoTAPI(ServiceClass):
         )
 
     def get_device_where(self, network_uuid: UUID, **kwargs: str) -> Optional[UUID]:
+        """Request data from a device with given values."""
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/network/{network_uuid}/device?this_{key}=={value}"
@@ -609,7 +602,7 @@ class IoTAPI(ServiceClass):
         return temp[0]
 
     def get_device(self, uuid: UUID) -> Union[Device, None]:
-        # url=f"/services/2.0/device/{uuid}",
+        """Request to get given device data."""
         return self._reply_send(
             data=None,
             url=f"/device/{uuid}",
@@ -617,7 +610,7 @@ class IoTAPI(ServiceClass):
         )
 
     def delete_device(self, uuid: UUID) -> bool:
-        # url=f"/services/2.0/device/{uuid}",
+        """Remove to given device."""
         return self._no_reply_send(
             data=None,
             url=f"/device/{uuid}",
@@ -633,6 +626,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[ValueUnion, WappstoMethod], None]
     ) -> None:
+        """Subscribe a function to be call on given value changes."""
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_value_event(
@@ -640,9 +634,11 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
+        """Unsubscribe a function from given value changes."""
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_value(self, device_uuid: UUID, data: ValueUnion) -> bool:
+        """Create given value."""
         # url=f"/services/2.0/{uuid}/value",
         return self._no_reply_send(
             data=data,
@@ -651,6 +647,7 @@ class IoTAPI(ServiceClass):
         )
 
     def put_value(self, uuid: UUID, data: ValueUnion) -> bool:
+        """Make changes to a value."""
         # url=f"/services/2.0/value/{uuid}",
         return self._no_reply_send(
             data=data,
@@ -659,6 +656,7 @@ class IoTAPI(ServiceClass):
         )
 
     def get_value_where(self, device_uuid: UUID, **kwargs: str) -> Optional[UUID]:
+        """Request data from a value with given values."""
         # /network/{uuid}/device?this_name==X
         key, value = list(kwargs.items())[0]
         url = f"/device/{device_uuid}/value?this_{key}=={value}"
@@ -674,6 +672,7 @@ class IoTAPI(ServiceClass):
         return temp[0]
 
     def get_value(self, uuid: UUID) -> Union[ValueUnion, None]:
+        """Request to get given value data."""
         # url=f"/services/2.0/value/{uuid}",
         return self._reply_send(
             data=None,
@@ -682,6 +681,7 @@ class IoTAPI(ServiceClass):
         )
 
     def delete_value(self, uuid: UUID) -> bool:
+        """Remove to given value."""
         # url=f"/services/2.0/value/{uuid}",
         return self._no_reply_send(
             data=None,
@@ -698,6 +698,7 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[State, WappstoMethod], None]
     ) -> None:
+        """Subscribe a function to be call on given state changes."""
         self.subscribers.setdefault(uuid, []).append(callback)
 
     def unsubscribe_state_event(
@@ -705,9 +706,11 @@ class IoTAPI(ServiceClass):
         uuid: UUID,
         callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
+        """Unsubscribe a function from given state changes."""
         self.subscribers.get(uuid, []).remove(callback)
 
     def post_state(self, value_uuid: UUID, data: State) -> bool:
+        """Create given state."""
         # url=f"/services/2.0/{uuid}/state",
         return self._no_reply_send(
             data=data,
@@ -716,6 +719,7 @@ class IoTAPI(ServiceClass):
         )
 
     def put_bulk_state(self, uuid: UUID, data: List[LogValue]) -> bool:
+        """Make bulk changes the given state."""
         # url=f"/services/2.0/state/{uuid}",
         return self._no_reply_bulk_send(
             data=data,
@@ -724,6 +728,7 @@ class IoTAPI(ServiceClass):
         )
 
     def put_state(self, uuid: UUID, data: Union[State, LogValue]) -> bool:
+        """Make changes to a state."""
         # url=f"/services/2.0/state/{uuid}",
         return self._no_reply_send(
             data=data,
@@ -732,6 +737,7 @@ class IoTAPI(ServiceClass):
         )
 
     def get_state(self, uuid: UUID) -> Union[State, None]:
+        """Request to get given state data."""
         return self._reply_send(
             data=None,
             url=f"/state/{uuid}",
@@ -739,6 +745,7 @@ class IoTAPI(ServiceClass):
         )
 
     def delete_state(self, uuid: UUID) -> bool:
+        """Remove to given state."""
         # url=f"/services/2.0/state/{uuid}",
         return self._no_reply_send(
             data=None,

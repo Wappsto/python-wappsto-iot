@@ -1,9 +1,14 @@
 #! /usr/bin/env python3
 """
-Thermostate Example code.
+Thermostat Example code.
 
 An example on how to make a thermostat program,
 that are connected to Wappsto with WappstoIoT.
+
+This code is based on the assumption that there have been
+created a 'certificate files' in the 'IoT Certificate Manager' wapp.
+The certificates, have then been downloaded
+unpack and saved into the config-folder of you project.
 """
 import math
 import time
@@ -23,19 +28,22 @@ temperature_target: int = 20
 
 
 def get_temperature() -> int:
+    """Get the current simulated temperature."""
     return temperature_reading
 
 
 def set_target_temperature(target: int):
+    """Set the current simulated temperature."""
     global temperature_target
     temperature_target = target
 
 
 def update_temperature() -> bool:
+    """Request the next simulated temperature."""
     global temperature_reading
     diff: int = temperature_target - temperature_reading
     if diff:
-        temperature_reading += math.ceil(diff/3) or -1
+        temperature_reading += math.ceil(diff / 3) or -1
         return True
     return False
 # ##############################
@@ -44,7 +52,7 @@ def update_temperature() -> bool:
 
 
 def createThermostat() -> wappstoiot.Value:
-
+    """Create the thermostat structure."""
     network = wappstoiot.createNetwork(
         name="Home",
         description="Thermostat Simulator"
@@ -85,6 +93,7 @@ def createThermostat() -> wappstoiot.Value:
 
 
 def main():
+    """."""
     wappstoiot.config(
         config_folder="config"
     )

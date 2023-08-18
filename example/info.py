@@ -1,15 +1,20 @@
 #! /bin/env python3
+"""
+This is a working example on how to make a chat-like interaction with wappsto.
 
-# This code is based on the assumption that The certificates,
-# have then been downloaded unpack and saved into the config-folder
-# of you project, in this case the info-folder.
+This code is based on the assumption that there have been
+created a 'certificate files' in the 'IoT Certificate Manager' wapp.
+The certificates, have then been downloaded
+unpack and saved into the config-folder of you project.
+"""
 
 import wappstoiot
 
 
 def main():
-
+    """."""
     def statusChange(StatusID, data):
+        """."""
         print(f"New status: {StatusID}")
 
     wappstoiot.onStatusChange(

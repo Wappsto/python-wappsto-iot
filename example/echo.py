@@ -1,9 +1,15 @@
 #! /bin/env python3
+"""
+This is a working code example on how to make a echo device.
 
-# This code is based on the assumption that there have been
-# created a 'black (custom)' in the 'IoT Rapid Prototyping' wapp.
-# The certificates, have then been downloaded
-# unpack and saved into the config-folder of you project.
+This device receives and string from wappsto, add `Refreshed!` on the end,
+and send it back to wappsto.
+
+This code is based on the assumption that there have been
+created a 'certificate files' in the 'IoT Certificate Manager' wapp.
+The certificates, have then been downloaded
+unpack and saved into the config-folder of you project.
+"""
 
 import time
 
@@ -11,6 +17,7 @@ import wappstoiot
 
 
 def main():
+    """."""
     wappstoiot.config(
         config_folder="echo"
     )

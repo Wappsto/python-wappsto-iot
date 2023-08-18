@@ -1,3 +1,4 @@
+"""Contain the Network Object."""
 import logging
 import uuid
 
@@ -22,6 +23,12 @@ from ..utils import name_check
 # #############################################################################
 
 class Network(object):
+    """
+    The root structure/grouping for the IoT Device.
+
+    A network administrates the relationship between different devices.
+    For example a network of lights.
+    """
 
     schema = WSchema.Network
 
@@ -32,7 +39,7 @@ class Network(object):
         network_uuid: uuid.UUID,
         description: str = "",
     ) -> None:
-        """Configure the WappstoIoT settings."""
+        """Configure the Network settings."""
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
@@ -146,6 +153,7 @@ class Network(object):
         return callback
 
     def cancelOnChange(self):
+        """Cancel the callback set in onChange-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
             callback=self.__callbacks['onChange']
@@ -177,6 +185,7 @@ class Network(object):
         return callback
 
     def cancelOnCreate(self):
+        """Cancel the callback set in onCreate-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
             callback=self.__callbacks['onCreate']
@@ -214,6 +223,7 @@ class Network(object):
         return callback
 
     def cancelOnRefresh(self):
+        """Cancel the callback set in onRefresh-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
             callback=self.__callbacks['onRefresh']
@@ -252,6 +262,7 @@ class Network(object):
         return callback
 
     def cancelOnDelete(self):
+        """Cancel the callback set in onDelete-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
             callback=self.__callbacks['onDelete']
@@ -262,9 +273,11 @@ class Network(object):
     # -------------------------------------------------------------------------
 
     def refresh(self):
+        """Not implemented."""
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
 
     def change(self):
+        """Not implemented."""
         pass
 
     def delete(self):
@@ -331,4 +344,5 @@ class Network(object):
         self.children_name_mapping[name] = device.uuid
 
     def close(self):
+        """Do nothing, only here for compatibility."""
         pass

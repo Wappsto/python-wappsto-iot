@@ -1,3 +1,4 @@
+"""Contain the encrypted socket class."""
 import logging
 import socket
 import threading
@@ -18,6 +19,8 @@ from ..utils import observer
 
 
 class TlsSocket(Connection):
+    """Handle the encrypted socket connection."""
+
     def __init__(
         self,
         address: str,
@@ -26,6 +29,7 @@ class TlsSocket(Connection):
         crt: Path,  # client.crt
         key: Path,  # client.key
     ):
+        """."""
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 

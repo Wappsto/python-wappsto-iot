@@ -68,9 +68,8 @@ setup(
         'wappstoiot': ["py.typed", "*.pyi", "**/*.pyi"]
     },
     install_requires=[
-        'slxjsonrpc==0.8.1',
-        'pydantic==1.9.2',
-        'requests>=2.25.1'
+        'slxjsonrpc<0.9.0',
+        'pydantic>=1.0.0,<2.0.0',
     ],
     # entry_points={  # TODO: fix __main__.py to be optional.
     #     "console_scripts": "wappstoiot=wappstoiot:__main__"

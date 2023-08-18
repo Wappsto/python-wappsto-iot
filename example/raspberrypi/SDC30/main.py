@@ -56,7 +56,7 @@ def main():
     )
 
     co2_value.onRefresh(
-        callback=lambda obj: obj.report(read().CO2)
+        callback=lambda obj: obj.report(read().CO2_PPM)
     )
 
     temp_value.onRefresh(

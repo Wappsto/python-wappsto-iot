@@ -9,10 +9,11 @@ from typing import Optional
 
 from utils import file_utils
 
-from wappstoiot.__main__ import _start_session
-from wappstoiot.__main__ import _create_network
-from wappstoiot.__main__ import _claim_network
-from wappstoiot.__main__ import _create_certificaties_files
+# TODO: Fix this test.
+# from wappstoiot.__main__ import _start_session
+# from wappstoiot.__main__ import _create_network
+# from wappstoiot.__main__ import _claim_network
+# from wappstoiot.__main__ import _create_certificaties_files
 
 
 def pytest_generate_tests(metafunc):
