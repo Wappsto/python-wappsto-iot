@@ -75,7 +75,7 @@ def main():
 
     def temp2pwm(temp):
         """Calculate the duty period for given temperature."""
-        return period_ns*(temp/100)  # TODO: This should be rewriten!
+        return period_ns * (temp / 100)  # TODO: This should be rewriten!
 
     tempPWM = PWM(chip=0, pwm=0)
     tempPWM.start(period_ns, temp2pwm(temperature.state.control.data))

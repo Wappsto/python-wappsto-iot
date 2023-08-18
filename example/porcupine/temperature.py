@@ -45,7 +45,7 @@ def main():
     )
 
     def temp2pwm(temp):
-        return period_ns*(temp/100)  # TODO: This should be rewriten!
+        return period_ns * (temp / 100)  # TODO: This should be rewriten!
 
     tempPWM = PWM(chip=0, pwm=0)
     tempPWM.start(period_ns, temp2pwm(temperature.getControlData()))

@@ -1,4 +1,5 @@
 import uuid
+from ..schema import base_schema as WSchema
 from ..schema.iot_schema import WappstoMethod as WappstoMethod
 from ..service.template import ServiceClass as ServiceClass
 from ..utils import name_check as name_check
@@ -7,7 +8,7 @@ from _typeshed import Incomplete
 from typing import Callable, Optional
 
 class Network:
-    schema: Incomplete
+    schema = WSchema.Network
     log: Incomplete
     element: Incomplete
     children_uuid_mapping: Incomplete

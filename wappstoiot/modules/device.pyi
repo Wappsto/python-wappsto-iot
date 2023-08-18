@@ -1,4 +1,5 @@
 import uuid
+from ..schema import base_schema as WSchema
 from ..schema.base_schema import PermissionType as PermissionType
 from ..schema.iot_schema import WappstoMethod as WappstoMethod
 from ..service.template import ServiceClass as ServiceClass
@@ -10,10 +11,6 @@ from _typeshed import Incomplete
 from enum import Enum
 from typing import Callable, Dict, Optional, Union
 
-class RequestType(str, Enum):
-    refresh: str
-    delete: str
-
 class ChangeType(str, Enum):
     value: str
     name: str
@@ -24,7 +21,7 @@ class ChangeType(str, Enum):
     description: str
 
 class Device:
-    schema: Incomplete
+    schema = WSchema.Device
     log: Incomplete
     parent: Incomplete
     element: Incomplete
