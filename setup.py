@@ -56,7 +56,8 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Wappsto/python-wappsto-iot",
     classifiers=[
-        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.11",
         "Operating System :: OS Independent"
     ],
     packages=find_packages(),
