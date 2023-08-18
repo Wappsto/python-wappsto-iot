@@ -1,9 +1,8 @@
 import abc
-from ..schema.base_schema import BlobValue as BlobValue, Device as Device, Network as Network, NumberValue as NumberValue, State as State, StringValue as StringValue, WappstoMethods as WappstoMethods, XmlValue as XmlValue
-from _typeshed import Incomplete
+from ..schema.base_schema import BlobValue as BlobValue, Device as Device, LogValue as LogValue, Network as Network, NumberValue as NumberValue, State as State, StringValue as StringValue, WappstoMethods as WappstoMethods, XmlValue as XmlValue
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Callable, Optional, Union
+from typing import Callable, List, Optional, Union
 from uuid import UUID
 
 class StatusID(str, Enum):
@@ -14,6 +13,8 @@ class StatusID(str, Enum):
     ERROR: str
 
 class ServiceClass(ABC, metaclass=abc.ABCMeta):
+    def close(self) -> None: ...
+    def ping(self) -> None: ...
     @abstractmethod
     def subscribe_network_event(self, uuid: UUID, callback: Callable[[Network, WappstoMethods], None]) -> None: ...
     @abstractmethod
@@ -40,7 +41,7 @@ class ServiceClass(ABC, metaclass=abc.ABCMeta):
     def get_device(self, uuid: UUID) -> Union[Device, None]: ...
     @abstractmethod
     def delete_device(self, uuid: UUID) -> bool: ...
-    ValueUnion: Incomplete
+    ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
     @abstractmethod
     def subscribe_value_event(self, uuid: UUID, callback: Callable[[ValueUnion, WappstoMethods], None]) -> None: ...
     @abstractmethod
@@ -61,6 +62,8 @@ class ServiceClass(ABC, metaclass=abc.ABCMeta):
     def unsubscribe_state_event(self, uuid: UUID, callback: Callable[[Device, WappstoMethods], None]) -> None: ...
     @abstractmethod
     def post_state(self, value_uuid: UUID, data: State) -> bool: ...
+    @abstractmethod
+    def put_bulk_state(self, uuid: UUID, data: List[LogValue]) -> bool: ...
     @abstractmethod
     def put_state(self, uuid: UUID, data: State) -> bool: ...
     @abstractmethod
