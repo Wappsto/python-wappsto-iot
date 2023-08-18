@@ -56,8 +56,12 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Wappsto/python-wappsto-iot",
     classifiers=[
-        "Programming Language :: Python :: 3",
-        "Operating System :: OS Independent"
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Operating System :: OS Independent",
     ],
     packages=find_packages(),
     # tests_require=[
@@ -68,8 +72,8 @@ setup(
         'wappstoiot': ["py.typed", "*.pyi", "**/*.pyi"]
     },
     install_requires=[
-        'slxjsonrpc>=0.9.1',
-        'pydantic==2.*',
+        'slxjsonrpc>=0.9.2',
+        'pydantic>=2.0.0,<3.0.0',
         'requests==2.25.1'
     ],
     # entry_points={  # TODO: fix __main__.py to be optional.
