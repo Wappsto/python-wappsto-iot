@@ -1,3 +1,13 @@
+v0.6.9 (Aug 18 2023)
+===============================================================================
+## Removed
+ * The CLI interface to create certificates. Use `https://wappsto.com/store/application/iot_certificate_manager` instead.
+ * Remove the `Tracer` (Package flow tracing).
+
+## Changed
+ * Pydantic version to be between 1.0.0 & 2.0.0 for better compatibility.
+
+
 v0.6.8 (Aug 04 2023)
 ===============================================================================
 ## Added

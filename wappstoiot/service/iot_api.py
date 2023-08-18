@@ -38,11 +38,10 @@ from ..schema.iot_schema import Identifier
 from ..schema.iot_schema import JsonReply
 from ..schema.iot_schema import Success
 from ..schema.iot_schema import WappstoMethod
-# from ..schema.iot_scgema import WappstoObjectType
+# from ..schema.iot_schema import WappstoObjectType
 
 from ..utils.certificateread import certificate_info_extraction
 from ..utils import observer
-from ..utils import tracer
 
 from ..connections.sslsocket import TlsSocket
 from ..connections.protocol import Connection
@@ -188,11 +187,6 @@ class IoTAPI(ServiceClass):
                     _ids = [elemt.get('id', elemt) for elemt in data]
                     self.log.debug(f"Package received: {elemt.get('id', elemt)}")
 
-                trace = tracer.Trace.trace_list_check(
-                    jsonrpc_elemts=data,
-                    name="Wappsto IoT Receive Thread"
-                )
-
                 reply = self.jsonrpc.parser(data)
                 self.log.debug(f"Package ID: {_ids}; Reply: {reply}")
 
@@ -203,20 +197,9 @@ class IoTAPI(ServiceClass):
                 # UNSURE: How do we check if it was send?
                 observer.post(StatusID.SEND, reply)
 
-                self._trace_send_logic(trace, reply)
-
             except Exception:
                 self.log.exception("Receive Handler Error:")
         self.log.debug("Receive Handler Stopped!")
-
-    def _trace_send_logic(self, trace_list, reply_list) -> None:
-        if not trace_list:
-            return
-        for t, d in zip(trace_list, reply_list.__root__):
-            if not isinstance(d, ErrorModel):
-                t.send_ok(name="Wappsto IoT Receive Thread")
-            else:
-                t.send_failed(name="Wappsto IoT Receive Thread")
 
     def _send_logic(self, data, _id=None):
         # NOTE (MBK): Something do not work here!
