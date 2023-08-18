@@ -1,3 +1,4 @@
+"""Contain the Device Object."""
 import uuid
 import logging
 
@@ -32,12 +33,13 @@ if TYPE_CHECKING:
 #                                 Device Setup
 # #############################################################################
 
-class RequestType(str, Enum):
-    refresh = "refresh"
-    delete = "delete"
+# class RequestType(str, Enum):
+#     refresh = "refresh"
+#     delete = "delete"
 
 
 class ChangeType(str, Enum):
+    """List of the different value that can be Changed."""
     value = "value"
     name = "name"
     manufacturer = "manufacturer"
@@ -48,6 +50,13 @@ class ChangeType(str, Enum):
 
 
 class Device:
+    """
+    A Device is an hardware tool that own different Values.
+
+    By using an example a network of light is structured
+    with different light bulbs (devices).
+    These devices own their own values of brightness, energy and color.
+    """
 
     schema = WSchema.Device
 
@@ -64,7 +73,7 @@ class Device:
         serial: Optional[str] = None,
         description: Optional[str] = None,
     ):
-
+        """Configure the Device settings."""
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
@@ -187,6 +196,7 @@ class Device:
         return callback
 
     def cancelOnDelete(self):
+        """Cancel the callback set in onDelete-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
             callback=self.__callbacks['onDelete']
@@ -225,6 +235,7 @@ class Device:
         return callback
 
     def cancelOnRefresh(self):
+        """Cancel the callback set in onRefresh-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
             callback=self.__callbacks['onRefresh']
@@ -256,6 +267,7 @@ class Device:
         return callback
 
     def cancelOnChange(self):
+        """Cancel the callback set in onChange-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
             callback=self.__callbacks['onChange']
@@ -287,6 +299,7 @@ class Device:
         return callback
 
     def cancelOnCreate(self):
+        """Cancel the callback set in onCreate-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
             callback=self.__callbacks['onCreate']
@@ -297,6 +310,7 @@ class Device:
     # -------------------------------------------------------------------------
 
     def refresh(self):
+        """Not Implemented."""
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
 
     def change(self, change_type: ChangeType) -> None:
@@ -338,6 +352,14 @@ class Device:
         meaningful_zero: Optional[bool] = None,
         ordered_mapping: Optional[bool] = None,
     ) -> Value:
+        """
+        Create a Wappsto Number Value.
+
+        A Wappsto Value is where the changing data can be found & are handled.
+
+        This require you to setup manually, that `createValue`
+        with `value_template` setup for you.
+        """
         kwargs = locals()
         kwargs.pop('self')
 
@@ -376,6 +398,14 @@ class Device:
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
     ) -> Value:
+        """
+        Create a Wappsto String Value.
+
+        A Wappsto Value is where the changing data can be found & are handled.
+
+        This require you to setup manually, that `createValue`
+        with `value_template` setup for you.
+        """
         kwargs = locals()
         kwargs.pop('self')
 
@@ -414,6 +444,14 @@ class Device:
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
     ) -> Value:
+        """
+        Create a Wappsto BLOB Value.
+
+        A Wappsto Value is where the changing data can be found & are handled.
+
+        This require you to setup manually, that `createValue`
+        with `value_template` setup for you.
+        """
         kwargs = locals()
         kwargs.pop('self')
 
@@ -452,6 +490,14 @@ class Device:
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
     ) -> Value:
+        """
+        Create a Wappsto XML Value.
+
+        A Wappsto Value is where the changing data can be found & are handled.
+
+        This require you to setup manually, that `createValue`
+        with `value_template` setup for you.
+        """
         kwargs = locals()
         kwargs.pop('self')
 
@@ -490,7 +536,7 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        If a value_type have been set, that means that the parameters like:
+        If a value_template have been set, that means that the parameters like:
         name, permission, min, max, step, encoding & unit have been set
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
@@ -525,4 +571,5 @@ class Device:
         self.children_name_mapping[name] = value.uuid
 
     def close(self):
+        """Do nothing, only here for compatibility."""
         pass

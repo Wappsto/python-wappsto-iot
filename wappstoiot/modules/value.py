@@ -1,3 +1,4 @@
+"""Contain the Value Object."""
 import uuid
 import logging
 
@@ -35,25 +36,34 @@ if TYPE_CHECKING:
 
 
 class Period(str, Enum):
+    """Different Period options."""
     PERIODIC_REFRESH = "periodic"
     DROP_UNTIL = "drop"
 
 
 class Delta(str, Enum):
+    """Different Delta options."""
     ONLY_UPDATE_IF = ""
     EXTRA_UPDATES = ""
 
 
 class Value:
+    """
+    A value is used to describe each possible values for a specific device.
+
+    A value can assign some limit to the states: as min, max or steps.
+    """
 
     class RequestType(str, Enum):
         """All the different Request types possible for a Value."""
+
         refresh = "refresh"
         control = "control"
         delete = "delete"
 
     class ChangeType(str, Enum):
         """All the different Change types possible for a Value."""
+
         report = "report"
         delta = "delta"
         period = "period"
@@ -97,6 +107,7 @@ class Value:
         si_conversion: Optional[str] = None,
         unit: Optional[str] = None,
     ):
+        """Configure the Value settings."""
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
@@ -446,6 +457,7 @@ class Value:
         return callback
 
     def cancelOnChange(self) -> None:
+        """Cancel the callback set in onChange-method."""
         self.connection.unsubscribe_value_event(
             uuid=self.uuid,
             callback=self.__callbacks['onChange']
@@ -495,6 +507,7 @@ class Value:
         return callback
 
     def cancelOnReport(self) -> None:
+        """Cancel the callback set in onReport-method."""
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=self.__callbacks['onReport']
@@ -549,6 +562,7 @@ class Value:
         return callback
 
     def cancelOnControl(self) -> None:
+        """Cancel the callback set in onControl-method."""
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
             callback=self.__callbacks['onControl']
@@ -587,6 +601,7 @@ class Value:
         return callback
 
     def cancelOnCreate(self) -> None:
+        """Cancel the callback set in onCreate-method."""
         self.connection.unsubscribe_state_event(
             uuid=self.uuid,
             callback=self.__callbacks['onCreate']
@@ -627,6 +642,7 @@ class Value:
         return callback
 
     def cancelOnRefresh(self) -> None:
+        """Cancel the callback set in onRefresh-method."""
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
             callback=self.__callbacks['onRefresh']
@@ -658,6 +674,7 @@ class Value:
         return callback
 
     def cancelOnDelete(self) -> None:
+        """Cancel the callback set in onDelete-method."""
         self.connection.unsubscribe_value_event(
             uuid=self.uuid,
             callback=self.__callbacks['onDelete']
@@ -668,6 +685,7 @@ class Value:
     # -------------------------------------------------------------------------
 
     def refresh(self) -> None:
+        """Not implemented."""
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
 
     def change(self, name: str, value: Any) -> None:
@@ -880,4 +898,5 @@ class Value:
         )
 
     def close(self) -> None:
+        """Do nothing, only here for compatibility."""
         pass

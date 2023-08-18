@@ -1,3 +1,4 @@
+"""Contain the basic JSONRpc structure for the the IoT endpoint."""
 import uuid
 import datetime
 
@@ -29,6 +30,7 @@ from .base_schema import DeleteList
 
 
 def parwise(values):
+    """Pair up the given values, two by two (hands of blue)."""
     a = iter(values)
     return zip_longest(a, a)
 
@@ -66,7 +68,7 @@ JsonRpc_error_codes = {
 
 
 class WappstoObjectType(str, Enum):
-    # WappstoMetaType
+    """The different wappsto Object type names, used in a JSONRpc."""
     NETWORK = "network"
     DEVICE = "device"
     VALUE = "value"
@@ -82,6 +84,7 @@ ObjectType2BaseModel: Dict[WappstoObjectType, Any] = {
 
 
 def url_parser(url: str) -> List[Tuple[WappstoObjectType, Optional[uuid.UUID]]]:
+    """Parse the Wappsto Url, for wappsto Type & given UUID."""
     r_list: List[Tuple[WappstoObjectType, Optional[uuid.UUID]]] = []
     obj_type: Optional[WappstoObjectType] = None
     if url is None:
@@ -100,6 +103,7 @@ def url_parser(url: str) -> List[Tuple[WappstoObjectType, Optional[uuid.UUID]]]:
 
 
 class WappstoMethod(str, Enum):
+    """The different Wappsto methods allowed for the JSONRpc."""
     GET = "GET"
     POST = "POST"
     PATCH = "PATCH"
@@ -109,22 +113,27 @@ class WappstoMethod(str, Enum):
 
 
 class Success(BaseModel):
+    """The Default reply on a received JSONRpc."""
     success: bool = True
 
     class Config:
+        """."""
         extra = Extra.forbid
 
 
 class Identifier(BaseModel):
+    """The meta data structure for sending data."""
     identifier: Optional[str]  # UNSURE: Should this always be there?
     fast: Optional[bool]  # Default: False
 
 
 class JsonMeta(BaseModel):
+    """The meta data structure on received data."""
     server_send_time: datetime.datetime
 
 
 class JsonReply(BaseModel):
+    """The JSONRpc result structure for receiving."""
     value: Optional[Union[
         Device,
         Network,
@@ -137,6 +146,7 @@ class JsonReply(BaseModel):
     meta: JsonMeta
 
     class Config:
+        """."""
         extra = Extra.forbid
 
     # @validator("value", pre=True, always=True)
@@ -170,6 +180,7 @@ class JsonReply(BaseModel):
 
 
 class JsonData(BaseModel):
+    """The JSONRpc param structure for sending."""
     url: str
     data: Optional[Any]
     # data: Optional[Union[
@@ -183,10 +194,12 @@ class JsonData(BaseModel):
     meta: Optional[Identifier]
 
     class Config:
+        """."""
         extra = Extra.forbid
 
     @validator('url')
     def path_check(cls, v, values, **kwargs):
+        """Validate the Url structure."""
         url_parser(v)
         return v
 

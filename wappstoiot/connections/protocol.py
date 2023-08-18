@@ -1,3 +1,4 @@
+"""Contain the Socket ABC classes."""
 from abc import ABC
 from abc import abstractmethod
 
@@ -11,6 +12,7 @@ from typing import Optional
 
 
 class StatusID(str, Enum):
+    """The difference connection Statuses."""
     CONNECTING = "Connecting"
     CONNECTED = "Connected"
     DISCONNECTING = "Disconnecting"
@@ -18,6 +20,7 @@ class StatusID(str, Enum):
 
 
 class Connection(ABC):
+    """."""
 
     send_ready: Lock
 

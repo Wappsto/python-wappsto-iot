@@ -15,13 +15,16 @@ from typing import Union
 
 
 class OfflineStorage(ABC):
+    """The Offline Storage template class."""
 
     @abstractmethod
     def save(self, data: str) -> None:
+        """Save the data for later retrieval."""
         ...
 
     @abstractmethod
     def load(self, max_count: Optional[int] = None) -> List[str]:
+        """Load the saved data, and return a list with it."""
         ...
 
 
@@ -36,6 +39,7 @@ class OfflineStorageFiles(OfflineStorage):
     Time used per run: 173_536.595006ns
     """
     def __init__(self, location: Union[Path, str]):
+        """."""
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
@@ -72,6 +76,7 @@ class OfflineStorageFiles(OfflineStorage):
             raise
 
     def save(self, data: str) -> None:
+        """Save the data for later retrieval."""
         self.log.debug(f"Saving data: {data}")
         datafile = self.loc / (str(time.perf_counter_ns()) + self.suffix)
         self.log.debug(f"Save to file: {datafile}")
@@ -80,6 +85,7 @@ class OfflineStorageFiles(OfflineStorage):
         self._files.append(datafile)
 
     def load(self, max_count: Optional[int] = None) -> List[str]:
+        """Load the saved data, and return a list with it."""
         self.log.debug(f"Load {max_count} lines.")
         data_files = self._sort_files(max_count)
         data = []
