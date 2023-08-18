@@ -274,7 +274,7 @@ class IoTAPI(ServiceClass):
     #                               API Helpers
     # -------------------------------------------------------------------------
 
-    def __create_json_data(self, data: List[Any], url, method):
+    def __create_json_data(self, data: List[Any], url, method) -> None:
         _cb_event = threading.Event()
         _err_data: Optional[ErrorModel] = None
 
@@ -433,14 +433,14 @@ class IoTAPI(ServiceClass):
     #                              Callback Helpers
     # -------------------------------------------------------------------------
 
-    def _cb_handler(self, data: JsonData, method: WappstoMethod):
+    def _cb_handler(self, data: JsonData, method: WappstoMethod) -> None:
         object_uuid = UUID(data.url.split("/")[-1])
         self.log.debug(f"Object UUID: {object_uuid}")
         for cb in self.subscribers.get(object_uuid, [self._default_cb]):
             self.workers.submit(cb, data.data, method)
             self.log.debug(f"Submitted to Worker: {cb}")
 
-    def _default_cb(self, data: WappstoObject, method: WappstoMethod):
+    def _default_cb(self, data: WappstoObject, method: WappstoMethod) -> None:
         self.log.warning(
             f"No callback found for method: {method}; data {data}"
         )

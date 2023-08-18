@@ -178,7 +178,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj, method) -> None:
             try:
                 if method in WappstoMethod.DELETE:
                     callback(self)
@@ -195,7 +195,7 @@ class Device:
 
         return callback
 
-    def cancelOnDelete(self):
+    def cancelOnDelete(self) -> None:
         """Cancel the callback set in onDelete-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
@@ -234,7 +234,7 @@ class Device:
 
         return callback
 
-    def cancelOnRefresh(self):
+    def cancelOnRefresh(self) -> None:
         """Cancel the callback set in onRefresh-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
@@ -249,7 +249,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onChange callback, are called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj, method) -> None:
             try:
                 if method in WappstoMethod.PUT:
                     callback(self)
@@ -266,7 +266,7 @@ class Device:
 
         return callback
 
-    def cancelOnChange(self):
+    def cancelOnChange(self) -> None:
         """Cancel the callback set in onChange-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
@@ -281,7 +281,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, are called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj, method) -> None:
             try:
                 if method in WappstoMethod.POST:
                     callback(self)
@@ -298,7 +298,7 @@ class Device:
 
         return callback
 
-    def cancelOnCreate(self):
+    def cancelOnCreate(self) -> None:
         """Cancel the callback set in onCreate-method."""
         self.connection.unsubscribe_device_event(
             uuid=self.uuid,
@@ -309,7 +309,7 @@ class Device:
     #   Device methods
     # -------------------------------------------------------------------------
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Not Implemented."""
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
 
