@@ -400,7 +400,7 @@ class State(BaseModel):
     """The State object found in values, that contain the raw value."""
 
     data: str
-    type: Optional[StateType]
+    type: Optional[StateType] = None
 
     meta: Optional[StateMeta] = Field(None, title='meta-2.0:create')
     status: Optional[StateStatus] = None

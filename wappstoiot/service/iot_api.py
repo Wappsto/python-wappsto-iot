@@ -102,16 +102,16 @@ class IoTAPI(ServiceClass):
         )
 
         params = {
-            x: Union[Success, JsonData] for x in WappstoMethod
+            x: JsonData for x in WappstoMethod
         }
 
         result = {
-            WappstoMethod.GET: JsonReply,
-            WappstoMethod.POST: JsonReply,
-            WappstoMethod.PUT: JsonReply,
-            WappstoMethod.DELETE: JsonReply,
-            # WappstoMethod.PATCH: JsonReply,
-            WappstoMethod.HEAD: JsonReply,
+            WappstoMethod.GET: Union[JsonReply, Success],
+            WappstoMethod.POST: Union[JsonReply, Success],
+            WappstoMethod.PUT: Union[JsonReply, Success],
+            WappstoMethod.DELETE: Union[JsonReply, Success],
+            # WappstoMethod.PATCH: Union[JsonReply, Success],
+            WappstoMethod.HEAD: Union[JsonReply, Success],
         }
 
         self.subscribers: Dict[
@@ -136,6 +136,7 @@ class IoTAPI(ServiceClass):
             result=result,
             params=params,
         )
+        self.jsonrpc._verbose = True
 
         self.killed = threading.Event()
         self.workers = ThreadPoolExecutor(max_workers=worker_count)
@@ -305,7 +306,9 @@ class IoTAPI(ServiceClass):
                 j_data = JsonData(
                     data=values,
                     url=url,
-                    meta=Identifier(fast=True, identifier=None) if self.fast_send and method != WappstoMethod.GET else None
+                    meta=Identifier(fast=True, identifier=None)
+                    if self.fast_send and method != WappstoMethod.GET
+                    else None
                 )
 
                 self.log.debug(f"Sending for: {url}")
@@ -349,7 +352,8 @@ class IoTAPI(ServiceClass):
         j_data = JsonData(
             data=data,
             url=url,
-            meta=Identifier(fast=True, identifier=None) if self.fast_send and method != WappstoMethod.GET else None
+            meta=Identifier(fast=True, identifier=None)
+            if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
@@ -397,7 +401,8 @@ class IoTAPI(ServiceClass):
         j_data = JsonData(
             data=data,
             url=url,
-            meta=Identifier(fast=True, identifier=None) if self.fast_send and method != WappstoMethod.GET else None
+            meta=Identifier(fast=True, identifier=None)
+            if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
