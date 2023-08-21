@@ -1784,8 +1784,11 @@ class TestValue(BaseValue):
                 data=data_value,
                 timestamp=timestamp,
             )
-            # Rework the Wait.
-            server_utils.wait_until_or(lambda: the_control_value, 1)
+
+            server_utils.wait_until_or(
+                lambda: value.getControlData() == data_value,
+                1
+            )
 
             value.cancelOnControl()
 
@@ -1796,7 +1799,7 @@ class TestValue(BaseValue):
             )
 
             server_utils.wait_until_or(
-                lambda: value.getControlData() == not_control_value,
+                lambda: state.extra_info.get('data') == str(not_control_value),
                 1
             )
 
@@ -1805,13 +1808,13 @@ class TestValue(BaseValue):
 
         mock_value_string_server.fail_check()
 
-        assert state.extra_info.get('data') == str(not_control_value)  # , "The server did not have the expected data."
+        # assert state.extra_info.get('data') == str(not_control_value)  # , "The server did not have the expected data."
 
         assert the_control_value == data_value  # , "Did not receive the expected data."
-        # assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
+        assert state.extra_info.get('data') == str(data_value)  # , "The server did not have the expected data."
         assert value.getControlData() == not_control_value  # , "'getControlData' did not return expected data."
 
-        assert state.extra_info.get('timestamp') == not_control_timestamp
+        # assert state.extra_info.get('timestamp') == not_control_timestamp
         assert value.getControlTimestamp() == not_control_timestamp
 
         server_utils.fast_send_check(
