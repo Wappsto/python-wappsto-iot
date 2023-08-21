@@ -317,41 +317,50 @@ class Value:
     def __update_self(self, element: WSchema.Value) -> None:
         old_type = type(element)
         new_type = type(self.element)
-
-        new_dict = element.model_copy(update=self.element.model_dump(exclude_none=True))
-        new_dict.meta = element.meta.model_copy(update=new_dict.meta)
+        new_elem = self.element.model_dump(exclude_none=True)
+        old_elem = element.model_dump(exclude_none=True)
 
         if new_type is old_type:
-            self.element = new_dict
+            new_model = element.model_copy(update=new_elem)
+            new_model.meta = element.meta.model_copy(update=new_model.meta)
+
+            self.element = new_model
 
             if old_type is WSchema.NumberValue:
-                new_dict.number = element.number.model_copy(
-                    update=new_dict.number
+                new_model.number = element.number.model_copy(
+                    update=new_model.number
                 )
             elif old_type is WSchema.StringValue:
-                new_dict.string = element.string.model_copy(
-                    update=new_dict.string
+                new_model.string = element.string.model_copy(
+                    update=new_model.string
                 )
             elif old_type is WSchema.BlobValue:
-                new_dict.blob = element.blob.model_copy(
-                    update=new_dict.blob
+                new_model.blob = element.blob.model_copy(
+                    update=new_model.blob
                 )
             elif old_type is WSchema.XmlValue:
-                new_dict.xml = element.xml.model_copy(
-                    update=new_dict.xml
+                new_model.xml = element.xml.model_copy(
+                    update=new_model.xml
                 )
         else:
-            new_dict = new_dict.model_dump(exclude_none=True)
             if old_type is WSchema.StringValue:
-                new_dict.pop('string')
+                old_elem.pop('string')
             elif old_type is WSchema.NumberValue:
-                new_dict.pop('number')
+                old_elem.pop('number')
             elif old_type is WSchema.BlobValue:
-                new_dict.pop('blob')
+                old_elem.pop('blob')
             elif old_type is WSchema.XmlValue:
-                new_dict.pop('xml')
-            self.log.debug(f"CC: {new_dict}")
-            self.element = self.schema(**new_dict)
+                old_elem.pop('xml')
+
+            old_dict = self.schema(**old_elem)
+            new_model = old_dict.model_copy(update=new_elem)
+
+            new_model.meta = element.meta.model_copy(
+                update=element.meta.model_dump(exclude_none=True)
+            )
+
+            self.log.debug(f"CC: {new_model}")
+            self.element = new_model
 
         # TODO: Check for the Difference Value-types & ensure that it is right.
 
