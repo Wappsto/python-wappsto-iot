@@ -139,7 +139,7 @@ class JsonMeta(BaseModel):
 
 
 class JsonReply(BaseModel):
-    """The JSONRpc param structure for received data."""
+    """The JSONRpc param structure for receiving data."""
 
     value: Optional[Union[
         Device,

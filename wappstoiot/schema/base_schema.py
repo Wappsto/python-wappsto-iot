@@ -87,7 +87,7 @@ class FirmwareStatus(str, Enum):
 
 
 class Command(str, Enum):
-    """Command to manage the firmware."""
+    """The possible firmware status for a device."""
 
     IDLE = 'idle'
     FIRMWARE_UPLOAD = 'firmware_upload'
@@ -218,7 +218,7 @@ class Connection(BaseModel):
 
 
 class WarningItem(BaseModel):
-    """The meta warning object structure."""
+    """The Connection info for the network."""
 
     message: Optional[Optional[str]] = None
     data: Optional[Optional[Dict[str, Any]]] = None
@@ -293,6 +293,7 @@ class EventlogMeta(BaseMeta):
         """Used instead of typing.Literal."""
 
         STATUS = "eventlog"
+
     type: Optional[WappstoMetaType] = None
 
     icon: Optional[Optional[str]] = None
@@ -339,6 +340,7 @@ class DeviceMeta(BaseMeta):
         """Used instead of typing.Literal."""
 
         DEVICE = "device"
+
     type: Optional[WappstoMetaType] = None
 
     geo: Optional[Geo] = None
@@ -351,6 +353,7 @@ class NetworkMeta(BaseMeta):
         """Used instead of typing.Literal."""
 
         NETWORK = "network"
+
     type: Optional[WappstoMetaType] = None
 
     geo: Optional[Geo] = None

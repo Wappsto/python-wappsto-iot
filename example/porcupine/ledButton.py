@@ -1,9 +1,12 @@
 #! /bin/env python3
+"""
+This is a example on how to connect a button on a porcupine to wappsto.
 
-# This code is based on the assumption that there have been
-# created a 'black (custom)' in the 'IoT Rapid Prototyping' wapp.
-# The certificates, have then been downloaded
-# unpack and saved into the config-folder of you project.
+This code is based on the assumption that there have been
+created a 'certificate files' in the 'IoT Certificate Manager' wapp.
+The certificates, have then been downloaded
+unpack and saved into the config-folder of you project.
+"""
 
 import time
 
@@ -13,7 +16,7 @@ import wappstoiot
 
 
 def main():
-
+    """."""
     wappstoiot.config(
         config_folder="ledButton",
         offline_storage=True
@@ -38,7 +41,7 @@ def main():
     bntValue = bnt.createValue(
         name="pushed",
         permission=wappstoiot.PermissionType.READ,
-        value_template=wappstoiot.ValueTemplate.BOOLEAN_TRUEFALSE
+        value_template=wappstoiot.ValueTemplate.BOOLEAN_ONOFF
     )
     PQPI_bnt = GPIO(
         chip=0,

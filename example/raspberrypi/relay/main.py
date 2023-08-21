@@ -18,6 +18,7 @@ from RPi import GPIO
 
 
 def main():
+    """."""
     relay_pin = 5
 
     GPIO.setmode(GPIO.BCM)

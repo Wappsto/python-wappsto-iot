@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-
 """
 This code is based on the assumption that there have been
 created a user on wappsto, and that it have been used to
@@ -18,6 +17,7 @@ from RPi import GPIO
 
 
 def main():
+    """."""
     bnt_pin = 6
     led_pin = 5
 

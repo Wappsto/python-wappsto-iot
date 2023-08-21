@@ -74,7 +74,6 @@ setup(
     install_requires=[
         'slxjsonrpc>=0.9.2',
         'pydantic>=2.0.0,<3.0.0',
-        'requests==2.25.1'
     ],
     # entry_points={  # TODO: fix __main__.py to be optional.
     #     "console_scripts": "wappstoiot=wappstoiot:__main__"

@@ -1,3 +1,4 @@
+"""Contain the Value Templates for Wappsto."""
 from enum import Enum
 
 from typing import Optional
@@ -11,6 +12,7 @@ from pydantic import BaseModel
 # #############################################################################
 
 class IoTEvent(str, Enum):
+    """Different IoT Event."""
     CREATE = "create"  # POST
     CHANGE = "change"  # PUT
     REQUEST = "request"  # GET
@@ -26,6 +28,7 @@ class ValueBaseType(str, Enum):
 
 
 class ValueSettinsSchema(BaseModel):
+    """The Structure for which all templates should follow."""
     value_type: ValueBaseType
     type: str
     mapping: Optional[Dict] = None  # Number only

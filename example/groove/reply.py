@@ -1,15 +1,18 @@
 #! /usr/bin/env python3
-
 """
+This is a example on how to connect a groove reply to wappsto.
+
 This code is based on the assumption that there have been
 created a user on wappsto, and that it have been used to
 download a certificate for a IoT unit.
 AND that it is executed on a raspberry pi.
 
-Downloading of the certificate can be done with:
-'python3 -m wappstoiot --path config'
-where it will promt you to login with your wappsto account.
+Downloading of the certificate can be done with the
+'IoT Certificate Manager' wapp.
+Download the certificates with target: 'certificate files',
+then unpack and saved into the config-folder of you project.
 """
+
 import time
 
 import wappstoiot
@@ -18,6 +21,7 @@ from grove.grove_relay import GroveRelay
 
 
 def main():
+    """."""
     relay_pin = 5
 
     relay = GroveRelay(relay_pin)

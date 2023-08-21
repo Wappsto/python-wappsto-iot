@@ -2,7 +2,7 @@ from ..connections.protocol import Connection as Connection
 from ..connections.sslsocket import TlsSocket as TlsSocket
 from ..schema.base_schema import BlobValue as BlobValue, Device as Device, IdList as IdList, LogValue as LogValue, Network as Network, NumberValue as NumberValue, State as State, StringValue as StringValue, WappstoObject as WappstoObject, XmlValue as XmlValue
 from ..schema.iot_schema import Identifier as Identifier, JsonData as JsonData, JsonReply as JsonReply, Success as Success, WappstoMethod as WappstoMethod
-from ..utils import observer as observer, tracer as tracer
+from ..utils import observer as observer
 from ..utils.certificateread import certificate_info_extraction as certificate_info_extraction
 from .template import ServiceClass as ServiceClass, StatusID as StatusID
 from _typeshed import Incomplete

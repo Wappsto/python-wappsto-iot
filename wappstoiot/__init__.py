@@ -54,7 +54,7 @@ from .utils import name_check
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.6.8"
+__version__ = "v0.6.9"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -108,7 +108,7 @@ def onStatusChange(
 # #############################################################################
 
 __config_folder: Path
-__the_connection: Optional[ServiceClass] = None
+__the_connection: ServiceClass = None
 __connection_closed: bool = False
 __ping_pong_thread_killed = threading.Event()
 __offline_storage_thread_killed = threading.Event()
@@ -215,14 +215,14 @@ def _certificate_check(path) -> Dict[str, Path]:
     return r_paths
 
 
-def _setup_ping_pong(period_s: Optional[int] = None):
+def _setup_ping_pong(period_s: Optional[int] = None) -> None:
     # TODO: Test me!
     __ping_pong_thread_killed.clear()
     if not period_s:
         return
 
     # TODO: Need a close check so it do not hold wappsto iot open.
-    def _ping():
+    def _ping() -> None:
         __log.debug("Ping-Pong called!")
         nonlocal thread
         global __ping_pong_thread_killed
@@ -262,7 +262,7 @@ def _setup_offline_storage(
         lambda _, data: offline_storage.save(data.model_dump_json(exclude_none=True)) if data else None
     )
 
-    def _resend_logic(status, status_data):
+    def _resend_logic(status, status_data) -> None:
         nonlocal offline_storage
         global __offline_storage_thread_killed
         __log.debug(f"Resend called with: status={status}")
@@ -313,7 +313,7 @@ def createNetwork(
             f"May only contain: {name_check.wappsto_letters}"
         )
 
-    if not __the_connection:
+    if __the_connection is None:
         config()
 
     if not __config_folder:
@@ -336,17 +336,17 @@ def createNetwork(
 # -------------------------------------------------------------------------
 
 
-def connect():
+def connect() -> None:
     """NOT Implemented yet."""
     pass
 
 
-def disconnect():
+def disconnect() -> None:
     """NOT Implemented yet."""
     pass
 
 
-def close():
+def close() -> None:
     """Close down the connection to wappsto."""
     atexit.unregister(close)
     __ping_pong_thread_killed.set()
