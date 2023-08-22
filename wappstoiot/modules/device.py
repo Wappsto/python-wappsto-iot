@@ -74,7 +74,7 @@ class Device:
         description: Optional[str] = None,
     ):
         """Configure the Device settings."""
-        self.log: Logging.Logger = logging.getLogger(__name__)
+        self.log: logging.Logger = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
         self.__callbacks: Dict[str, Callable[[...], ...]] = {}

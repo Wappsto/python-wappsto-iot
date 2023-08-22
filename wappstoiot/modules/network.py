@@ -135,7 +135,7 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onChange callback, is called with 1 argument.")
 
-        def _cb(obj:WSchema.Network, method: WappstoMethod) -> None:
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(obj)
@@ -167,7 +167,7 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, is called with 1 argument.")
 
-        def _cb(obj:WSchema.Network, method: WappstoMethod) -> None:
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.POST:
                     callback(obj)
@@ -205,7 +205,7 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onRefresh callback, is called with 1 argument.")
 
-        def _cb(obj:WSchema.Network, method: WappstoMethod) -> None:
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.GET:
                     callback(obj)
@@ -244,7 +244,7 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb(obj:WSchema.Network, method: WappstoMethod) -> None:
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.DELETE:
                     callback(self)

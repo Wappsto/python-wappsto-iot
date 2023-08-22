@@ -644,7 +644,7 @@ class DeleteList(BaseModel):
 
 """A collection of all Wappsto Value Types."""
 Value: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
-ValueUnion:Type  = Union[StringValue, NumberValue, BlobValue, XmlValue]
+ValueUnion: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
 """A collection of all Wappsto Types."""
 WappstoObject = Union[Network, Device, Value, State, IdList, DeleteList]
