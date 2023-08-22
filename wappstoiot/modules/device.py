@@ -178,7 +178,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb((obj: WSchema.Device, method: WappstoMethod) -> None:
+        def _cb(obj: WSchema.Device, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.DELETE:
                     callback(self)
