@@ -263,7 +263,7 @@ class Value:
     #   Helper methods
     # -------------------------------------------------------------------------
 
-    def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable[...], requiredArgumentCount: int) -> bool:
         """Check if the requeried Argument count for given function fits."""
         allArgument: int = callback.__code__.co_argcount
         the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
@@ -447,7 +447,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The OnChange callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.PUT:
                     callback(self)
@@ -488,7 +488,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 2):
             raise TypeError("The OnReport callback, is called with 2 argument.")
 
-        def _cb_float(obj, method):
+        def _cb_float(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, float(obj.data))
@@ -496,7 +496,7 @@ class Value:
                 self.log.exception("onReport callback error.")
                 raise
 
-        def _cb_str(obj, method):
+        def _cb_str(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, obj.data)
@@ -539,7 +539,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 2):
             raise TypeError("The OnControl callback, is called with 2 argument.")
 
-        def _cb_float(obj, method):
+        def _cb_float(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     try:
@@ -551,7 +551,7 @@ class Value:
                 self.log.exception("OnChange callback error.")
                 raise
 
-        def _cb_str(obj, method):
+        def _cb_str(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, obj.data)
@@ -592,7 +592,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.POST:
                     callback(self)
@@ -633,7 +633,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onRefresh callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.GET:
                     callback(self)
@@ -665,7 +665,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.DELETE:
                     callback(self)
@@ -717,7 +717,7 @@ class Value:
         """Request a delete of the Device, & all it's Children."""
         self.connection.delete_value(uuid=self.uuid)
 
-    def _update_local_report(self, data, timestamp):
+    def _update_local_report(self, data, timestamp) -> None:
         if (
             data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
         ):

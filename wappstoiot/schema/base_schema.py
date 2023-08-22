@@ -494,7 +494,7 @@ class StringValue(BaseValue):
     model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
     # @model_validator(mode='before')
-    # def value_type_check(cls, values):
+    # def value_type_check(cls, values: Dict[str, Any]):
     #     """Force the Validate for the value type."""
     #     keys = ["number", "blob", "xml"]
     #     if any(key in values for key in keys):
@@ -510,7 +510,7 @@ class NumberValue(BaseValue):
     model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
     # @model_validator(mode='before')
-    # def value_type_check(cls, values):
+    # def value_type_check(cls, values: Dict[str, Any]):
     #     """Force the Validate for the value type."""
     #     keys = ["string", "blob", "xml"]
     #     if any(key in values for key in keys):
@@ -526,7 +526,7 @@ class BlobValue(BaseValue):
     model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
     # @model_validator(mode='before')
-    # def value_type_check(cls, values):
+    # def value_type_check(cls, values: Dict[str, Any]):
     #     """Force the Validate for the value type."""
     #     keys = ["number", "string", "xml"]
     #     if any(key in values for key in keys):
@@ -542,7 +542,7 @@ class XmlValue(BaseValue):
     model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
     # @model_validator(mode='before')
-    # def value_type_check(cls, values):
+    # def value_type_check(cls, values: Dict[str, Any]):
     #     """Force the Validate for the value type."""
     #     keys = ["number", "blob", "string"]
     #     if any(key in values for key in keys):
@@ -644,6 +644,7 @@ class DeleteList(BaseModel):
 
 """A collection of all Wappsto Value Types."""
 Value: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
+ValueUnion:Type  = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
 """A collection of all Wappsto Types."""
 WappstoObject = Union[Network, Device, Value, State, IdList, DeleteList]

@@ -31,13 +31,13 @@ class ValueSettinsSchema(BaseModel):
     """The Structure for which all templates should follow."""
     value_type: ValueBaseType
     type: str
-    mapping: Optional[Dict] = None  # Number only
+    mapping: Optional[Dict[str, str]] = None  # Number only
     ordered_mapping: Optional[bool] = None  # Number only
     meaningful_zero: Optional[bool] = None  # Number only
     si_conversion: Optional[str] = None  # Number only
-    min: Optional[float] = None  # Number only
-    max: Optional[float] = None  # Blob, number, str only.
-    step: Optional[float] = None  # Number only
+    min: Optional[str] = None  # Number only
+    max: Optional[str] = None  # Blob, number, str only.
+    step: Optional[str] = None  # Number only
     encoding: Optional[str] = None  # Blob, str only.
     xsd: Optional[str] = None  # XML only
     namespace: Optional[str] = None  # XML only

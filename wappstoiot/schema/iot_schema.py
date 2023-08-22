@@ -12,6 +12,7 @@ from typing import Optional
 from typing import Tuple
 from typing import Type
 from typing import Union
+from typing import Iterable
 
 from pydantic import BaseModel
 from pydantic import ConfigDict
@@ -31,7 +32,7 @@ from .base_schema import IdList
 from .base_schema import DeleteList
 
 
-def pair_wise(values):
+def pair_wise(values: Iterable) -> Iterable:
     """Pair up the given values, two by two (hands of blue)."""
     a = iter(values)
     return zip_longest(a, a)

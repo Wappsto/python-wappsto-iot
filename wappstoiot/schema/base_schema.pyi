@@ -1,10 +1,13 @@
-from _typeshed import Incomplete
 from datetime import datetime
 from enum import Enum
-from pydantic import BaseModel, UUID4 as UUID4, conint as conint, constr as constr
-from typing import Any, Dict, List, Optional, Union
+from pydantic import BaseModel, ConfigDict, GenerateSchema, UUID4 as UUID4, conint as conint
+from pydantic_core import CoreSchema as CoreSchema
+from typing import Any, Dict, List, Optional, Type, Union
 
-def timestamp_converter(dt: datetime) -> str: ...
+class LaxStrGenerator(GenerateSchema):
+    def str_schema(self) -> CoreSchema: ...
+
+def timestamp_converter(dt: datetime) -> Optional[str]: ...
 
 class WappstoMethods(str, Enum):
     DELETE: str
@@ -112,8 +115,7 @@ class WappstoMetaType(str, Enum):
 class Connection(BaseModel):
     timestamp: Optional[datetime]
     online: Optional[bool]
-    class Config:
-        json_encoders: Incomplete
+    def serialize_timestamp(self, value: datetime) -> Optional[str]: ...
 
 class WarningItem(BaseModel):
     message: Optional[Optional[str]]
@@ -144,15 +146,13 @@ class BaseMeta(BaseModel):
     path: Optional[Optional[str]]
     oem: Optional[Optional[str]]
     accept_manufacturer_as_owner: Optional[Optional[bool]]
-    redirect: Optional[None]
     error: Optional[UUID4]
     warning: Optional[List[WarningItem]]
     trace: Optional[Optional[str]]
     set: Optional[List[UUID4]]
     contract: Optional[List[UUID4]]
     historical: Optional[bool]
-    class Config:
-        json_encoders: Incomplete
+    def serialize_timestamp(self, value: datetime) -> Optional[str]: ...
 
 class EventlogMeta(BaseMeta):
     class WappstoMetaType(str, Enum):
@@ -201,18 +201,16 @@ class Status(BaseModel):
     level: Level
     type: Optional[StatusType]
     meta: Optional[StatusMeta]
-    class Config:
-        json_encoders: Incomplete
+    def serialize_timestamp(self, value: datetime) -> Optional[str]: ...
 
 class Info(BaseModel):
     enabled: Optional[bool]
 
 class LogValue(BaseModel):
     data: str
-    timestamp: Union[str, datetime]
-    class Config:
-        extra: Incomplete
-        json_encoders: Incomplete
+    timestamp: datetime
+    model_config: ConfigDict
+    def serialize_timestamp(self, value: datetime) -> Optional[str]: ...
 
 class State(BaseModel):
     data: str
@@ -220,10 +218,9 @@ class State(BaseModel):
     meta: Optional[StateMeta]
     status: Optional[StateStatus]
     status_payment: Optional[str]
-    timestamp: Optional[str]
-    class Config:
-        extra: Incomplete
-        json_encoders: Incomplete
+    timestamp: Optional[datetime]
+    model_config: ConfigDict
+    def serialize_timestamp(self, value: datetime) -> Optional[str]: ...
 
 class EventlogItem(BaseModel):
     message: str
@@ -232,6 +229,7 @@ class EventlogItem(BaseModel):
     level: Level
     type: Optional[str]
     meta: Optional[EventlogMeta]
+    def serialize_timestamp(self, value: datetime) -> Optional[str]: ...
 
 class BaseValue(BaseModel):
     name: Optional[str]
@@ -243,8 +241,9 @@ class BaseValue(BaseModel):
     status: Optional[EventStatus]
     meta: Optional[ValueMeta]
     state: Optional[List[Union[State, UUID4]]]
-    eventlog: Optional[List[Union['EventlogItem', UUID4]]]
+    eventlog: Optional[List[Union[EventlogItem, UUID4]]]
     info: Optional[Info]
+    model_config: ConfigDict
 
 class Number(BaseModel):
     min: Union[float, int]
@@ -270,19 +269,19 @@ class Xml(BaseModel):
 
 class StringValue(BaseValue):
     string: Optional[String]
-    def value_type_check(cls, values): ...
+    model_config: ConfigDict
 
 class NumberValue(BaseValue):
     number: Optional[Number]
-    def value_type_check(cls, values): ...
+    model_config: ConfigDict
 
 class BlobValue(BaseValue):
     blob: Optional[Blob]
-    def value_type_check(cls, values): ...
+    model_config: ConfigDict
 
 class XmlValue(BaseValue):
     xml: Optional[Xml]
-    def value_type_check(cls, values): ...
+    model_config: ConfigDict
 
 class Device(BaseModel):
     name: Optional[str]
@@ -332,13 +331,13 @@ class IdList(BaseModel):
     limit: int
     count: int
     meta: ApiMetaInfo
-    class Config:
-        extra: Incomplete
+    model_config: ConfigDict
 
 class DeleteList(BaseModel):
     deleted: List[UUID4]
     code: int
     message: str
     meta: ApiMetaInfo
-Value = Union[StringValue, NumberValue, BlobValue, XmlValue]
+
+Value: Type
 WappstoObject = Union[Network, Device, Value, State, IdList, DeleteList]

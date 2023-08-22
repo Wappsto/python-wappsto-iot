@@ -1,13 +1,14 @@
 import datetime
 import uuid
-from .base_schema import BlobValue as BlobValue, DeleteList as DeleteList, Device as Device, IdList as IdList, Network as Network, NumberValue as NumberValue, State as State, StringValue as StringValue, XmlValue as XmlValue
+from .base_schema import BlobValue as BlobValue, DeleteList as DeleteList, Device as Device, IdList as IdList, LogValue as LogValue, Network as Network, NumberValue as NumberValue, State as State, StringValue as StringValue, XmlValue as XmlValue
 from _typeshed import Incomplete
 from enum import Enum
-from pydantic import BaseModel
-from typing import Any, Dict, List, Optional, Tuple, Union
+from pydantic import BaseModel, ConfigDict, FieldValidationInfo as FieldValidationInfo
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Type, Union
 
-def parwise(values): ...
-ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
+def pair_wise(values: Iterable) -> Iterable: ...
+
+ValueUnion: Type
 JsonRpc_error_codes: Incomplete
 
 class WappstoObjectType(str, Enum):
@@ -16,7 +17,7 @@ class WappstoObjectType(str, Enum):
     VALUE: str
     STATE: str
 
-ObjectType2BaseModel: Dict[WappstoObjectType, Any]
+ObjectType2BaseModel: Dict[WappstoObjectType, Union[Type[Network], Type[Device], Type[ValueUnion], Type[State]]]
 
 def url_parser(url: str) -> List[Tuple[WappstoObjectType, Optional[uuid.UUID]]]: ...
 
@@ -30,8 +31,7 @@ class WappstoMethod(str, Enum):
 
 class Success(BaseModel):
     success: bool
-    class Config:
-        extra: Incomplete
+    model_config: ConfigDict
 
 class Identifier(BaseModel):
     identifier: Optional[str]
@@ -43,14 +43,12 @@ class JsonMeta(BaseModel):
 class JsonReply(BaseModel):
     value: Optional[Union[Device, Network, State, ValueUnion, IdList, DeleteList, bool]]
     meta: JsonMeta
-    class Config:
-        extra: Incomplete
+    model_config: ConfigDict
 
 class JsonData(BaseModel):
     url: str
     data: Optional[Any]
     meta: Optional[Identifier]
-    class Config:
-        extra: Incomplete
-    def path_check(cls, v, values, **kwargs): ...
-    def url_data_mapper(cls, v, values, **kwargs) -> Optional[Union[Network, Device, ValueUnion, State, IdList, DeleteList]]: ...
+    model_config: ConfigDict
+    def path_check(cls, v: str) -> str: ...
+    def url_data_mapper(cls, v: Optional[Any], info: FieldValidationInfo) -> Optional[Union[Network, Device, ValueUnion, State, LogValue]]: ...

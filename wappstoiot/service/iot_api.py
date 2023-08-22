@@ -25,14 +25,15 @@ from .template import ServiceClass
 
 from ..schema.base_schema import BlobValue
 from ..schema.base_schema import Device
+from ..schema.base_schema import IdList
+from ..schema.base_schema import LogValue
 from ..schema.base_schema import Network
 from ..schema.base_schema import NumberValue
 from ..schema.base_schema import State
 from ..schema.base_schema import StringValue
-from ..schema.base_schema import XmlValue
+from ..schema.base_schema import ValueUnion
 from ..schema.base_schema import WappstoObject
-from ..schema.base_schema import IdList
-from ..schema.base_schema import LogValue
+from ..schema.base_schema import XmlValue
 
 from ..schema.iot_schema import JsonData
 from ..schema.iot_schema import Identifier
@@ -46,9 +47,6 @@ from ..utils import observer
 
 from ..connections.sslsocket import TlsSocket
 from ..connections.protocol import Connection
-
-
-ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
 
 # POST   -> onCreate
