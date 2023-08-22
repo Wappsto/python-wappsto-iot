@@ -46,7 +46,7 @@ def find_auther(*file_paths):
 
 setup(
     name="wappstoiot",
-    python_requires='>=3.6.0',
+    python_requires='>=3.7.0',
     version=find_version("wappstoiot", "__init__.py"),
     author=find_auther("wappstoiot", "__init__.py"),
     author_email="support@seluxit.com",
@@ -56,9 +56,12 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/Wappsto/python-wappsto-iot",
     classifiers=[
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
-        "Operating System :: OS Independent"
+        "Operating System :: OS Independent",
     ],
     packages=find_packages(),
     # tests_require=[
@@ -69,8 +72,8 @@ setup(
         'wappstoiot': ["py.typed", "*.pyi", "**/*.pyi"]
     },
     install_requires=[
-        'slxjsonrpc<0.9.0',
-        'pydantic>=1.0.0,<2.0.0',
+        'slxjsonrpc>=0.9.2',
+        'pydantic>=2.0.0,<3.0.0',
     ],
     # entry_points={  # TODO: fix __main__.py to be optional.
     #     "console_scripts": "wappstoiot=wappstoiot:__main__"

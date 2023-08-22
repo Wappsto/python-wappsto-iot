@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 
-from typing import Generator
+from typing import Iterator
 from typing import List
 from typing import Optional
 from typing import Union
@@ -66,7 +66,7 @@ class OfflineStorageFiles(OfflineStorage):
         return temp
 
     @contextmanager
-    def auto_save(self, data: str) -> Generator:
+    def auto_save(self, data: str) -> Iterator[None]:
         """Used when replying on a trace."""
         # self.send_pending(name=name)  # Are send on class creation.
         try:

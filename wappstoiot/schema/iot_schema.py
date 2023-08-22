@@ -10,32 +10,36 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
-# from typing import Type
+from typing import Type
 from typing import Union
+from typing import Iterable
 
 from pydantic import BaseModel
-from pydantic import Extra
-from pydantic import parse_obj_as
-from pydantic import validator
+from pydantic import ConfigDict
+from pydantic import field_validator
+from pydantic import FieldValidationInfo
+from pydantic import TypeAdapter
 
 from .base_schema import BlobValue
 from .base_schema import Device
 from .base_schema import Network
 from .base_schema import NumberValue
 from .base_schema import State
+from .base_schema import LogValue
 from .base_schema import StringValue
 from .base_schema import XmlValue
 from .base_schema import IdList
 from .base_schema import DeleteList
 
 
-def parwise(values):
+def pair_wise(values: Iterable) -> Iterable:
     """Pair up the given values, two by two (hands of blue)."""
     a = iter(values)
     return zip_longest(a, a)
 
 
-ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
+ValueUnion: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
+
 
 JsonRpc_error_codes = {
     # Rpc Error Code: [HTTP Error Code, "Error String"]
@@ -69,17 +73,18 @@ JsonRpc_error_codes = {
 
 class WappstoObjectType(str, Enum):
     """The different wappsto Object type names, used in a JSONRpc."""
+
     NETWORK = "network"
     DEVICE = "device"
     VALUE = "value"
     STATE = "state"
 
 
-ObjectType2BaseModel: Dict[WappstoObjectType, Any] = {
+ObjectType2BaseModel: Dict[WappstoObjectType, Union[Type[Network], Type[Device], Type[ValueUnion], Type[State]]] = {
     WappstoObjectType.NETWORK: Network,
     WappstoObjectType.DEVICE: Device,
     WappstoObjectType.VALUE: ValueUnion,
-    WappstoObjectType.STATE: State,
+    WappstoObjectType.STATE: Union[State, LogValue],
 }
 
 
@@ -92,10 +97,10 @@ def url_parser(url: str) -> List[Tuple[WappstoObjectType, Optional[uuid.UUID]]]:
     parsed_url = url.split("?")[0]
     if parsed_url.startswith("/services/2.0/"):
         parsed_url = parsed_url.replace("/services/2.0", "")
-    for selftype, selfid in parwise(parsed_url.split("/")[1:]):
-        obj_type = WappstoObjectType(selftype)
-        if selfid:
-            r_list.append((obj_type, uuid.UUID(selfid)))
+    for self_type, self_id in pair_wise(parsed_url.split("/")[1:]):
+        obj_type = WappstoObjectType(self_type)
+        if self_id:
+            r_list.append((obj_type, uuid.UUID(self_id)))
         else:
             r_list.append((obj_type, None))
             break
@@ -104,6 +109,7 @@ def url_parser(url: str) -> List[Tuple[WappstoObjectType, Optional[uuid.UUID]]]:
 
 class WappstoMethod(str, Enum):
     """The different Wappsto methods allowed for the JSONRpc."""
+
     GET = "GET"
     POST = "POST"
     PATCH = "PATCH"
@@ -114,26 +120,28 @@ class WappstoMethod(str, Enum):
 
 class Success(BaseModel):
     """The Default reply on a received JSONRpc."""
+
     success: bool = True
 
-    class Config:
-        """."""
-        extra = Extra.forbid
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
 
 class Identifier(BaseModel):
     """The meta data structure for sending data."""
-    identifier: Optional[str]  # UNSURE: Should this always be there?
-    fast: Optional[bool]  # Default: False
+
+    identifier: Optional[str] = None  # UNSURE: Should this always be there?
+    fast: Optional[bool] = None  # Default: False
 
 
 class JsonMeta(BaseModel):
     """The meta data structure on received data."""
+
     server_send_time: datetime.datetime
 
 
 class JsonReply(BaseModel):
-    """The JSONRpc result structure for receiving."""
+    """The JSONRpc param structure for receiving data."""
+
     value: Optional[Union[
         Device,
         Network,
@@ -145,42 +153,12 @@ class JsonReply(BaseModel):
     ]]
     meta: JsonMeta
 
-    class Config:
-        """."""
-        extra = Extra.forbid
-
-    # @validator("value", pre=True, always=True)
-    # def url_data_mapper(
-    #     cls, v, values, **kwargs
-    # ) -> Optional[Union[
-    #         Network,
-    #         Device,
-    #         ValueUnion,
-    #         State,
-    #         IdList,
-    #         DeleteList,
-    #         bool
-    #     ]
-    # ]:
-    #     """Check & enforce the data schema, depended on the method value."""
-    #     if v is None or isinstance(v, bool):
-    #         return v
-    #     if type(v) in ObjectType2BaseModel.values():
-    #         return v
-
-    #     # TODO: handle IdList & DeleteList
-
-    #     url_obj = url_parser(values.get('url'))
-    #     obj_type = url_obj[-1][0]
-
-    #     model = ObjectType2BaseModel[obj_type]
-    #     if model is None:
-    #         raise ValueError('Unhandled Object type.')
-    #     return parse_obj_as(model, v)
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
 
 class JsonData(BaseModel):
     """The JSONRpc param structure for sending."""
+
     url: str
     data: Optional[Any]
     # data: Optional[Union[
@@ -193,27 +171,26 @@ class JsonData(BaseModel):
     # ]]
     meta: Optional[Identifier]
 
-    class Config:
-        """."""
-        extra = Extra.forbid
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
-    @validator('url')
-    def path_check(cls, v, values, **kwargs):
-        """Validate the Url structure."""
+    @field_validator('url')
+    def path_check(cls, v: str) -> str:
+        """Ensure that the url is valid."""
         url_parser(v)
         return v
 
-    @validator("data", pre=True, always=True)
+    @field_validator("data", mode='before')
     def url_data_mapper(
-        cls, v, values, **kwargs
+        cls, v: Optional[Any], info: FieldValidationInfo
     ) -> Optional[
         Union[
             Network,
             Device,
             ValueUnion,
             State,
-            IdList,
-            DeleteList,
+            LogValue,
+            # IdList,
+            # DeleteList,
         ]
     ]:
         """Check & enforce the data schema, depended on the method value."""
@@ -224,10 +201,15 @@ class JsonData(BaseModel):
 
         # TODO: handle IdList & DeleteList
 
-        url_obj = url_parser(values.get('url'))
+        url_obj = url_parser(info.data['url'])
         obj_type = url_obj[-1][0]
 
         model = ObjectType2BaseModel[obj_type]
         if model is None:
             raise ValueError('Unhandled Object type.')
-        return parse_obj_as(model, v)
+
+        if isinstance(model, BaseModel):
+            return model.model_validate(v)
+
+        model_converter: TypeAdapter = TypeAdapter(model)  # type: ignore
+        return model_converter.validate_python(v)

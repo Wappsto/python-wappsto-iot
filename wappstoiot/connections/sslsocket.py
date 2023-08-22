@@ -71,7 +71,7 @@ class TlsSocket(Connection):
         After 5 idle minutes, start sending keepalives every 1 minutes.
         Drop connection after 2 failed keepalives
         """
-        self.raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.raw_socket: Optional[socket.socket] = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.raw_socket.setsockopt(
             socket.SOL_SOCKET,
             socket.SO_KEEPALIVE,
@@ -119,7 +119,7 @@ class TlsSocket(Connection):
 
         self.socket = self._ssl_wrap()
 
-    def _ssl_wrap(self):
+    def _ssl_wrap(self) -> ssl.SSLSocket:
         """
         Wrap socket.
 
@@ -177,7 +177,7 @@ class TlsSocket(Connection):
         except AttributeError:
             return False
         else:
-            self.log.debug(f"Raw Data Send: {data}")
+            self.log.debug(f"Raw Data Send: {data!r}")
             return True
 
     def receive(self, parser: Callable[[bytes], Any]) -> Any:

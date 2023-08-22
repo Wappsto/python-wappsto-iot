@@ -263,7 +263,7 @@ class Value:
     #   Helper methods
     # -------------------------------------------------------------------------
 
-    def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable[...], requiredArgumentCount: int) -> bool:
         """Check if the requeried Argument count for given function fits."""
         allArgument: int = callback.__code__.co_argcount
         the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
@@ -328,41 +328,50 @@ class Value:
     def __update_self(self, element: WSchema.Value) -> None:
         old_type = type(element)
         new_type = type(self.element)
-
-        new_dict = element.copy(update=self.element.dict(exclude_none=True))
-        new_dict.meta = element.meta.copy(update=new_dict.meta)
+        new_elem = self.element.model_dump(exclude_none=True)
+        old_elem = element.model_dump(exclude_none=True)
 
         if new_type is old_type:
-            self.element = new_dict
+            new_model = element.model_copy(update=new_elem)
+            new_model.meta = element.meta.model_copy(update=new_model.meta)
+
+            self.element = new_model
 
             if old_type is WSchema.NumberValue:
-                new_dict.number = element.number.copy(
-                    update=new_dict.number
+                new_model.number = element.number.model_copy(
+                    update=new_model.number
                 )
             elif old_type is WSchema.StringValue:
-                new_dict.string = element.string.copy(
-                    update=new_dict.string
+                new_model.string = element.string.model_copy(
+                    update=new_model.string
                 )
             elif old_type is WSchema.BlobValue:
-                new_dict.blob = element.blob.copy(
-                    update=new_dict.blob
+                new_model.blob = element.blob.model_copy(
+                    update=new_model.blob
                 )
             elif old_type is WSchema.XmlValue:
-                new_dict.xml = element.xml.copy(
-                    update=new_dict.xml
+                new_model.xml = element.xml.model_copy(
+                    update=new_model.xml
                 )
         else:
-            new_dict = new_dict.dict(exclude_none=True)
             if old_type is WSchema.StringValue:
-                new_dict.pop('string')
+                old_elem.pop('string')
             elif old_type is WSchema.NumberValue:
-                new_dict.pop('number')
+                old_elem.pop('number')
             elif old_type is WSchema.BlobValue:
-                new_dict.pop('blob')
+                old_elem.pop('blob')
             elif old_type is WSchema.XmlValue:
-                new_dict.pop('xml')
-            self.log.debug(f"CC: {new_dict}")
-            self.element = self.schema(**new_dict)
+                old_elem.pop('xml')
+
+            old_dict = self.schema(**old_elem)
+            new_model = old_dict.model_copy(update=new_elem)
+
+            new_model.meta = element.meta.model_copy(
+                update=element.meta.model_dump(exclude_none=True)
+            )
+
+            self.log.debug(f"CC: {new_model}")
+            self.element = new_model
 
         # TODO: Check for the Difference Value-types & ensure that it is right.
 
@@ -438,7 +447,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The OnChange callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.PUT:
                     callback(self)
@@ -479,7 +488,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 2):
             raise TypeError("The OnReport callback, is called with 2 argument.")
 
-        def _cb_float(obj, method):
+        def _cb_float(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, float(obj.data))
@@ -487,7 +496,7 @@ class Value:
                 self.log.exception("onReport callback error.")
                 raise
 
-        def _cb_str(obj, method):
+        def _cb_str(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, obj.data)
@@ -530,7 +539,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 2):
             raise TypeError("The OnControl callback, is called with 2 argument.")
 
-        def _cb_float(obj, method):
+        def _cb_float(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     try:
@@ -542,7 +551,7 @@ class Value:
                 self.log.exception("OnChange callback error.")
                 raise
 
-        def _cb_str(obj, method):
+        def _cb_str(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, obj.data)
@@ -583,7 +592,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.POST:
                     callback(self)
@@ -624,7 +633,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onRefresh callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.GET:
                     callback(self)
@@ -656,7 +665,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.DELETE:
                     callback(self)
@@ -708,11 +717,11 @@ class Value:
         """Request a delete of the Device, & all it's Children."""
         self.connection.delete_value(uuid=self.uuid)
 
-    def _update_local_report(self, data, timestamp):
+    def _update_local_report(self, data, timestamp) -> None:
         if (
             data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
         ):
-            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+            self.report_state = self.report_state.model_copy(update=data.model_dump(exclude_none=True))
             self.report_state.timestamp = timestamp or data.timestamp
             if self.report_state.timestamp:
                 self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
@@ -798,7 +807,7 @@ class Value:
     #     if (
     #         data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
     #     ):
-    #         self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+    #         self.report_state = self.report_state.copy(update=data.model_dump(exclude_none=True))
     #         self.report_state.timestamp = the_timestamp
     #         if self.report_state.timestamp:
     #             self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
@@ -831,7 +840,7 @@ class Value:
         if (
             data.timestamp and self.control_state.timestamp or self.control_state.timestamp
         ):
-            self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
+            self.control_state = self.control_state.model_copy(update=data.model_dump(exclude_none=True))
             self.control_state.timestamp = the_timestamp
             if self.control_state.timestamp:
                 self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
@@ -857,7 +866,7 @@ class Value:
             self.report_state = WSchema.State(
                 data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.REPORT,
-                meta=WSchema.BaseMeta(
+                meta=WSchema.StateMeta(
                     id=self.children_name_mapping.get(WSchema.StateType.REPORT.name)
                 )
             )
@@ -871,7 +880,7 @@ class Value:
             self.control_state = WSchema.State(
                 data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.CONTROL,
-                meta=WSchema.BaseMeta(
+                meta=WSchema.StateMeta(
                     id=self.children_name_mapping[WSchema.StateType.CONTROL.name]
                 )
             )
@@ -884,7 +893,7 @@ class Value:
                         obj.timestamp and self.control_state.timestamp or not self.control_state.timestamp
                     ):
                         self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
-                        self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+                        self.control_state = self.control_state.model_copy(update=obj.model_dump(exclude_none=True))
                         if self.control_state.timestamp:
                             self.control_state.timestamp = str_to_datetime(self.control_state.timestamp)
                             self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)

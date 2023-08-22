@@ -21,6 +21,7 @@ def wait_until_or(check: Callable[[], bool], max_wait: int):
         if start <= time.time():
             break
         time.sleep(0.05)
+    time.sleep(0.05)  # NOTE: To ensure the reply to reach the server.
 
 
 def generate_value_extra_info(

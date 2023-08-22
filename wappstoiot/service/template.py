@@ -17,8 +17,8 @@ from ..schema.base_schema import Network
 from ..schema.base_schema import NumberValue
 from ..schema.base_schema import State
 from ..schema.base_schema import StringValue
-from ..schema.base_schema import WappstoMethods
 from ..schema.base_schema import XmlValue
+from ..schema.iot_schema import WappstoMethod
 
 
 class StatusID(str, Enum):
@@ -53,7 +53,7 @@ class ServiceClass(ABC):
     def subscribe_network_event(
         self,
         uuid: UUID,
-        callback: Callable[[Network, WappstoMethods], None]
+        callback: Callable[[Network, WappstoMethod], None]
     ) -> None:
         """Subscribe a function to be call on Network changes."""
         pass
@@ -62,7 +62,7 @@ class ServiceClass(ABC):
     def unsubscribe_network_event(
         self,
         uuid: UUID,
-        callback: Callable[[Network, WappstoMethods], None]
+        callback: Callable[[Network, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from Network changes."""
         pass
@@ -95,7 +95,7 @@ class ServiceClass(ABC):
     def subscribe_device_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethods], None]
+        callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
         """Subscribe a function to be call on given Device changes."""
         pass
@@ -104,7 +104,7 @@ class ServiceClass(ABC):
     def unsubscribe_device_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethods], None]
+        callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given Device changes."""
         pass
@@ -145,7 +145,7 @@ class ServiceClass(ABC):
     def subscribe_value_event(
         self,
         uuid: UUID,
-        callback: Callable[[ValueUnion, WappstoMethods], None]
+        callback: Callable[[ValueUnion, WappstoMethod], None]
     ) -> None:
         """Subscribe a function to be call on given value changes."""
         pass
@@ -154,7 +154,7 @@ class ServiceClass(ABC):
     def unsubscribe_value_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethods], None]
+        callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given value changes."""
         pass
@@ -193,7 +193,7 @@ class ServiceClass(ABC):
     def subscribe_state_event(
         self,
         uuid: UUID,
-        callback: Callable[[State, WappstoMethods], None]
+        callback: Callable[[State, WappstoMethod], None]
     ) -> None:
         """Subscribe a function to be call on given state changes."""
         pass
@@ -202,7 +202,7 @@ class ServiceClass(ABC):
     def unsubscribe_state_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethods], None]
+        callback: Callable[[Device, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given state changes."""
         pass
