@@ -16,7 +16,7 @@ from pathlib import Path
 from enum import Enum
 
 
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Any, Dict, Optional, Union, Callable, cast
 
 
 from .modules.network import Network
@@ -34,10 +34,10 @@ from .service.iot_api import IoTAPI
 from .modules.value import Value
 # from .modules.value import Delta  # Note: Not ready yet!
 # from .modules.value import Period  # Note: Not ready yet!
-from .modules.value import PermissionType
 from .modules.template import ValueTemplate
 
 from .schema.base_schema import LogValue
+from .schema.base_schema import PermissionType
 
 from .service import template as service
 
@@ -91,7 +91,7 @@ __log.addHandler(logging.NullHandler())
 def onStatusChange(
     StatusID: Union[service.StatusID, connection.StatusID],
     callback: Callable[[Union[service.StatusID, connection.StatusID], Any], None]
-):
+) -> None:
     """
     Configure an action when the Status have changed.
 
@@ -108,7 +108,7 @@ def onStatusChange(
 # #############################################################################
 
 __config_folder: Path
-__the_connection: ServiceClass = None
+__the_connection: Optional[ServiceClass] = None
 __connection_closed: bool = False
 __ping_pong_thread_killed = threading.Event()
 __offline_storage_thread_killed = threading.Event()
@@ -178,11 +178,20 @@ def config(
     #     _setup_RestAPI(__config_folder, configs)  # FIXME:
 
 
-def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
+def _setup_IoTAPI(
+    __config_folder: Path,
+    configs: None = None,
+    fast_send: bool = False,
+) -> None:
     # TODO: Setup the Connection.
     global __the_connection
     kwargs = _certificate_check(__config_folder)
-    __the_connection = IoTAPI(**kwargs, fast_send=fast_send)
+    __the_connection = IoTAPI(
+        ca=kwargs['ca'],
+        crt=kwargs['crt'],
+        key=kwargs['key'],
+        fast_send=fast_send,
+    )
 
 
 # def _setup_RestAPI(__config_folder, configs):
@@ -199,7 +208,7 @@ def _setup_IoTAPI(__config_folder, configs=None, fast_send=False):
 #     __the_connection = RestAPI(**kwargs, url=configs.end_point)
 
 
-def _certificate_check(path) -> Dict[str, Path]:
+def _certificate_check(path: Path) -> Dict[str, Path]:
     """Check if the right certificates are at the given path."""
     certi_path = {
         "ca": "ca.crt",
@@ -218,6 +227,8 @@ def _certificate_check(path) -> Dict[str, Path]:
 def _setup_ping_pong(period_s: Optional[int] = None) -> None:
     # TODO: Test me!
     __ping_pong_thread_killed.clear()
+    thread: threading.Timer
+
     if not period_s:
         return
 
@@ -227,6 +238,8 @@ def _setup_ping_pong(period_s: Optional[int] = None) -> None:
         nonlocal thread
         global __ping_pong_thread_killed
         if __ping_pong_thread_killed.is_set():
+            return
+        if __the_connection is None:
             return
         try:
             thread = threading.Timer(period_s, _ping)
@@ -262,7 +275,7 @@ def _setup_offline_storage(
         lambda _, data: offline_storage.save(data.model_dump_json(exclude_none=True)) if data else None
     )
 
-    def _resend_logic(status, status_data) -> None:
+    def _resend_logic(status: str, status_data: Any) -> None:
         nonlocal offline_storage
         global __offline_storage_thread_killed
         __log.debug(f"Resend called with: status={status}")
@@ -275,6 +288,8 @@ def _setup_offline_storage(
 
                 s_data = [json.loads(d) for d in data]
                 __log.debug(f"Sending Data: {s_data}")
+                if __the_connection is None:
+                    return
                 __the_connection._resend_data(
                     json.dumps(s_data)
                 )
@@ -326,7 +341,7 @@ def createNetwork(
 
     return Network(
         name=name,
-        connection=__the_connection,
+        connection=cast(ServiceClass, __the_connection),
         network_uuid=network_uuid,
         description=description
     )
@@ -358,6 +373,7 @@ def close() -> None:
     if not __connection_closed and __the_connection is not None:
         __log.info("Closing Wappsto IoT")
         __the_connection.close()
+        __the_connection = None
         __connection_closed = True
     # Disconnect
     pass

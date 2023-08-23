@@ -41,6 +41,10 @@ class ServiceClass(ABC):
     #                               Helper API
     # #########################################################################
 
+    def _resend_data(self, data: Union[str, bytes]) -> None:
+        """For internal resending of data."""
+        pass
+
     def ping(self) -> None:
         """Should send a ping to check the connection."""
         pass
@@ -68,12 +72,12 @@ class ServiceClass(ABC):
         pass
 
     @abstractmethod
-    def post_network(self, data) -> bool:
+    def post_network(self, data: Network) -> bool:
         """Create the network."""
         pass
 
     @abstractmethod
-    def put_network(self, uuid: UUID, data) -> bool:
+    def put_network(self, uuid: UUID, data: Network) -> bool:
         """Make changes to a network."""
         pass
 
@@ -154,7 +158,7 @@ class ServiceClass(ABC):
     def unsubscribe_value_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[ValueUnion, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given value changes."""
         pass
@@ -202,13 +206,13 @@ class ServiceClass(ABC):
     def unsubscribe_state_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[State, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given state changes."""
         pass
 
     @abstractmethod
-    def post_state(self, value_uuid: UUID, data: State) -> bool:
+    def post_state(self, value_uuid: UUID, data: Union[State, LogValue]) -> bool:
         """Create given state."""
         # url=f"/services/2.0/{uuid}/state",
         pass
@@ -219,7 +223,7 @@ class ServiceClass(ABC):
         pass
 
     @abstractmethod
-    def put_state(self, uuid: UUID, data: State) -> bool:
+    def put_state(self, uuid: UUID, data: Union[State, LogValue]) -> bool:
         """Make changes to a state."""
         pass
 

@@ -6,6 +6,7 @@ from enum import Enum
 
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Optional
 from typing import Union
@@ -77,7 +78,7 @@ class Device:
         self.log: logging.Logger = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
-        self.__callbacks: Dict[str, Callable[[...], ...]] = {}
+        self.__callbacks: Dict[str, Callable[[WSchema.Device, WappstoMethod], None]] = {}
 
         self.parent = parent
         self.element: WSchema.Device
@@ -85,7 +86,7 @@ class Device:
         self.children_uuid_mapping: Dict[uuid.UUID, Value] = {}
         self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
-        self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
+        # self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
 
         self.connection: ServiceClass = parent.connection
 
@@ -104,7 +105,7 @@ class Device:
             communication=communication,
             meta=WSchema.DeviceMeta(
                 version=WSchema.WappstoVersion.V2_0,
-                type=WSchema.WappstoMetaType.DEVICE,
+                type=WSchema.DeviceMeta.WappstoMetaType.DEVICE,
                 id=self.uuid
             )
         )
@@ -133,7 +134,7 @@ class Device:
     @property
     def name(self) -> str:
         """Returns the name of the value."""
-        return self.element.name
+        return cast(str, self.element.name)
 
     @property
     def uuid(self) -> uuid.UUID:
@@ -145,8 +146,8 @@ class Device:
         # NOTE: If there was a diff, post local one.
         self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
         self.element.meta = element.meta.model_copy(update=self.element.meta)
-        for nr, value in enumerate(self.element.value):
-            self.cloud_id_mapping[nr] = value
+        # for nr, value in enumerate(self.element.value):
+        #     self.cloud_id_mapping[nr] = value
 
     def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
         """Check if the required Argument count for given function fits."""

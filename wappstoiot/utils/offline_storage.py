@@ -10,7 +10,6 @@ from pathlib import Path
 
 from typing import Iterator
 from typing import List
-from typing import Optional
 from typing import Union
 
 
@@ -23,7 +22,7 @@ class OfflineStorage(ABC):
         ...
 
     @abstractmethod
-    def load(self, max_count: Optional[int] = None) -> List[str]:
+    def load(self, max_count: int = 1) -> List[str]:
         """Load the saved data, and return a list with it."""
         ...
 
@@ -84,7 +83,7 @@ class OfflineStorageFiles(OfflineStorage):
             file.write(f"{data}")
         self._files.append(datafile)
 
-    def load(self, max_count: Optional[int] = None) -> List[str]:
+    def load(self, max_count: int = 1) -> List[str]:
         """Load the saved data, and return a list with it."""
         self.log.debug(f"Load {max_count} lines.")
         data_files = self._sort_files(max_count)

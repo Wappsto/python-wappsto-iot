@@ -32,7 +32,7 @@ from .base_schema import IdList
 from .base_schema import DeleteList
 
 
-def pair_wise(values: Iterable) -> Iterable:
+def pair_wise(values: Iterable[str]) -> Iterable[Tuple[str, str]]:
     """Pair up the given values, two by two (hands of blue)."""
     a = iter(values)
     return zip_longest(a, a)
@@ -80,7 +80,9 @@ class WappstoObjectType(str, Enum):
     STATE = "state"
 
 
-ObjectType2BaseModel: Dict[WappstoObjectType, Union[Type[Network], Type[Device], Type[ValueUnion], Type[State]]] = {
+ObjectType2BaseModel: Dict[WappstoObjectType, Union[
+    Type[Network], Type[Device], Type[ValueUnion], Type[State], Type[LogValue]]
+] = {
     WappstoObjectType.NETWORK: Network,
     WappstoObjectType.DEVICE: Device,
     WappstoObjectType.VALUE: ValueUnion,

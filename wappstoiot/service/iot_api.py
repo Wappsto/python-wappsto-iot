@@ -47,6 +47,14 @@ from ..connections.sslsocket import TlsSocket
 from ..connections.protocol import Connection
 
 
+RpcSchemas = Union[
+    slxjsonrpc.RpcBatch,
+    slxjsonrpc.RpcError,
+    slxjsonrpc.RpcNotification,
+    slxjsonrpc.RpcRequest,
+    slxjsonrpc.RpcResponse,
+]
+
 # POST   -> onCreate
 # GET    -> onRefresh
 # PUT    -> onChange
@@ -210,7 +218,7 @@ class IoTAPI(ServiceClass):
                 self.log.exception("Receive Handler Error:")
         self.log.debug("Receive Handler Stopped!")
 
-    def _send_logic(self, data: slxjsonrpc.RpcSchemas, _id=None) -> None:
+    def _send_logic(self, data: RpcSchemas) -> None:
         # NOTE (MBK): Something do not work here!
         # if not data:
         #     return
@@ -284,7 +292,7 @@ class IoTAPI(ServiceClass):
         data: List[Any],
         url: str,
         method: WappstoMethod,
-    ) -> slxjsonrpc.RpcSchemas:
+    ) -> RpcSchemas:
         _cb_event = threading.Event()
         _err_data: Optional[ErrorModel] = None
 
@@ -348,7 +356,7 @@ class IoTAPI(ServiceClass):
 
     def _no_reply_send(
         self,
-        data: WappstoObject,
+        data: Optional[Union[WappstoObject, LogValue]],
         url: str,
         method: WappstoMethod,
     ) -> bool:
@@ -397,7 +405,7 @@ class IoTAPI(ServiceClass):
 
     def _reply_send(
         self,
-        data: WappstoObject,
+        data: Optional[WappstoObject],
         url: str,
         method: WappstoMethod,
     ) -> Optional[WappstoObject]:
@@ -656,7 +664,7 @@ class IoTAPI(ServiceClass):
     def unsubscribe_value_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[ValueUnion, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given value changes."""
         self.subscribers.get(uuid, []).remove(callback)
@@ -690,7 +698,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        temp: Optional[UUID] = getattr(data, "id", None)
+        temp: Optional[List[UUID]] = getattr(data, "id", None)
         if not temp:
             return None
         return temp[0]
@@ -728,12 +736,12 @@ class IoTAPI(ServiceClass):
     def unsubscribe_state_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[State, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given state changes."""
         self.subscribers.get(uuid, []).remove(callback)
 
-    def post_state(self, value_uuid: UUID, data: State) -> bool:
+    def post_state(self, value_uuid: UUID, data: Union[State, LogValue]) -> bool:
         """Create given state."""
         # url=f"/services/2.0/{uuid}/state",
         return self._no_reply_send(

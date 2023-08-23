@@ -45,14 +45,17 @@ class Network(object):
 
         kwargs = locals()
         self.__uuid: uuid.UUID = network_uuid
-        self.element: WSchema.Network = self.schema()
+        self.element: WSchema.Network
 
-        self.__callbacks: Dict[str, Callable[[...], ...]] = {}
+        self.__callbacks: Dict[
+            str,
+            Callable[[WSchema.Network, WappstoMethod], None],
+        ] = {}
 
         self.children_uuid_mapping: Dict[uuid.UUID, Device] = {}
         self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
-        self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
+        # self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
 
         self.connection: ServiceClass = connection
 
@@ -61,7 +64,7 @@ class Network(object):
             description=description,
             meta=WSchema.NetworkMeta(
                 version=WSchema.WappstoVersion.V2_0,
-                type=WSchema.WappstoMetaType.NETWORK,
+                type=WSchema.NetworkMeta.WappstoMetaType.NETWORK,
                 id=self.uuid
             )
         )
@@ -111,13 +114,13 @@ class Network(object):
     #   Save/Load helper methods
     # -------------------------------------------------------------------------
 
-    def __update_self(self, element: WSchema.Network):
+    def __update_self(self, element: WSchema.Network) -> None:
         # TODO(MBK): Check if new devices was added! & Check diff.
         # NOTE: If there was a diff, post local one.
         self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
         self.element.meta = element.meta.model_copy(update=self.element.meta)
-        for nr, device in enumerate(self.element.device):
-            self.cloud_id_mapping[nr] = device
+        # for nr, device in enumerate(self.element.device):
+        #     self.cloud_id_mapping[nr] = device
 
     # -------------------------------------------------------------------------
     #   Network 'on-' methods
@@ -138,7 +141,7 @@ class Network(object):
         def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
-                    callback(obj)
+                    callback(self)
             except Exception:
                 self.log.exception("OnChange callback error.")
                 raise
@@ -170,7 +173,7 @@ class Network(object):
         def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.POST:
-                    callback(obj)
+                    callback(self)
             except Exception:
                 self.log.exception("onCreate callback error.")
                 raise
@@ -208,7 +211,7 @@ class Network(object):
         def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.GET:
-                    callback(obj)
+                    callback(self)
             except Exception:
                 self.log.exception("onRefresh callback error.")
                 raise

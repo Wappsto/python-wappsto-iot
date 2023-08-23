@@ -6,7 +6,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Type
+# from typing import TypeAlias
 from typing import Union
 
 from pydantic import BaseModel
@@ -455,9 +455,9 @@ class BaseValue(BaseModel):
 class Number(BaseModel):
     """Substructure for the Number value."""
 
-    min: Union[float, int]
-    max: Union[float, int]
-    step: Union[float, int]
+    min: Union[float, int, str]
+    max: Union[float, int, str]
+    step: Union[float, int, str]
     mapping: Optional[Dict[str, Any]] = None
     meaningful_zero: Optional[bool] = None
     ordered_mapping: Optional[bool] = None
@@ -643,8 +643,8 @@ class DeleteList(BaseModel):
 
 
 """A collection of all Wappsto Value Types."""
-Value: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
-ValueUnion: Type = Union[StringValue, NumberValue, BlobValue, XmlValue]
+Value = Union[StringValue, NumberValue, BlobValue, XmlValue]
+ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
 """A collection of all Wappsto Types."""
 WappstoObject = Union[Network, Device, Value, State, IdList, DeleteList]
