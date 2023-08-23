@@ -1,6 +1,0 @@
-from _typeshed import Incomplete
-
-wappsto_letters: Incomplete
-
-def legal_name(name: str) -> bool: ...
-def illegal_characters(name: str) -> str: ...
