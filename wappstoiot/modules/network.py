@@ -324,7 +324,7 @@ class Network(object):
 
         if illegal_chars:
             raise ValueError(
-                f"Given name contain a illegal character: {illegal_chars}"
+                f"Given name contain a illegal character: {illegal_chars}\n"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
