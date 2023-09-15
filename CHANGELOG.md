@@ -1,4 +1,4 @@
-v0.6.10 (sep 12 2023)
+v0.6.10 (sep 15 2023)
 ===============================================================================
 ## Added
  * `remove_illegal_characters` function to help remove the illegal characters.
