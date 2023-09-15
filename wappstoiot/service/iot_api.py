@@ -2,6 +2,7 @@
 import copy
 import json
 import logging
+import pathlib
 import re
 import threading
 
@@ -15,6 +16,7 @@ from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 from typing import Union
 
 import slxjsonrpc
@@ -23,16 +25,13 @@ from slxjsonrpc.schema.jsonrpc import ErrorModel
 from .template import StatusID
 from .template import ServiceClass
 
-from ..schema.base_schema import BlobValue
 from ..schema.base_schema import Device
-from ..schema.base_schema import Network
-from ..schema.base_schema import NumberValue
-from ..schema.base_schema import State
-from ..schema.base_schema import StringValue
-from ..schema.base_schema import XmlValue
-from ..schema.base_schema import WappstoObject
 from ..schema.base_schema import IdList
 from ..schema.base_schema import LogValue
+from ..schema.base_schema import Network
+from ..schema.base_schema import State
+from ..schema.base_schema import ValueUnion
+from ..schema.base_schema import WappstoObject
 
 from ..schema.iot_schema import JsonData
 from ..schema.iot_schema import Identifier
@@ -48,8 +47,13 @@ from ..connections.sslsocket import TlsSocket
 from ..connections.protocol import Connection
 
 
-ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
-
+RpcSchemas = Union[
+    slxjsonrpc.RpcBatch,
+    slxjsonrpc.RpcError,
+    slxjsonrpc.RpcNotification,
+    slxjsonrpc.RpcRequest,
+    slxjsonrpc.RpcResponse,
+]
 
 # POST   -> onCreate
 # GET    -> onRefresh
@@ -104,21 +108,26 @@ class IoTAPI(ServiceClass):
         )
 
         params = {
-            x: Union[Success, JsonData] for x in WappstoMethod
+            x: JsonData for x in WappstoMethod
         }
 
         result = {
-            WappstoMethod.GET: JsonReply,
-            WappstoMethod.POST: JsonReply,
-            WappstoMethod.PUT: JsonReply,
-            WappstoMethod.DELETE: JsonReply,
-            # WappstoMethod.PATCH: JsonReply,
-            WappstoMethod.HEAD: JsonReply,
+            WappstoMethod.GET: Union[JsonReply, Success],
+            WappstoMethod.POST: Union[JsonReply, Success],
+            WappstoMethod.PUT: Union[JsonReply, Success],
+            WappstoMethod.DELETE: Union[JsonReply, Success],
+            # WappstoMethod.PATCH: Union[JsonReply, Success],
+            WappstoMethod.HEAD: Union[JsonReply, Success],
         }
 
         self.subscribers: Dict[
             UUID,
-            List[Callable[[WappstoObject, WappstoMethod], None]]
+            List[Union[
+                Callable[[Network, WappstoMethod], None],
+                Callable[[Device, WappstoMethod], None],
+                Callable[[ValueUnion, WappstoMethod], None],
+                Callable[[State, WappstoMethod], None],
+            ]]
         ] = {}
 
         method_cb = {
@@ -138,18 +147,21 @@ class IoTAPI(ServiceClass):
             result=result,
             params=params,
         )
+        self.jsonrpc._verbose = True
 
         self.killed = threading.Event()
         self.workers = ThreadPoolExecutor(max_workers=worker_count)
 
         self.workers.submit(self._receive_handler)
 
-    def close(self):
+    def close(self) -> None:
         """Closes the IoTApi down."""
         self.killed.set()
         self.log.debug("Closing Connection.")
         self.connection.close()
         self.log.debug("Closing Workers")
+        # while self.workers._work_queue.qsize() > 1:
+        #     time.sleep(0.02)
         self.workers.shutdown()
         self.log.debug("IoTAPI Closed.")
 
@@ -157,7 +169,7 @@ class IoTAPI(ServiceClass):
     #                              Helper Methods
     # #########################################################################
 
-    def _url_gen(self, crt):
+    def _url_gen(self, crt: pathlib.Path) -> Tuple[str, int]:
         cer = certificate_info_extraction(crt_path=crt)
         endpoint = cer.get('issuer', {}).get('commonName')
         port = self.wappstoPort.get(endpoint.split('.')[0], 443)
@@ -172,7 +184,7 @@ class IoTAPI(ServiceClass):
         #     addr = f'{addr}:{port}'
         return (addr, port)
 
-    def _receive_handler(self):
+    def _receive_handler(self) -> None:
         self.log.debug("Receive Handler Started!")
         while not self.killed.is_set():
             try:
@@ -202,10 +214,11 @@ class IoTAPI(ServiceClass):
                 observer.post(StatusID.SEND, reply)
 
             except Exception:
+                self.log.error(f"data: {data}")
                 self.log.exception("Receive Handler Error:")
         self.log.debug("Receive Handler Stopped!")
 
-    def _send_logic(self, data, _id=None):
+    def _send_logic(self, data: RpcSchemas) -> None:
         # NOTE (MBK): Something do not work here!
         # if not data:
         #     return
@@ -219,7 +232,7 @@ class IoTAPI(ServiceClass):
                     send_data = copy.copy(data)
 
                 if isinstance(send_data, slxjsonrpc.RpcBatch):
-                    _id = "; ".join(x.id for x in send_data.__root__)
+                    _id = "; ".join(x.id for x in send_data.root)
                 elif send_data:
                     _id = send_data.id
 
@@ -228,9 +241,9 @@ class IoTAPI(ServiceClass):
 
                 if send_data:
                     observer.post(StatusID.SENDING, send_data)
-                    self.connection.send(send_data.json(exclude_none=True))
+                    self.connection.send(send_data.model_dump_json(exclude_none=True))
 
-    def _resend_data(self, data):
+    def _resend_data(self, data: Union[str, bytes]) -> None:
         j_data = json.loads(data)
         _cb_event = threading.Event()
 
@@ -274,11 +287,16 @@ class IoTAPI(ServiceClass):
     #                               API Helpers
     # -------------------------------------------------------------------------
 
-    def __create_json_data(self, data: List[Any], url, method) -> None:
+    def __create_json_data(
+        self,
+        data: List[Any],
+        url: str,
+        method: WappstoMethod,
+    ) -> RpcSchemas:
         _cb_event = threading.Event()
         _err_data: Optional[ErrorModel] = None
 
-        def _err_callback(err_data: ErrorModel):
+        def _err_callback(err_data: ErrorModel) -> None:
             nonlocal _err_data
             nonlocal _cb_event
             _err_data = err_data
@@ -289,7 +307,9 @@ class IoTAPI(ServiceClass):
                 j_data = JsonData(
                     data=values,
                     url=url,
-                    meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
+                    meta=Identifier(fast=True, identifier=None)
+                    if self.fast_send and method != WappstoMethod.GET
+                    else None
                 )
 
                 self.log.debug(f"Sending for: {url}")
@@ -305,7 +325,12 @@ class IoTAPI(ServiceClass):
 
         return rpc_data, _cb_event, _err_data
 
-    def _no_reply_bulk_send(self, data: List, url, method) -> bool:
+    def _no_reply_bulk_send(
+        self,
+        data: List[Any],
+        url: str,
+        method: WappstoMethod,
+    ) -> bool:
         rpc_data, _cb_event, _err_data = self.__create_json_data(
             data=data, url=url, method=method,
         )
@@ -329,11 +354,17 @@ class IoTAPI(ServiceClass):
         self.log.debug(f"--CALLBACK None! {rpc_id}")
         return False
 
-    def _no_reply_send(self, data, url, method) -> bool:
+    def _no_reply_send(
+        self,
+        data: Optional[Union[WappstoObject, LogValue]],
+        url: str,
+        method: WappstoMethod,
+    ) -> bool:
         j_data = JsonData(
             data=data,
             url=url,
-            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
+            meta=Identifier(fast=True, identifier=None)
+            if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
@@ -341,7 +372,7 @@ class IoTAPI(ServiceClass):
         _cb_event = threading.Event()
         _err_data: Optional[ErrorModel] = None
 
-        def _err_callback(err_data: ErrorModel):
+        def _err_callback(err_data: ErrorModel) -> None:
             nonlocal _err_data
             nonlocal _cb_event
             _err_data = err_data
@@ -374,14 +405,15 @@ class IoTAPI(ServiceClass):
 
     def _reply_send(
         self,
-        data,
-        url,
-        method
-    ) -> Optional[Union[Device, Network, ValueUnion, State, IdList]]:
+        data: Optional[WappstoObject],
+        url: str,
+        method: WappstoMethod,
+    ) -> Optional[WappstoObject]:
         j_data = JsonData(
             data=data,
             url=url,
-            meta=Identifier(fast=True) if self.fast_send and method != WappstoMethod.GET else None
+            meta=Identifier(fast=True, identifier=None)
+            if self.fast_send and method != WappstoMethod.GET else None
         )
 
         self.log.debug(f"Sending for: {url}")
@@ -389,7 +421,7 @@ class IoTAPI(ServiceClass):
         _cb_event = threading.Event()
         _err_data: ErrorModel = None
 
-        def _err_callback(err_data: ErrorModel):
+        def _err_callback(err_data: ErrorModel) -> None:
             nonlocal _err_data
             nonlocal _cb_event
             _err_data = err_data
@@ -397,7 +429,7 @@ class IoTAPI(ServiceClass):
 
         _data: Optional[JsonReply] = None
 
-        def _data_callback(data: JsonReply):
+        def _data_callback(data: JsonReply) -> None:
             nonlocal _data
             nonlocal _cb_event
             _data = data
@@ -632,7 +664,7 @@ class IoTAPI(ServiceClass):
     def unsubscribe_value_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[ValueUnion, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given value changes."""
         self.subscribers.get(uuid, []).remove(callback)
@@ -666,7 +698,7 @@ class IoTAPI(ServiceClass):
             method=WappstoMethod.GET
         )
 
-        temp = getattr(data, "id", None)
+        temp: Optional[List[UUID]] = getattr(data, "id", None)
         if not temp:
             return None
         return temp[0]
@@ -704,12 +736,12 @@ class IoTAPI(ServiceClass):
     def unsubscribe_state_event(
         self,
         uuid: UUID,
-        callback: Callable[[Device, WappstoMethod], None]
+        callback: Callable[[State, WappstoMethod], None]
     ) -> None:
         """Unsubscribe a function from given state changes."""
         self.subscribers.get(uuid, []).remove(callback)
 
-    def post_state(self, value_uuid: UUID, data: State) -> bool:
+    def post_state(self, value_uuid: UUID, data: Union[State, LogValue]) -> bool:
         """Create given state."""
         # url=f"/services/2.0/{uuid}/state",
         return self._no_reply_send(

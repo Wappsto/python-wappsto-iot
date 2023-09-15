@@ -6,6 +6,7 @@ from enum import Enum
 
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import Optional
 from typing import Union
@@ -25,7 +26,7 @@ from ..utils import name_check
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    # NOTE: To avoid ciclic import
+    # NOTE: To avoid circle import
     from .network import Network
 
 
@@ -74,10 +75,10 @@ class Device:
         description: Optional[str] = None,
     ):
         """Configure the Device settings."""
-        self.log = logging.getLogger(__name__)
+        self.log: logging.Logger = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
-        self.__callbacks: Dict[str, Callable[[...], ...]] = {}
+        self.__callbacks: Dict[str, Callable[[WSchema.Device, WappstoMethod], None]] = {}
 
         self.parent = parent
         self.element: WSchema.Device
@@ -85,7 +86,7 @@ class Device:
         self.children_uuid_mapping: Dict[uuid.UUID, Value] = {}
         self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
-        self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
+        # self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
 
         self.connection: ServiceClass = parent.connection
 
@@ -104,7 +105,7 @@ class Device:
             communication=communication,
             meta=WSchema.DeviceMeta(
                 version=WSchema.WappstoVersion.V2_0,
-                type=WSchema.WappstoMetaType.DEVICE,
+                type=WSchema.DeviceMeta.WappstoMetaType.DEVICE,
                 id=self.uuid
             )
         )
@@ -133,20 +134,20 @@ class Device:
     @property
     def name(self) -> str:
         """Returns the name of the value."""
-        return self.element.name
+        return cast(str, self.element.name)
 
     @property
     def uuid(self) -> uuid.UUID:
         """Returns the name of the value."""
         return self.__uuid
 
-    def __update_self(self, element: WSchema.Device):
+    def __update_self(self, element: WSchema.Device) -> None:
         # TODO(MBK): Check if new devices was added! & Check diff.
         # NOTE: If there was a diff, post local one.
-        self.element = element.copy(update=self.element.dict(exclude_none=True))
-        self.element.meta = element.meta.copy(update=self.element.meta)
-        for nr, value in enumerate(self.element.value):
-            self.cloud_id_mapping[nr] = value
+        self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
+        self.element.meta = element.meta.model_copy(update=self.element.meta)
+        # for nr, value in enumerate(self.element.value):
+        #     self.cloud_id_mapping[nr] = value
 
     def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
         """Check if the required Argument count for given function fits."""
@@ -178,7 +179,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb(obj, method) -> None:
+        def _cb(obj: WSchema.Device, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.DELETE:
                     callback(self)
@@ -217,7 +218,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onRefresh callback, are called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.Device, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.GET:
                     callback(self)
@@ -249,7 +250,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onChange callback, are called with 1 argument.")
 
-        def _cb(obj, method) -> None:
+        def _cb(obj: WSchema.Device, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.PUT:
                     callback(self)
@@ -281,7 +282,7 @@ class Device:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, are called with 1 argument.")
 
-        def _cb(obj, method) -> None:
+        def _cb(obj: WSchema.Device, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.POST:
                     callback(self)
@@ -367,7 +368,7 @@ class Device:
 
         if illegal_chars:
             raise ValueError(
-                f"Given name contain a illegal character: {illegal_chars}"
+                f"Given name contain a illegal character: {illegal_chars}\n"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -413,7 +414,7 @@ class Device:
 
         if illegal_chars:
             raise ValueError(
-                f"Given name contain a illegal character: {illegal_chars}"
+                f"Given name contain a illegal character: {illegal_chars}\n"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -459,7 +460,7 @@ class Device:
 
         if illegal_chars:
             raise ValueError(
-                f"Given name contain a illegal character: {illegal_chars}"
+                f"Given name contain a illegal character: {illegal_chars}\n"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -505,7 +506,7 @@ class Device:
 
         if illegal_chars:
             raise ValueError(
-                f"Given name contain a illegal character: {illegal_chars}"
+                f"Given name contain a illegal character: {illegal_chars}\n"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -545,7 +546,7 @@ class Device:
 
         if illegal_chars:
             raise ValueError(
-                f"Given name contain a illegal character: {illegal_chars}"
+                f"Given name contain a illegal character: {illegal_chars}\n"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -559,17 +560,17 @@ class Device:
             name=name,
             value_uuid=value_uuid,
             permission=permission,
-            **valueSettings[value_template].dict()
+            **valueSettings[value_template].model_dump()
         )
 
         self.__add_value(value_obj, name)
         return value_obj
 
-    def __add_value(self, value: Value, name: str):
+    def __add_value(self, value: Value, name: str) -> None:
         """Helper function for Create, to only localy create it."""
         self.children_uuid_mapping[value.uuid] = value
         self.children_name_mapping[name] = value.uuid
 
-    def close(self):
+    def close(self) -> None:
         """Do nothing, only here for compatibility."""
         pass

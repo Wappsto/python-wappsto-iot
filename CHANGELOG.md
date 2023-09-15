@@ -1,3 +1,12 @@
+v0.6.10 (sep 15 2023)
+===============================================================================
+## Added
+ * `remove_illegal_characters` function to help remove the illegal characters.
+
+## Changed
+ * Extended the legal characters list for name.
+
+
 v0.6.9 (Aug 18 2023)
 ===============================================================================
 ## Removed

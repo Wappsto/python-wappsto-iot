@@ -8,9 +8,8 @@ from contextlib import contextmanager
 from pathlib import Path
 
 
-from typing import Generator
+from typing import Iterator
 from typing import List
-from typing import Optional
 from typing import Union
 
 
@@ -23,7 +22,7 @@ class OfflineStorage(ABC):
         ...
 
     @abstractmethod
-    def load(self, max_count: Optional[int] = None) -> List[str]:
+    def load(self, max_count: int = 1) -> List[str]:
         """Load the saved data, and return a list with it."""
         ...
 
@@ -66,7 +65,7 @@ class OfflineStorageFiles(OfflineStorage):
         return temp
 
     @contextmanager
-    def auto_save(self, data: str) -> Generator:
+    def auto_save(self, data: str) -> Iterator[None]:
         """Used when replying on a trace."""
         # self.send_pending(name=name)  # Are send on class creation.
         try:
@@ -84,7 +83,7 @@ class OfflineStorageFiles(OfflineStorage):
             file.write(f"{data}")
         self._files.append(datafile)
 
-    def load(self, max_count: Optional[int] = None) -> List[str]:
+    def load(self, max_count: int = 1) -> List[str]:
         """Load the saved data, and return a list with it."""
         self.log.debug(f"Load {max_count} lines.")
         data_files = self._sort_files(max_count)

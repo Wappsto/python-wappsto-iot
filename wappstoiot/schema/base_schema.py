@@ -6,18 +6,38 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+# from typing import TypeAlias
 from typing import Union
 
 from pydantic import BaseModel
+from pydantic import ConfigDict
 from pydantic import conint
-from pydantic import constr
-from pydantic import Extra
+# from pydantic import constr
 from pydantic import Field
-from pydantic import root_validator
+from pydantic import field_serializer
+from pydantic import GenerateSchema
 from pydantic import UUID4
 
+from pydantic_core import CoreSchema
+from pydantic_core import core_schema
 
-def timestamp_converter(dt: datetime) -> str:
+
+class LaxStrGenerator(GenerateSchema):
+    """
+    A more relax converter, that make it work like Pydantic v1.
+
+    URL: https://github.com/pydantic/pydantic/issues/6045#issuecomment-1650443311
+    """
+
+    def str_schema(self) -> CoreSchema:
+        """Convert a string more relaxed."""
+        return core_schema.no_info_before_validator_function(str, core_schema.str_schema())
+
+
+BaseModel.model_config = ConfigDict(schema_generator=LaxStrGenerator)
+
+
+def timestamp_converter(dt: datetime) -> Optional[str]:
     """
     Return The default timestamp used for Wappsto.
 
@@ -26,6 +46,8 @@ def timestamp_converter(dt: datetime) -> str:
     Returns:
         The UTC time string in ISO format.
     """
+    if dt is None:
+        return None
     return dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
 
@@ -189,11 +211,10 @@ class Connection(BaseModel):
     timestamp: Optional[datetime] = None
     online: Optional[bool] = None
 
-    class Config:
-        """."""
-        json_encoders = {
-            datetime: timestamp_converter
-        }
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> Optional[str]:
+        """Convert datetime to Wappsto datetime standard."""
+        return timestamp_converter(value)
 
 
 class WarningItem(BaseModel):
@@ -217,7 +238,7 @@ class BaseMeta(BaseModel):
     """The base for all meta objects."""
 
     id: Optional[UUID4] = None
-    # NOTE: Set in the children-class.
+    # NOTE: Set in the children-class to enforce right BaseModel type.
     # #  type: Optional[WappstoMetaType] = None
     version: Optional[WappstoVersion] = None
 
@@ -240,13 +261,15 @@ class BaseMeta(BaseModel):
 
     oem: Optional[Optional[str]] = None
     accept_manufacturer_as_owner: Optional[Optional[bool]] = None
-    redirect: Optional[  # type: ignore
-        constr(
-            regex=r'^[0-9a-zA-Z_-]+$',  # noqa: F722
-            min_length=1,
-            max_length=200
-        )
-    ] = None
+
+    # NOTE: patterns do not work while the `LaxStrGenerator` are in use.
+    # redirect: Optional[  # type: ignore
+    #     constr(
+    #         pattern=r'^[0-9a-zA-Z_-]+$',  # noqa: F722
+    #         min_length=1,
+    #         max_length=200
+    #     )
+    # ] = None
 
     error: Optional[UUID4] = None
     warning: Optional[List[WarningItem]] = None
@@ -257,11 +280,10 @@ class BaseMeta(BaseModel):
 
     historical: Optional[bool] = None
 
-    class Config:
-        """."""
-        json_encoders = {
-            datetime: timestamp_converter
-        }
+    @field_serializer('created', 'updated', 'changed')
+    def serialize_timestamp(self, value: datetime) -> Optional[str]:
+        """Convert datetime to Wappsto datetime standard."""
+        return timestamp_converter(value)
 
 
 class EventlogMeta(BaseMeta):
@@ -316,6 +338,7 @@ class DeviceMeta(BaseMeta):
 
     class WappstoMetaType(str, Enum):
         """Used instead of typing.Literal."""
+
         DEVICE = "device"
 
     type: Optional[WappstoMetaType] = None
@@ -328,6 +351,7 @@ class NetworkMeta(BaseMeta):
 
     class WappstoMetaType(str, Enum):
         """Used instead of typing.Literal."""
+
         NETWORK = "network"
 
     type: Optional[WappstoMetaType] = None
@@ -349,11 +373,10 @@ class Status(BaseModel):
     type: Optional[StatusType]
     meta: Optional[StatusMeta] = Field(None, title='meta-2.0:create')
 
-    class Config:
-        """."""
-        json_encoders = {
-            datetime: timestamp_converter
-        }
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> Optional[str]:
+        """Convert datetime to Wappsto datetime standard."""
+        return timestamp_converter(value)
 
 
 class Info(BaseModel):
@@ -366,37 +389,37 @@ class LogValue(BaseModel):
     """The required data for post of new values."""
 
     data: str
-    timestamp: Union[str, datetime]
+    timestamp: datetime
 
-    class Config:
-        """."""
-        extra = Extra.forbid
-        json_encoders = {
-            datetime: timestamp_converter,
-        }
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> Optional[str]:
+        """Convert datetime to Wappsto datetime standard."""
+        return timestamp_converter(value)
 
 
 class State(BaseModel):
     """The State object found in values, that contain the raw value."""
 
     data: str
-    type: Optional[StateType]
+    type: Optional[StateType] = None
 
     meta: Optional[StateMeta] = Field(None, title='meta-2.0:create')
     status: Optional[StateStatus] = None
     status_payment: Optional[str] = None
-    timestamp: Optional[str] = None
+    timestamp: Optional[datetime] = None
 
-    class Config:
-        """."""
-        extra = Extra.forbid
-        json_encoders = {
-            datetime: timestamp_converter,
-        }
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> Optional[str]:
+        """Convert datetime to Wappsto datetime standard."""
+        return timestamp_converter(value)
 
 
 class EventlogItem(BaseModel):
-    """Event Log structure, found in values."""
+    """Event Log structure, found in values.."""
 
     message: str
     timestamp: Optional[datetime] = None
@@ -404,6 +427,11 @@ class EventlogItem(BaseModel):
     level: Level
     type: Optional[str] = None
     meta: Optional[EventlogMeta] = Field(None, title='meta-2.0:create')
+
+    @field_serializer('timestamp')
+    def serialize_timestamp(self, value: datetime) -> Optional[str]:
+        """Convert datetime to Wappsto datetime standard."""
+        return timestamp_converter(value)
 
 
 class BaseValue(BaseModel):
@@ -418,16 +446,18 @@ class BaseValue(BaseModel):
     status: Optional[EventStatus] = None
     meta: Optional[ValueMeta] = Field(None, title='meta-2.0:create')
     state: Optional[List[Union[State, UUID4]]] = None
-    eventlog: Optional[List[Union['EventlogItem', UUID4]]] = None
+    eventlog: Optional[List[Union[EventlogItem, UUID4]]] = None
     info: Optional[Info] = None
+
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
 
 class Number(BaseModel):
     """Substructure for the Number value."""
 
-    min: Union[float, int]
-    max: Union[float, int]
-    step: Union[float, int]
+    min: Union[float, int, str]
+    max: Union[float, int, str]
+    step: Union[float, int, str]
     mapping: Optional[Dict[str, Any]] = None
     meaningful_zero: Optional[bool] = None
     ordered_mapping: Optional[bool] = None
@@ -461,13 +491,15 @@ class StringValue(BaseValue):
 
     string: Optional[String] = None
 
-    @root_validator(pre=True)
-    def value_type_check(cls, values):
-        """Validate that it is a String Value."""
-        keys = ["number", "blob", "xml"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A string value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values: Dict[str, Any]):
+    #     """Force the Validate for the value type."""
+    #     keys = ["number", "blob", "xml"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto string value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class NumberValue(BaseValue):
@@ -475,13 +507,15 @@ class NumberValue(BaseValue):
 
     number: Optional[Number] = None
 
-    @root_validator(pre=True)
-    def value_type_check(cls, values):
-        """Validate that it is a Number Value."""
-        keys = ["string", "blob", "xml"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A number value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values: Dict[str, Any]):
+    #     """Force the Validate for the value type."""
+    #     keys = ["string", "blob", "xml"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto number value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class BlobValue(BaseValue):
@@ -489,13 +523,15 @@ class BlobValue(BaseValue):
 
     blob: Optional[Blob] = None
 
-    @root_validator(pre=True)
-    def value_type_check(cls, values):
-        """Validate that it is a Blob Value."""
-        keys = ["number", "string", "xml"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A blob value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values: Dict[str, Any]):
+    #     """Force the Validate for the value type."""
+    #     keys = ["number", "string", "xml"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto blob value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class XmlValue(BaseValue):
@@ -503,13 +539,15 @@ class XmlValue(BaseValue):
 
     xml: Optional[Xml] = None
 
-    @root_validator(pre=True)
-    def value_type_check(cls, values):
-        """Validate that it is a Xml Value."""
-        keys = ["number", "blob", "blob"]
-        if any(key in values for key in keys):
-            raise TypeError(f"A xml value can not contain: {' '.join(keys)}")
-        return values
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
+
+    # @model_validator(mode='before')
+    # def value_type_check(cls, values: Dict[str, Any]):
+    #     """Force the Validate for the value type."""
+    #     keys = ["number", "blob", "string"]
+    #     if any(key in values for key in keys):
+    #         raise TypeError(f"A Wappsto xml value can not contain: {' '.join(keys)}")
+    #     return values
 
 
 class Device(BaseModel):
@@ -546,8 +584,7 @@ class Device(BaseModel):
     ] = None
     info: Optional[Info] = None
 
-    # class Config:
-    #     extra = Extra.forbid
+    # model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
 
 class Network(BaseModel):
@@ -559,8 +596,7 @@ class Network(BaseModel):
     meta: Optional[NetworkMeta] = Field(None, title='meta-2.0:create')
     info: Optional[Info] = None
 
-    # class Config:
-    #     extra = Extra.forbid
+    # model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
 
 class ApiMetaTypes(str, Enum):
@@ -594,9 +630,7 @@ class IdList(BaseModel):
     count: int
     meta: ApiMetaInfo
 
-    class Config:
-        """."""
-        extra = Extra.forbid
+    model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
 
 class DeleteList(BaseModel):
@@ -608,18 +642,9 @@ class DeleteList(BaseModel):
     meta: ApiMetaInfo
 
 
-Value = Union[
-    StringValue,
-    NumberValue,
-    BlobValue,
-    XmlValue,
-]
+"""A collection of all Wappsto Value Types."""
+Value = Union[StringValue, NumberValue, BlobValue, XmlValue]
+ValueUnion = Union[StringValue, NumberValue, BlobValue, XmlValue]
 
-WappstoObject = Union[
-    Network,
-    Device,
-    Value,
-    State,
-    IdList,
-    DeleteList,
-]
+"""A collection of all Wappsto Types."""
+WappstoObject = Union[Network, Device, Value, State, IdList, DeleteList]

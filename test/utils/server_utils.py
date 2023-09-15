@@ -21,6 +21,7 @@ def wait_until_or(check: Callable[[], bool], max_wait: int):
         if start <= time.time():
             break
         time.sleep(0.05)
+    time.sleep(0.05)  # NOTE: To ensure the reply to reach the server.
 
 
 def generate_value_extra_info(
@@ -125,7 +126,7 @@ def base_type_string_check(
 ):
     assert 'string' in value.extra_info.keys(), "Not a string type"
     assert value.extra_info.get('type') == target.type, "Type Have not been changed"
-    assert value.extra_info.get('string', {}).get('max') == target.max
+    assert str(value.extra_info.get('string', {}).get('max')) == str(target.max)
     assert value.extra_info.get('string', {}).get('encoding') == target.encoding
 
 
@@ -135,7 +136,7 @@ def base_type_blob_check(
 ):
     assert 'blob' in value.extra_info.keys(), "Not a blob type"
     assert value.extra_info.get('type') == target.type, "Type Have not been changed"
-    assert value.extra_info.get('blob', {}).get('max') == target.max
+    assert str(value.extra_info.get('blob', {}).get('max')) == str(target.max)
     assert value.extra_info.get('blob', {}).get('encoding') == target.encoding
 
 

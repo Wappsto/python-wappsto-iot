@@ -7,6 +7,7 @@ from datetime import datetime
 
 from typing import Any
 from typing import Callable
+from typing import cast
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -20,8 +21,6 @@ from ..schema import base_schema as WSchema
 from ..schema.base_schema import PermissionType
 from ..schema.base_schema import LogValue
 from ..schema.iot_schema import WappstoMethod
-
-from ..schema.base_schema import timestamp_converter
 
 from ..utils.Timestamp import str_to_datetime
 
@@ -92,17 +91,17 @@ class Value:
         value_uuid: Optional[uuid.UUID],  # Only used on loading.
         type: Optional[str] = None,
         permission: PermissionType = PermissionType.READWRITE,
-        min: Optional[Union[int, float]] = None,
-        max: Optional[Union[int, float]] = None,
-        step: Optional[Union[int, float]] = None,
+        min: Optional[str] = None,
+        max: Optional[str] = None,
+        step: Optional[str] = None,
         encoding: Optional[str] = None,
         xsd: Optional[str] = None,
         namespace: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
         delta: Optional[Union[int, float]] = None,
         description: Optional[str] = None,
-        meaningful_zero: Optional[str] = None,
-        mapping: Optional[Dict[str, Any]] = None,
+        meaningful_zero: Optional[bool] = None,
+        mapping: Optional[Dict[str, str]] = None,
         ordered_mapping: Optional[bool] = None,
         si_conversion: Optional[str] = None,
         unit: Optional[str] = None,
@@ -113,7 +112,13 @@ class Value:
 
         self.value_type = value_type
 
-        self.__callbacks: Dict[str, Callable] = {}
+        self.__callbacks: Dict[
+            str,
+            Union[
+                Callable[[WSchema.ValueUnion, WappstoMethod], None],
+                Callable[[WSchema.State, WappstoMethod], None],
+            ]
+        ] = {}
 
         self.schema = self.__value_type_2_Schema[value_type]
         self.report_state: WSchema.State
@@ -126,7 +131,7 @@ class Value:
             WSchema.XmlValue
         ] = self.schema()
 
-        self.children_name_mapping: Dict[str, uuid.UUID] = {}
+        self.children_name_mapping: Dict[WSchema.StateType, uuid.UUID] = {}
 
         self.connection: ServiceClass = parent.connection
 
@@ -159,7 +164,7 @@ class Value:
             **subValue,
             meta=WSchema.ValueMeta(
                 version=WSchema.WappstoVersion.V2_0,
-                type=WSchema.WappstoMetaType.VALUE,
+                type=WSchema.ValueMeta.WappstoMetaType.VALUE,
                 id=self.uuid
             )
         )
@@ -219,8 +224,6 @@ class Value:
         """
         if isinstance(self.control_state.timestamp, datetime):
             return self.control_state.timestamp
-        if isinstance(self.control_state.timestamp, str):
-            return str_to_datetime(self.control_state.timestamp)
         return None
 
     def getReportData(self) -> Optional[Union[float, str]]:
@@ -245,14 +248,12 @@ class Value:
         """
         if isinstance(self.report_state.timestamp, datetime):
             return self.report_state.timestamp
-        if isinstance(self.report_state.timestamp, str):
-            return str_to_datetime(self.report_state.timestamp)
         return None
 
     @property
     def name(self) -> str:
         """Returns the name of the value."""
-        return self.element.name
+        return cast(str, self.element.name)
 
     @property
     def uuid(self) -> uuid.UUID:
@@ -263,7 +264,7 @@ class Value:
     #   Helper methods
     # -------------------------------------------------------------------------
 
-    def __argumentCountCheck(self, callback: Callable[[Any], Any], requiredArgumentCount: int) -> bool:
+    def __argumentCountCheck(self, callback: Callable, requiredArgumentCount: int) -> bool:
         """Check if the requeried Argument count for given function fits."""
         allArgument: int = callback.__code__.co_argcount
         the_default_count: int = len(callback.__defaults__) if callback.__defaults__ is not None else 1
@@ -275,8 +276,8 @@ class Value:
     def __parseValueTemplate(
         self,
         ValueBaseType: ValueBaseType,
-        max_range: float,
-        min_range: Optional[float] = None,
+        max_range: str,
+        min_range: Optional[str] = None,
         step: Optional[float] = None,
         encoding: Optional[str] = None,
         mapping: Optional[Dict[str, Any]] = None,
@@ -286,14 +287,21 @@ class Value:
         si_conversion: Optional[str] = None,
         unit: Optional[str] = None,
         xsd: Optional[str] = None,
-    ) -> None:
+    ) -> Dict[
+        str,
+        Union[WSchema.Number, WSchema.Blob, WSchema.String, WSchema.Xml]
+    ]:
+        subValue: Dict[
+            str,
+            Union[WSchema.Number, WSchema.Blob, WSchema.String, WSchema.Xml]
+        ]
 
         if ValueBaseType == ValueBaseType.NUMBER:
             subValue = {
                 "number": WSchema.Number(
-                    min=min_range,
+                    min=cast(str, min_range),
                     max=max_range,
-                    step=step,
+                    step=cast(str, step),
                     mapping=mapping,
                     meaningful_zero=meaningful_zero,
                     ordered_mapping=ordered_mapping,
@@ -326,43 +334,50 @@ class Value:
         return subValue
 
     def __update_self(self, element: WSchema.Value) -> None:
-        old_type = type(element)
-        new_type = type(self.element)
+        new_elem = self.element.model_dump(exclude_none=True)
+        old_elem = element.model_dump(exclude_none=True)
 
-        new_dict = element.copy(update=self.element.dict(exclude_none=True))
-        new_dict.meta = element.meta.copy(update=new_dict.meta)
+        if type(self.element) is type(element):
+            new_model = cast(type(element), element.model_copy(update=new_elem))
+            new_model.meta = element.meta.model_copy(update=new_model.meta)
 
-        if new_type is old_type:
-            self.element = new_dict
+            self.element = new_model
 
-            if old_type is WSchema.NumberValue:
-                new_dict.number = element.number.copy(
-                    update=new_dict.number
+            if isinstance(element, WSchema.NumberValue):
+                new_model.number = element.number.model_copy(
+                    update=new_model.number
                 )
-            elif old_type is WSchema.StringValue:
-                new_dict.string = element.string.copy(
-                    update=new_dict.string
+            elif isinstance(element, WSchema.StringValue):
+                new_model.string = element.string.model_copy(
+                    update=new_model.string
                 )
-            elif old_type is WSchema.BlobValue:
-                new_dict.blob = element.blob.copy(
-                    update=new_dict.blob
+            elif isinstance(element, WSchema.BlobValue):
+                new_model.blob = element.blob.model_copy(
+                    update=new_model.blob
                 )
-            elif old_type is WSchema.XmlValue:
-                new_dict.xml = element.xml.copy(
-                    update=new_dict.xml
+            elif isinstance(element, WSchema.XmlValue):
+                new_model.xml = element.xml.model_copy(
+                    update=new_model.xml
                 )
         else:
-            new_dict = new_dict.dict(exclude_none=True)
-            if old_type is WSchema.StringValue:
-                new_dict.pop('string')
-            elif old_type is WSchema.NumberValue:
-                new_dict.pop('number')
-            elif old_type is WSchema.BlobValue:
-                new_dict.pop('blob')
-            elif old_type is WSchema.XmlValue:
-                new_dict.pop('xml')
-            self.log.debug(f"CC: {new_dict}")
-            self.element = self.schema(**new_dict)
+            if isinstance(element, WSchema.StringValue):
+                old_elem.pop('string')
+            elif isinstance(element, WSchema.NumberValue):
+                old_elem.pop('number')
+            elif isinstance(element, WSchema.BlobValue):
+                old_elem.pop('blob')
+            elif isinstance(element, WSchema.XmlValue):
+                old_elem.pop('xml')
+
+            old_dict = self.schema(**old_elem)
+            new_model = old_dict.model_copy(update=new_elem)
+
+            new_model.meta = element.meta.model_copy(
+                update=element.meta.model_dump(exclude_none=True)
+            )
+
+            self.log.debug(f"CC: {new_model}")
+            self.element = new_model
 
         # TODO: Check for the Difference Value-types & ensure that it is right.
 
@@ -370,14 +385,16 @@ class Value:
         state_count = len(self.element.state)
         if self.element.permission == PermissionType.NONE:
             return
-        elif state_count == 0:
+        elif self.element.permission is None:
+            return
+        elif state_count == 0 or self.element.state is None:
             self._createStates(self.element.permission)
             return
 
         state_uuid = self.element.state[0]
         state_obj = self.connection.get_state(uuid=state_uuid)
         self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
-        self.children_name_mapping[state_obj.type.name] = state_uuid
+        self.children_name_mapping[state_obj.type] = state_uuid
 
         if not state_obj:
             return
@@ -398,7 +415,7 @@ class Value:
         state_uuid = self.element.state[1]
         state_obj = self.connection.get_state(uuid=state_uuid)
         self.log.info(f"Found State: {state_uuid} for device: {self.uuid}")
-        self.children_name_mapping[state_obj.type.name] = state_uuid
+        self.children_name_mapping[state_obj.type] = state_uuid
 
         if state_obj.type == WSchema.StateType.REPORT:
             self.report_state = state_obj
@@ -438,7 +455,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The OnChange callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
             try:
                 if method in WappstoMethod.PUT:
                     callback(self)
@@ -479,7 +496,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 2):
             raise TypeError("The OnReport callback, is called with 2 argument.")
 
-        def _cb_float(obj, method):
+        def _cb_float(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, float(obj.data))
@@ -487,7 +504,7 @@ class Value:
                 self.log.exception("onReport callback error.")
                 raise
 
-        def _cb_str(obj, method):
+        def _cb_str(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, obj.data)
@@ -500,7 +517,7 @@ class Value:
         self.__callbacks['onReport'] = _cb
 
         self.connection.subscribe_state_event(
-            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT],
             callback=_cb
         )
 
@@ -509,8 +526,11 @@ class Value:
     def cancelOnReport(self) -> None:
         """Cancel the callback set in onReport-method."""
         self.connection.unsubscribe_state_event(
-            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
-            callback=self.__callbacks['onReport']
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT],
+            callback=cast(
+                Callable[[WSchema.State, WappstoMethod], None],
+                self.__callbacks['onReport'],
+            )
         )
 
     def onControl(
@@ -530,7 +550,8 @@ class Value:
         if not self.__argumentCountCheck(callback, 2):
             raise TypeError("The OnControl callback, is called with 2 argument.")
 
-        def _cb_float(obj, method):
+        def _cb_float(obj: WSchema.State, method: WappstoMethod) -> None:
+            data: Union[float, str]
             try:
                 if method == WappstoMethod.PUT:
                     try:
@@ -542,7 +563,7 @@ class Value:
                 self.log.exception("OnChange callback error.")
                 raise
 
-        def _cb_str(obj, method):
+        def _cb_str(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     callback(self, obj.data)
@@ -555,7 +576,7 @@ class Value:
         self.__callbacks['onControl'] = _cb
 
         self.connection.subscribe_state_event(
-            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL],
             callback=_cb
         )
 
@@ -564,8 +585,11 @@ class Value:
     def cancelOnControl(self) -> None:
         """Cancel the callback set in onControl-method."""
         self.connection.unsubscribe_state_event(
-            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
-            callback=self.__callbacks['onControl']
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL],
+            callback=cast(
+                Callable[[WSchema.State, WappstoMethod], None],
+                self.__callbacks['onControl'],
+            )
         )
 
     def onCreate(
@@ -583,7 +607,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.POST:
                     callback(self)
@@ -604,7 +628,10 @@ class Value:
         """Cancel the callback set in onCreate-method."""
         self.connection.unsubscribe_state_event(
             uuid=self.uuid,
-            callback=self.__callbacks['onCreate']
+            callback=cast(
+                Callable[[WSchema.State, WappstoMethod], None],
+                self.__callbacks['onCreate'],
+            )
         )
 
     def onRefresh(
@@ -624,7 +651,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onRefresh callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.GET:
                     callback(self)
@@ -635,7 +662,7 @@ class Value:
         self.__callbacks['onRefresh'] = _cb
 
         self.connection.subscribe_state_event(
-            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT],
             callback=_cb
         )
 
@@ -644,8 +671,11 @@ class Value:
     def cancelOnRefresh(self) -> None:
         """Cancel the callback set in onRefresh-method."""
         self.connection.unsubscribe_state_event(
-            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
-            callback=self.__callbacks['onRefresh']
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT],
+            callback=cast(
+                Callable[[WSchema.State, WappstoMethod], None],
+                self.__callbacks['onRefresh'],
+            )
         )
 
     def onDelete(
@@ -656,7 +686,7 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.DELETE:
                     callback(self)
@@ -677,7 +707,10 @@ class Value:
         """Cancel the callback set in onDelete-method."""
         self.connection.unsubscribe_value_event(
             uuid=self.uuid,
-            callback=self.__callbacks['onDelete']
+            callback=cast(
+                Callable[[WSchema.ValueUnion, WappstoMethod], None],
+                self.__callbacks['onDelete'],
+            )
         )
 
     # -------------------------------------------------------------------------
@@ -708,12 +741,12 @@ class Value:
         """Request a delete of the Device, & all it's Children."""
         self.connection.delete_value(uuid=self.uuid)
 
-    def _update_local_report(self, data, timestamp):
+    def _update_local_report(self, data: LogValue) -> None:
         if (
             data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
         ):
-            self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
-            self.report_state.timestamp = timestamp or data.timestamp
+            self.report_state = self.report_state.model_copy(update=data.model_dump(exclude_none=True))
+            self.report_state.timestamp = data.timestamp
             if self.report_state.timestamp:
                 self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
 
@@ -735,20 +768,22 @@ class Value:
         # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
 
+        data: LogValue
+
         if isinstance(value, list):
             if not len(value):
                 return
 
             # TODO: Make sure the timestamps are set.
             sorted_values = sorted(value, key=lambda r: r.timestamp)
-            self._update_local_report(sorted_values[-1], sorted_values[-1].timestamp)
+            self._update_local_report(sorted_values[-1])
 
             self.connection.put_bulk_state(
-                uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+                uuid=self.children_name_mapping[WSchema.StateType.REPORT],
                 data=[
                     LogValue(
                         data=x.data,
-                        timestamp=timestamp_converter(x.timestamp) if isinstance(x.timestamp, datetime) else x.timestamp
+                        timestamp=x.timestamp
                     ) for x in sorted_values
                 ],
             )
@@ -757,18 +792,18 @@ class Value:
         if not isinstance(value, LogValue):
             the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
             data = LogValue(
-                data=value,
-                timestamp=timestamp_converter(the_timestamp) if isinstance(the_timestamp, datetime) else the_timestamp,
+                data=str(value),
+                timestamp=the_timestamp,
             )
         else:
             # TODO: Make sure the timestamp is set.
             data = value
 
-        self._update_local_report(data, the_timestamp)
+        self._update_local_report(data)
 
         # NOTE: Single Report
         self.connection.put_state(
-            uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+            uuid=self.children_name_mapping[WSchema.StateType.REPORT],
             data=data,
         )
 
@@ -798,12 +833,12 @@ class Value:
     #     if (
     #         data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
     #     ):
-    #         self.report_state = self.report_state.copy(update=data.dict(exclude_none=True))
+    #         self.report_state = self.report_state.copy(update=data.model_dump(exclude_none=True))
     #         self.report_state.timestamp = the_timestamp
     #         if self.report_state.timestamp:
     #             self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
     #     self.connection.put_state(
-    #         uuid=self.children_name_mapping[WSchema.StateType.REPORT.name],
+    #         uuid=self.children_name_mapping[WSchema.StateType.REPORT],
     #         data=data
     #     )
 
@@ -825,18 +860,18 @@ class Value:
         self.log.info(f"Sending Control for: {self.control_state.meta.id}")
         the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
         data = WSchema.State(
-            data=value,
-            timestamp=timestamp_converter(the_timestamp)
+            data=str(value),
+            timestamp=the_timestamp,
         )
         if (
             data.timestamp and self.control_state.timestamp or self.control_state.timestamp
         ):
-            self.control_state = self.control_state.copy(update=data.dict(exclude_none=True))
+            self.control_state = self.control_state.model_copy(update=data.model_dump(exclude_none=True))
             self.control_state.timestamp = the_timestamp
             if self.control_state.timestamp:
                 self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
         self.connection.put_state(
-            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL],
             data=data
         )
 
@@ -851,40 +886,40 @@ class Value:
             self._CreateControl()
 
     def _CreateReport(self) -> None:
-        if not self.children_name_mapping.get(WSchema.StateType.REPORT.name):
-            self.children_name_mapping[WSchema.StateType.REPORT.name] = uuid.uuid4()
+        if not self.children_name_mapping.get(WSchema.StateType.REPORT):
+            self.children_name_mapping[WSchema.StateType.REPORT] = uuid.uuid4()
 
             self.report_state = WSchema.State(
                 data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.REPORT,
-                meta=WSchema.BaseMeta(
-                    id=self.children_name_mapping.get(WSchema.StateType.REPORT.name)
+                meta=WSchema.StateMeta(
+                    id=self.children_name_mapping.get(WSchema.StateType.REPORT)
                 )
             )
 
             self.connection.post_state(value_uuid=self.uuid, data=self.report_state)
 
     def _CreateControl(self) -> None:
-        if not self.children_name_mapping.get(WSchema.StateType.CONTROL.name):
-            self.children_name_mapping[WSchema.StateType.CONTROL.name] = uuid.uuid4()
+        if not self.children_name_mapping.get(WSchema.StateType.CONTROL):
+            self.children_name_mapping[WSchema.StateType.CONTROL] = uuid.uuid4()
 
             self.control_state = WSchema.State(
                 data="NA" if self.value_type == ValueBaseType.NUMBER else "",
                 type=WSchema.StateType.CONTROL,
-                meta=WSchema.BaseMeta(
-                    id=self.children_name_mapping[WSchema.StateType.CONTROL.name]
+                meta=WSchema.StateMeta(
+                    id=self.children_name_mapping[WSchema.StateType.CONTROL]
                 )
             )
             self.connection.post_state(value_uuid=self.uuid, data=self.control_state)
 
-        def _cb(obj, method: WappstoMethod) -> None:
+        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
                     if (
                         obj.timestamp and self.control_state.timestamp or not self.control_state.timestamp
                     ):
-                        self.log.info(f"Control Value updated: {obj.meta.id}, {obj.data}")
-                        self.control_state = self.control_state.copy(update=obj.dict(exclude_none=True))
+                        self.log.info(f"Control Value updated: {self.uuid}, {obj.data}")
+                        self.control_state = self.control_state.model_copy(update=obj.model_dump(exclude_none=True))
                         if self.control_state.timestamp:
                             self.control_state.timestamp = str_to_datetime(self.control_state.timestamp)
                             self.control_state.timestamp = self.control_state.timestamp.replace(tzinfo=None)
@@ -893,7 +928,7 @@ class Value:
                 raise
 
         self.connection.subscribe_state_event(
-            uuid=self.children_name_mapping[WSchema.StateType.CONTROL.name],
+            uuid=self.children_name_mapping[WSchema.StateType.CONTROL],
             callback=_cb
         )
 

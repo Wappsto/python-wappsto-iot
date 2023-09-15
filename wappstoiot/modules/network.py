@@ -45,14 +45,17 @@ class Network(object):
 
         kwargs = locals()
         self.__uuid: uuid.UUID = network_uuid
-        self.element: WSchema.Network = self.schema()
+        self.element: WSchema.Network
 
-        self.__callbacks: Dict[str, Callable[[...], ...]] = {}
+        self.__callbacks: Dict[
+            str,
+            Callable[[WSchema.Network, WappstoMethod], None],
+        ] = {}
 
         self.children_uuid_mapping: Dict[uuid.UUID, Device] = {}
         self.children_name_mapping: Dict[str, uuid.UUID] = {}
 
-        self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
+        # self.cloud_id_mapping: Dict[int, uuid.UUID] = {}
 
         self.connection: ServiceClass = connection
 
@@ -61,7 +64,7 @@ class Network(object):
             description=description,
             meta=WSchema.NetworkMeta(
                 version=WSchema.WappstoVersion.V2_0,
-                type=WSchema.WappstoMetaType.NETWORK,
+                type=WSchema.NetworkMeta.WappstoMetaType.NETWORK,
                 id=self.uuid
             )
         )
@@ -111,13 +114,13 @@ class Network(object):
     #   Save/Load helper methods
     # -------------------------------------------------------------------------
 
-    def __update_self(self, element: WSchema.Network):
+    def __update_self(self, element: WSchema.Network) -> None:
         # TODO(MBK): Check if new devices was added! & Check diff.
         # NOTE: If there was a diff, post local one.
-        self.element = element.copy(update=self.element.dict(exclude_none=True))
-        self.element.meta = element.meta.copy(update=self.element.meta)
-        for nr, device in enumerate(self.element.device):
-            self.cloud_id_mapping[nr] = device
+        self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
+        self.element.meta = element.meta.model_copy(update=self.element.meta)
+        # for nr, device in enumerate(self.element.device):
+        #     self.cloud_id_mapping[nr] = device
 
     # -------------------------------------------------------------------------
     #   Network 'on-' methods
@@ -135,10 +138,10 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onChange callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.PUT:
-                    callback(...)
+                    callback(self)
             except Exception:
                 self.log.exception("OnChange callback error.")
                 raise
@@ -152,7 +155,7 @@ class Network(object):
 
         return callback
 
-    def cancelOnChange(self):
+    def cancelOnChange(self) -> None:
         """Cancel the callback set in onChange-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
@@ -167,10 +170,10 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onCreate callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.POST:
-                    callback()
+                    callback(self)
             except Exception:
                 self.log.exception("onCreate callback error.")
                 raise
@@ -184,7 +187,7 @@ class Network(object):
 
         return callback
 
-    def cancelOnCreate(self):
+    def cancelOnCreate(self) -> None:
         """Cancel the callback set in onCreate-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
@@ -205,10 +208,10 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onRefresh callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.GET:
-                    callback()
+                    callback(self)
             except Exception:
                 self.log.exception("onRefresh callback error.")
                 raise
@@ -222,7 +225,7 @@ class Network(object):
 
         return callback
 
-    def cancelOnRefresh(self):
+    def cancelOnRefresh(self) -> None:
         """Cancel the callback set in onRefresh-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
@@ -244,7 +247,7 @@ class Network(object):
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onDelete callback, is called with 1 argument.")
 
-        def _cb(obj, method):
+        def _cb(obj: WSchema.Network, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.DELETE:
                     callback(self)
@@ -261,7 +264,7 @@ class Network(object):
 
         return callback
 
-    def cancelOnDelete(self):
+    def cancelOnDelete(self) -> None:
         """Cancel the callback set in onDelete-method."""
         self.connection.unsubscribe_network_event(
             uuid=self.uuid,
@@ -272,15 +275,15 @@ class Network(object):
     #   Network methods
     # -------------------------------------------------------------------------
 
-    def refresh(self):
+    def refresh(self) -> None:
         """Not implemented."""
         raise NotImplementedError("Method: 'refresh' is not Implemented.")
 
-    def change(self):
+    def change(self) -> None:
         """Not implemented."""
         pass
 
-    def delete(self):
+    def delete(self) -> None:
         """
         Normally it is used to unclaim a Network & delete all children.
 
@@ -321,7 +324,7 @@ class Network(object):
 
         if illegal_chars:
             raise ValueError(
-                f"Given name contain a illegal character: {illegal_chars}"
+                f"Given name contain a illegal character: {illegal_chars}\n"
                 f"May only contain: {name_check.wappsto_letters}"
             )
 
@@ -338,11 +341,11 @@ class Network(object):
         self.__add_device(device_obj, kwargs['name'])
         return device_obj
 
-    def __add_device(self, device: Device, name: str):
+    def __add_device(self, device: Device, name: str) -> None:
         """Helper function for Create, to only localy create it."""
         self.children_uuid_mapping[device.uuid] = device
         self.children_name_mapping[name] = device.uuid
 
-    def close(self):
+    def close(self) -> None:
         """Do nothing, only here for compatibility."""
         pass
