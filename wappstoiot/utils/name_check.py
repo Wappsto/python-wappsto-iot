@@ -3,10 +3,10 @@ import string
 
 
 wappsto_letters = (
-    string.digits +
-    string.ascii_letters +
-    " !#$%&'()*+,-./:;<=>?@[\\]^_`{|}~" +
-    'æøåÆØÅöäÖÄ'
+    string.digits
+    + string.ascii_letters
+    + " !#$%&'()*+,-./:;<=>?@[\\]^_`{|}~"
+    + 'æøåÆØÅöäÖÄ'
 )
 __wappsto_letter_set = set(wappsto_letters)
 
