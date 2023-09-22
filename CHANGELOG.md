@@ -1,4 +1,11 @@
-v0.6.10 (sep 15 2023)
+v0.7.0 (Sep 22 2023)
+===============================================================================
+
+## Changed
+ * Breaking Change! - If the server do not reply on any messages, it will now cast a `TimeoutError` exception.
+
+
+v0.6.10 (Sep 15 2023)
 ===============================================================================
 ## Added
  * `remove_illegal_characters` function to help remove the illegal characters.

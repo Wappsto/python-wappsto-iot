@@ -1,12 +1,12 @@
 import datetime
 import itertools
 import json
+import logging
 import socket
 import threading
 import time
 import traceback
 import uuid
-
 
 from typing import Dict
 from typing import List
@@ -77,6 +77,8 @@ class SimuServer(object):
         name: str,
         description: Optional[str] = None
     ):
+        self.log = logging.getLogger(__name__)
+        self.log.addHandler(logging.NullHandler())
         self.network_uuid: uuid.UUID = network_uuid
         self.network_name: str = name
         self.objects: Dict[uuid.UUID, ObjectModel] = {}
@@ -250,7 +252,7 @@ class SimuServer(object):
                     continue
 
                 temp_data, _ = mock_ssl_socket.return_value.sendall.call_args
-                print(f"temp_data: {temp_data}")
+                self.log.debug(f"Data Received: {temp_data}")
                 send_data = temp_data[0]
                 mock_ssl_socket.return_value.sendall.call_args = None
 
@@ -266,6 +268,7 @@ class SimuServer(object):
                     raise error
                 else:
                     if data != b'':
+                        self.log.debug(f"Data Reply: {data}")
                         return data
 
             time.sleep(0.1)
