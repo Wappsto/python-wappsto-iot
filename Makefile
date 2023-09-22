@@ -2,7 +2,7 @@ TEST_PATH=./test
 PY_VERSION=python3.10
 PY_ENV=env
 
-.PHONY: clean-pyc clean-build build
+.PHONY: clean-pyc clean-build build, test
 
 clean: clean-pyc clean-build
 
@@ -31,7 +31,7 @@ lint:
 	${PY_ENV}/bin/flake8 --docstring-convention google --ignore D212,W503  wappstoiot/*.py wappstoiot/**/*.py
 	${PY_ENV}/bin/mypy --strict --follow-imports=normal --python-version 3.7  wappstoiot/*.py wappstoiot/**/*.py
 
-test: lint
+test:
 	${PY_ENV}/bin/tox
 
 gen-stub:

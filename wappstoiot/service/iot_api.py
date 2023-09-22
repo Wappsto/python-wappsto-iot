@@ -352,7 +352,7 @@ class IoTAPI(ServiceClass):
             return True
         observer.post(StatusID.SENDERROR, rpc_data)
         self.log.debug(f"--CALLBACK None! {rpc_id}")
-        return False
+        raise TimeoutError(f'JsonRPC reply timeout on package: {rpc_id}')
 
     def _no_reply_send(
         self,
@@ -401,7 +401,7 @@ class IoTAPI(ServiceClass):
             return True
         observer.post(StatusID.SENDERROR, rpc_data)
         self.log.debug(f"--CALLBACK None! {rpc_id}")
-        return False
+        raise TimeoutError(f'JsonRPC reply timeout on package: {rpc_id}')
 
     def _reply_send(
         self,
@@ -459,7 +459,7 @@ class IoTAPI(ServiceClass):
                 return None
         self.log.debug(f"--CALLBACK None! {rpc_id}")
         observer.post(StatusID.SENDERROR, rpc_data)
-        return None
+        raise TimeoutError(f'JsonRPC reply timeout on package: {rpc_id}')
 
     # -------------------------------------------------------------------------
     #                              Callback Helpers
@@ -753,20 +753,34 @@ class IoTAPI(ServiceClass):
     def put_bulk_state(self, uuid: UUID, data: List[LogValue]) -> bool:
         """Make bulk changes the given state."""
         # url=f"/services/2.0/state/{uuid}",
-        return self._no_reply_bulk_send(
-            data=data,
-            url=f"/state/{uuid}",
-            method=WappstoMethod.PUT
-        )
+        try:
+            return self._no_reply_bulk_send(
+                data=data,
+                url=f"/state/{uuid}",
+                method=WappstoMethod.PUT
+            )
+        except TimeoutError:
+            msg = (
+                'Error in sending Values.\n'
+                'If Offline storage is enabled it will be send later.'
+            )
+            self.log.exception(msg)
 
     def put_state(self, uuid: UUID, data: Union[State, LogValue]) -> bool:
         """Make changes to a state."""
         # url=f"/services/2.0/state/{uuid}",
-        return self._no_reply_send(
-            data=data,
-            url=f"/state/{uuid}",
-            method=WappstoMethod.PUT
-        )
+        try:
+            return self._no_reply_send(
+                data=data,
+                url=f"/state/{uuid}",
+                method=WappstoMethod.PUT
+            )
+        except TimeoutError:
+            msg = (
+                'Error in sending Values.\n'
+                'If Offline storage is enabled it will be send later.'
+            )
+            self.log.exception(msg)
 
     def get_state(self, uuid: UUID) -> Union[State, None]:
         """Request to get given state data."""
