@@ -210,5 +210,5 @@ TODO List {icon cog spin}
 * [x] Autogen code Stub with: [Tool](https://mypy.readthedocs.io/en/stable/stubgen.html)
 * [ ] Make a github-test for Python v3.6.7
 * [ ] Detect if multiple is using same Certificate. (it disconnects Multiple times if it is the case)
-* [ ] [Pydantic Migrate to v2](https://docs.pydantic.dev/2.0/migration/)
+* [x] [Pydantic Migrate to v2](https://docs.pydantic.dev/2.0/migration/)
 * [ ] Enable `value.report` to take `LogValues` and/or `list[LogValues]`.

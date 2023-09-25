@@ -10,6 +10,7 @@ import atexit
 import json
 import logging
 import threading
+import time
 import uuid
 
 from pathlib import Path
@@ -111,6 +112,7 @@ __config_folder: Path
 __the_connection: Optional[ServiceClass] = None
 __connection_closed: bool = False
 __ping_pong_thread_killed = threading.Event()
+__offline_storage: Union[OfflineStorage, bool] = False
 __offline_storage_thread_killed = threading.Event()
 
 
@@ -259,30 +261,31 @@ def _setup_offline_storage(
 ) -> None:
     global __the_connection
     global __offline_storage_thread_killed
+    global __offline_storage
     __ping_pong_thread_killed.clear()
 
     if offlineStorage is False:
         return
     # if offlineStorage is True:
-    offline_storage: OfflineStorage = OfflineStorageFiles(
+    __offline_storage = OfflineStorageFiles(
         location=__config_folder
     ) if offlineStorage is True else offlineStorage
     # else:
-    #     offline_storage: OfflineStorage = offlineStorage
+    #     __offline_storage: OfflineStorage = offlineStorage
 
     observer.subscribe(
         service.StatusID.SENDERROR,
-        lambda _, data: offline_storage.save(data.model_dump_json(exclude_none=True)) if data else None
+        lambda _, data: __offline_storage.save(data.model_dump_json(exclude_none=True)) if data else None
     )
 
     def _resend_logic(status: str, status_data: Any) -> None:
-        nonlocal offline_storage
+        global __offline_storage
         global __offline_storage_thread_killed
         __log.debug(f"Resend called with: status={status}")
         try:
             __log.debug("Resending Offline data")
             while not __offline_storage_thread_killed.is_set():
-                data = offline_storage.load(10)
+                data = __offline_storage.load(10)
                 if not data:
                     return
 
@@ -290,9 +293,12 @@ def _setup_offline_storage(
                 __log.debug(f"Sending Data: {s_data}")
                 if __the_connection is None:
                     return
-                __the_connection._resend_data(
-                    json.dumps(s_data)
-                )
+                try:
+                    __the_connection._resend_data(
+                        json.dumps(s_data)
+                    )
+                except Exception:
+                    __log.exception('Error in sending Offline Data.')
 
         except Exception:
             __log.exception("Resend Logic")
@@ -301,6 +307,42 @@ def _setup_offline_storage(
         connection.StatusID.CONNECTED,
         _resend_logic
     )
+
+# -------------------------------------------------------------------------
+#   OfflineStorage methods
+# -------------------------------------------------------------------------
+
+def offline_storage_size() -> Optional[int]:
+    """
+    Return the amount of offline data storage.
+
+    Returns:
+        int: The size of what have been storage offline.
+        None: If offline storage have not been enabled.
+    """
+    global __offline_storage
+
+    if not __offline_storage:
+        return None
+    
+    return __offline_storage.storage_size()
+
+def wait_for_offline_storage(timeout: Optional[int] = None) -> None:
+    """
+    Wait for Offline Storage to upload the stored data.
+
+    Args:
+        timeout: A timeout for how long it should wait. (Default Forever.)
+    
+    Raises:
+        TimeoutError: raised when timeout ran out.
+    """
+    observer.post(connection.StatusID.CONNECTED, None)
+    end_time: int = time.time() + timeout if timeout else 0
+    while offline_storage_size() != 0:
+        if timeout is not None and end_time < time.time():
+            raise TimeoutError('Offline Storage did not upload all data.')
+        time.sleep(0.1)
 
 
 # #############################################################################
@@ -346,19 +388,27 @@ def createNetwork(
         description=description
     )
 
+
 # -------------------------------------------------------------------------
 #   Connection methods
 # -------------------------------------------------------------------------
 
-
 def connect() -> None:
-    """NOT Implemented yet."""
-    pass
+    """Connect to the server."""
+    global __the_connection
+    __the_connection.connection.connect()
 
 
 def disconnect() -> None:
-    """NOT Implemented yet."""
-    pass
+    """Disconnect the connect to the server."""
+    global __the_connection
+    __the_connection.connection.disconnect()
+
+
+def reconnect() -> None:
+    """Force a reconnect the the server."""
+    global __the_connection
+    __the_connection.connection.reconnect()
 
 
 def close() -> None:
@@ -376,4 +426,3 @@ def close() -> None:
         __the_connection = None
         __connection_closed = True
     # Disconnect
-    pass
