@@ -110,6 +110,7 @@ class IoTAPI(ServiceClass):
         params = {
             x: JsonData for x in WappstoMethod
         }
+        params[WappstoMethod.HEAD] = JsonData
 
         result = {
             WappstoMethod.GET: Union[JsonReply, Success],
@@ -258,7 +259,11 @@ class IoTAPI(ServiceClass):
                     callback=lambda data: _cb_event.set(),
                     error_callback=lambda err_data: _cb_event.set(),
                     method=l_data.get('method'),
-                    params=l_data.get('params')
+                    params=JsonData(
+                        data=l_data.get('params').get('data'),
+                        url=l_data.get('params').get('url'),
+                        meta=Identifier(fast=True, identifier=None)
+                    ),
                 )
                 self._send_logic(s_data)
             elif l_data.get('result'):

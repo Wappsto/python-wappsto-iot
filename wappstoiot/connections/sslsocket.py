@@ -58,8 +58,6 @@ class TlsSocket(Connection):
         self.ssl_context.load_cert_chain(certfile=crt, keyfile=key)
         self.ssl_context.load_verify_locations(cafile=ca)
 
-        self._socket_setup()
-
     def _socket_setup(self) -> None:
         """
         Create socket to communicate with server.
@@ -247,6 +245,8 @@ class TlsSocket(Connection):
         if self.killed.is_set():
             return False
 
+        self._socket_setup()
+
         try:
             self.log.info("Trying to Connect.")
             self.observer.post(StatusID.CONNECTING, None)
@@ -289,7 +289,6 @@ class TlsSocket(Connection):
             if retry_limit:
                 retry_limit -= 1
             self.disconnect()
-            self._socket_setup()
             try:
                 if self.connect():
                     self.log.warning("Reconnected...")

@@ -17,6 +17,11 @@ class OfflineStorage(ABC):
     """The Offline Storage template class."""
 
     @abstractmethod
+    def storage_size(self) -> int:
+        """Return the amount of data in the storage."""
+        ...
+
+    @abstractmethod
     def save(self, data: str) -> None:
         """Save the data for later retrieval."""
         ...
@@ -73,6 +78,10 @@ class OfflineStorageFiles(OfflineStorage):
         except Exception:
             self.save(data=data)
             raise
+
+    def storage_size(self) -> int:
+        """Return the amount of data in the storage."""
+        return len(self._files)
 
     def save(self, data: str) -> None:
         """Save the data for later retrieval."""

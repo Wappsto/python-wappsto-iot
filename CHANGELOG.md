@@ -1,3 +1,15 @@
+v0.7.1 (Sep 26 2023)
+===============================================================================
+## Added
+ * Added functionality to check offline storage stored size. (`wappsto.iot.offline_storage_size`)
+ * Added functionality to wait for offline storage to upload all. (`wappsto.iot.wait_for_offline_storage`)
+ * OfflineStorage ABC class now contain a `storage_size` method.
+ * Functions `connect`, `disconnect` & `reconnect` is now implemented.
+
+## Fixed
+ * Issue where it could not resend offline data after migration to Pydantic 2.
+
+
 v0.7.0 (Sep 22 2023)
 ===============================================================================
 
@@ -12,7 +24,7 @@ v0.6.10 (Sep 15 2023)
 
 ## Changed
  * Extended the legal characters list for name.
-
+ * Migrated to Pydantic 2.
 
 v0.6.9 (Aug 18 2023)
 ===============================================================================
