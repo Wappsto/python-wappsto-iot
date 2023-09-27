@@ -55,7 +55,7 @@ from .utils import name_check
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.7.0"
+__version__ = "v0.7.1"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -312,6 +312,7 @@ def _setup_offline_storage(
 #   OfflineStorage methods
 # -------------------------------------------------------------------------
 
+
 def offline_storage_size() -> Optional[int]:
     """
     Return the amount of offline data storage.
@@ -324,8 +325,9 @@ def offline_storage_size() -> Optional[int]:
 
     if not __offline_storage:
         return None
-    
+
     return __offline_storage.storage_size()
+
 
 def wait_for_offline_storage(timeout: Optional[int] = None) -> None:
     """
@@ -333,7 +335,7 @@ def wait_for_offline_storage(timeout: Optional[int] = None) -> None:
 
     Args:
         timeout: A timeout for how long it should wait. (Default Forever.)
-    
+
     Raises:
         TimeoutError: raised when timeout ran out.
     """

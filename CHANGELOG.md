@@ -1,4 +1,4 @@
-v0.7.1 (Sep 25 2023)
+v0.7.1 (Sep 26 2023)
 ===============================================================================
 ## Added
  * Added functionality to check offline storage stored size. (`wappsto.iot.offline_storage_size`)
