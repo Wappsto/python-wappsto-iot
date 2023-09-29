@@ -42,6 +42,7 @@ from ..schema.iot_schema import WappstoMethod
 
 from ..utils.certificateread import certificate_info_extraction
 from ..utils import observer
+from ..utils.Timestamp import timestamp_converter
 
 from ..connections.sslsocket import TlsSocket
 from ..connections.protocol import Connection
@@ -763,6 +764,29 @@ class IoTAPI(ServiceClass):
                 data=data,
                 url=f"/state/{uuid}",
                 method=WappstoMethod.PUT
+            )
+        except TimeoutError:
+            msg = (
+                'Error in sending Values.\n'
+                'If Offline storage is enabled it will be send later.'
+            )
+            self.log.exception(msg)
+
+    def post_log_state(self, uuid: UUID, data: List[LogValue]) -> bool:
+        """Make bulk changes the given state."""
+        data_list = ["state_id,timestamp,data"] + [
+            ",".join(
+                str(uuid),
+                timestamp_converter(values.timestamp),
+                str(values.data),
+            ) for values in data
+        ]
+
+        try:
+            return self._no_reply_bulk_send(
+                data="\n".join(data_list),
+                url=f"/log_zip",
+                method=WappstoMethod.POST
             )
         except TimeoutError:
             msg = (
