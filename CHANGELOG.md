@@ -1,3 +1,13 @@
+
+v0.8.0 (SOctep 04 2023)
+===============================================================================
+
+## Added
+ * Period and Delta functionality.
+ * Can now send log data. Log data are not shown as a new value update.
+
+
+
 v0.7.1 (Sep 26 2023)
 ===============================================================================
 ## Added
