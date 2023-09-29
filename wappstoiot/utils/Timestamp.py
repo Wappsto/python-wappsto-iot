@@ -1,10 +1,12 @@
 """Contain the wappsto timestamp converters."""
 import datetime
 
+from typing import Optional
+
 
 def timestamp() -> str:
     """
-    Return The default timestamp used for Wappsto.
+    Return now timestamp used for Wappsto.
 
     The timestamp are always set to the UTC timezone.
 
@@ -28,3 +30,17 @@ def str_to_datetime(timestamp: str) -> datetime.datetime:
         timestamp,
         '%Y-%m-%dT%H:%M:%S.%fZ'
     )
+
+
+def timestamp_converter(dt: datetime) -> Optional[str]:
+    """
+    Return The default timestamp used for Wappsto.
+
+    The timestamp are always set to the UTC timezone.
+
+    Returns:
+        The UTC time string in ISO format.
+    """
+    if dt is None:
+        return None
+    return dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')

@@ -21,6 +21,7 @@ from pydantic import UUID4
 from pydantic_core import CoreSchema
 from pydantic_core import core_schema
 
+from ..utils.Timestamp import timestamp_converter
 
 class LaxStrGenerator(GenerateSchema):
     """
@@ -35,20 +36,6 @@ class LaxStrGenerator(GenerateSchema):
 
 
 BaseModel.model_config = ConfigDict(schema_generator=LaxStrGenerator)
-
-
-def timestamp_converter(dt: datetime) -> Optional[str]:
-    """
-    Return The default timestamp used for Wappsto.
-
-    The timestamp are always set to the UTC timezone.
-
-    Returns:
-        The UTC time string in ISO format.
-    """
-    if dt is None:
-        return None
-    return dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
 
 class WappstoMethods(str, Enum):

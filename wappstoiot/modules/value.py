@@ -654,7 +654,13 @@ class Value:
         def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
             try:
                 if method == WappstoMethod.GET:
-                    callback(self)
+                    copy_self = copy.copy(self)
+                    copy_self.report = functools.partial(
+                        self.report,
+                        force=True,
+                        add_jitter=True,
+                    )
+                    callback(copy_self)
             except Exception:
                 self.log.exception("onRefresh callback error.")
                 raise
@@ -753,7 +759,10 @@ class Value:
     def report(
         self,
         value: Union[int, float, str, LogValue, List[LogValue], None],
-        timestamp: Optional[datetime] = None
+        timestamp: Optional[datetime] = None,
+        *,
+        force: bool = False,
+        add_jitter: bool = False,
     ) -> None:
         """
         Report the new current value to Wappsto.
@@ -761,9 +770,6 @@ class Value:
         The Report value is typical a measured value from a sensor,
         whether it is a GPIO pin, a analog temperature sensor or a
         device over a I2C bus.
-
-        ERROR: https://github.com/pydantic/pydantic/issues/4852
-
         """
         # TODO: Check if this value have a state that is read.
         self.log.info(f"Sending Report for: {self.report_state.meta.id}")
