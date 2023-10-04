@@ -651,14 +651,17 @@ class Value:
         if not self.__argumentCountCheck(callback, 1):
             raise TypeError("The onRefresh callback, is called with 1 argument.")
 
-        def _cb(obj: WSchema.State, method: WappstoMethod) -> None:
+        def _cb(
+            obj: WSchema.State, method: WappstoMethod,
+            force: bool = False, add_jitter: bool = False,
+        ) -> None:
             try:
                 if method == WappstoMethod.GET:
                     copy_self = copy.copy(self)
                     copy_self.report = functools.partial(
                         self.report,
-                        force=True,
-                        add_jitter=True,
+                        force=force,
+                        add_jitter=add_jitter,
                     )
                     callback(copy_self)
             except Exception:
@@ -812,41 +815,6 @@ class Value:
             uuid=self.children_name_mapping[WSchema.StateType.REPORT],
             data=data,
         )
-
-    # def report(
-    #     self,
-    #     value: Union[int, float, str, LogValue, List[LogValue], None],
-    #     timestamp: Optional[datetime] = None
-    # ) -> None:
-    #     """
-    #     Report the new current value to Wappsto.
-
-    #     The Report value is typical a measured value from a sensor,
-    #     whether it is a GPIO pin, a analog temperature sensor or a
-    #     device over a I2C bus.
-
-    #     ERROR: https://github.com/pydantic/pydantic/issues/4852
-
-    #     """
-    #     # TODO: Check if this value have a state that is read.
-    #     self.log.info(f"Sending Report for: {self.report_state.meta.id}")
-
-    #     the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
-    #     data = WSchema.State(
-    #         data=value,
-    #         timestamp=timestamp_converter(the_timestamp)
-    #     )
-    #     if (
-    #         data.timestamp and self.report_state.timestamp or not self.report_state.timestamp
-    #     ):
-    #         self.report_state = self.report_state.copy(update=data.model_dump(exclude_none=True))
-    #         self.report_state.timestamp = the_timestamp
-    #         if self.report_state.timestamp:
-    #             self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
-    #     self.connection.put_state(
-    #         uuid=self.children_name_mapping[WSchema.StateType.REPORT],
-    #         data=data
-    #     )
 
     def control(
         self,

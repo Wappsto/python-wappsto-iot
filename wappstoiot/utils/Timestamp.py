@@ -32,7 +32,7 @@ def str_to_datetime(timestamp: str) -> datetime.datetime:
     )
 
 
-def timestamp_converter(dt: datetime) -> Optional[str]:
+def timestamp_converter(dt: Optional[datetime]) -> Optional[str]:
     """
     Return The default timestamp used for Wappsto.
 
