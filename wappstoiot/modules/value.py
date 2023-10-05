@@ -990,4 +990,5 @@ class Value:
 
     def close(self) -> None:
         """Stop all the internal logic."""
-        self.__period_timer.close()
+        if self.__period_timer is not None:
+            self.__period_timer.close()
