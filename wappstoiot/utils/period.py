@@ -8,6 +8,9 @@ from abc import abstractmethod
 
 from typing import Any
 from typing import Callable
+from typing import Dict
+from typing import Optional
+from typing import Tuple
 
 
 class PeriodClass(ABC):
@@ -24,8 +27,8 @@ class PeriodClass(ABC):
     def start(
         self,
         function: Callable[..., Any],
-        args: tuple[Any] | None=None,
-        kwargs: dict[Any] | None=None,
+        args: Optional[Tuple[Any]]=None,
+        kwargs: Optional[Dict[str, Any]]=None,
     ): ...
 
     @abstractmethod
@@ -41,8 +44,8 @@ class Period(PeriodClass):
         self,
         period: datetime.timedelta,
         function: Callable[..., Any],
-        args: tuple[Any] | None=None,
-        kwargs: dict[Any] | None=None,
+        args: Optional[Tuple[Any]]=None,
+        kwargs: Optional[Dict[str, Any]]=None,
     ):
         """Initialize the period."""
         self.period = period
