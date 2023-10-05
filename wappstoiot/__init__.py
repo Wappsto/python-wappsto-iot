@@ -114,7 +114,7 @@ __connection_closed: bool = False
 __ping_pong_thread_killed = threading.Event()
 __offline_storage: Union[OfflineStorage, bool] = False
 __offline_storage_thread_killed = threading.Event()
-__network: Network
+__network: Optional [Network] = None
 
 
 class ConnectionTypes(str, Enum):
@@ -426,7 +426,8 @@ def close() -> None:
     global __the_connection
     global __network
 
-    __network.close()
+    if __network is not None:
+        __network.close()
 
     if not __connection_closed and __the_connection is not None:
         __log.info("Closing Wappsto IoT")
