@@ -572,5 +572,6 @@ class Device:
         self.children_name_mapping[name] = value.uuid
 
     def close(self) -> None:
-        """Do nothing, only here for compatibility."""
-        pass
+        """Stop all the internal  and children logic."""
+        for child in self.children_uuid_mapping.values():
+            child.close()

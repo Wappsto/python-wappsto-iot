@@ -347,5 +347,6 @@ class Network(object):
         self.children_name_mapping[name] = device.uuid
 
     def close(self) -> None:
-        """Do nothing, only here for compatibility."""
-        pass
+        """Stop all the internal  and children logic."""
+        for child in self.children_uuid_mapping.values():
+            child.close()

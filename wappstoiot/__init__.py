@@ -114,6 +114,7 @@ __connection_closed: bool = False
 __ping_pong_thread_killed = threading.Event()
 __offline_storage: Union[OfflineStorage, bool] = False
 __offline_storage_thread_killed = threading.Event()
+__network: Network
 
 
 class ConnectionTypes(str, Enum):
@@ -363,6 +364,7 @@ def createNetwork(
     """
     global __config_folder
     global __the_connection
+    global __network
 
     illegal_chars: str = name_check.illegal_characters(name)
 
@@ -383,12 +385,13 @@ def createNetwork(
 
     atexit.register(close)
 
-    return Network(
+    __network = Network(
         name=name,
         connection=cast(ServiceClass, __the_connection),
         network_uuid=network_uuid,
         description=description
     )
+    return __network
 
 
 # -------------------------------------------------------------------------
@@ -421,6 +424,9 @@ def close() -> None:
     # atexit._run_exitfuncs()
     global __connection_closed
     global __the_connection
+    global __network
+
+    __network.close()
 
     if not __connection_closed and __the_connection is not None:
         __log.info("Closing Wappsto IoT")

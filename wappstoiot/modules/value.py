@@ -989,5 +989,5 @@ class Value:
         )
 
     def close(self) -> None:
-        """Do nothing, only here for compatibility."""
-        pass
+        """Stop all the internal logic."""
+        self.__period_timer.close()
