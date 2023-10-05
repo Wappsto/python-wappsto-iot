@@ -445,8 +445,17 @@ class Value:
     def __activate_period(self, callback: Callable[['Value'], None]) -> None:
         if self.__period_timer is not None:
             self.__period_timer.close()
+        if self.element.period is None:
+            return
 
-        period: datetime.timedelta = datetime.timedelta(seconds=self.element.period)
+        period_float: float = float(self.element.period)
+
+        if period_float == 0.0:
+            return
+        if period_float == float('inf'):
+            return
+
+        period: datetime.timedelta = datetime.timedelta(seconds=period_float)
         copy_self = copy.copy(self)
         copy_self.report = functools.partial(
             self.report,
@@ -460,9 +469,29 @@ class Value:
         )
         self.__period_timer.start()
 
-    def delta_ok(self, new_value: int | float) -> bool:
+    def delta_ok(self, new_value: Union[int, float]) -> bool:
         """Check if the the value are outside the required delta range."""
-        return new_value >= (self.element.delta + self.getReportData())
+        if self.value_type != ValueBaseType.NUMBER:
+            return True
+        if self.getReportData() is None:
+            return True
+        if self.element.delta is None:
+            return True
+
+        delta_float:float = float(self.element.delta)
+
+        if delta_float == 0.0:
+            return True
+        if delta_float == float('inf'):
+            self.log.warning(
+                f"Dropping value update for \"{self.name}\" because delta is Inf"
+            )
+            return False
+
+        max_ignore: float = self.getReportData() + delta_float
+        min_ignore: float = self.getReportData() - delta_float
+
+        return min_ignore >= new_value or new_value >= max_ignore
 
     # -------------------------------------------------------------------------
     #   Value 'on-' methods
@@ -823,6 +852,9 @@ class Value:
 
             if self.value_type == ValueBaseType.NUMBER:
                 if not force and not self.delta_ok(new_value=sorted_values[-1].data):
+                    self.log.warning(
+                        f"Dropping value update for \"{self.name}\"."
+                    )
                     sorted_values.pop()
 
             self._update_local_report(sorted_values[-1])
@@ -848,9 +880,11 @@ class Value:
                 # TODO: Make sure the timestamp is set.
                 data: LogValue = value
 
-            if self.value_type == ValueBaseType.NUMBER:
-                if not force and not self.delta_ok(new_value=data.data):
-                    return
+            if not force and not self.delta_ok(new_value=data.data):
+                self.log.warning(
+                    f"Dropping value update for \"{self.name}\"."
+                )
+                return
 
             self._update_local_report(data)
 
