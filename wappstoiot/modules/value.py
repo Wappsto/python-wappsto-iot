@@ -23,6 +23,9 @@ from ..schema.base_schema import LogValue
 from ..schema.iot_schema import WappstoMethod
 
 from ..utils.Timestamp import str_to_datetime
+from ..utils.jitter import exec_with_jitter
+from ..utils.period import PeriodClass
+from ..utils.period import Period
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -110,6 +113,8 @@ class Value:
         self.log = logging.getLogger(__name__)
         self.log.addHandler(logging.NullHandler())
 
+        self.__period_timer: Optional[PeriodClass] = None
+
         self.value_type = value_type
 
         self.__callbacks: Dict[
@@ -157,8 +162,8 @@ class Value:
         self.element = self.schema(
             name=name,
             description=description,
-            period=period,
-            delta=delta,
+            period=period if period else 0.0,
+            delta=delta if delta else 0.0,
             type=type,
             permission=permission,
             **subValue,
@@ -434,6 +439,32 @@ class Value:
     #                 self.control_state = state_obj
 
     # -------------------------------------------------------------------------
+    #   Core Helpers
+    # -------------------------------------------------------------------------
+
+    def __activate_period(self, callback: Callable[['Value'], None]) -> None:
+        if self.__period_timer is not None:
+            self.__period_timer.close()
+
+        period: datetime.timedelta = datetime.timedelta(seconds=self.element.period)
+        copy_self = copy.copy(self)
+        copy_self.report = functools.partial(
+            self.report,
+            force=force,
+            add_jitter=add_jitter,
+        )
+        self.__period_timer = Period(
+            period=period,
+            function=callback,
+            args=copy_self,
+        )
+        self.__period_timer.start()
+
+    def delta_ok(self, new_value: int | float) -> bool:
+        """Check if the the value are outside the required delta range."""
+        return new_value >= (self.element.delta + self.getReportData())
+
+    # -------------------------------------------------------------------------
     #   Value 'on-' methods
     # -------------------------------------------------------------------------
 
@@ -654,16 +685,16 @@ class Value:
         def _cb(
             obj: WSchema.State, method: WappstoMethod,
             force: bool = False, add_jitter: bool = False,
+            # trace: Optional[str] = None,
         ) -> None:
             try:
                 if method == WappstoMethod.GET:
-                    copy_self = copy.copy(self)
-                    copy_self.report = functools.partial(
-                        self.report,
-                        force=force,
-                        add_jitter=add_jitter,
-                    )
-                    callback(copy_self)
+                    # copy_self = copy.copy(self)
+                    # copy_self.report = functools.partial(
+                    #     self.report,
+                    #     trace=force,
+                    # )
+                    callback(self)
             except Exception:
                 self.log.exception("onRefresh callback error.")
                 raise
@@ -674,6 +705,8 @@ class Value:
             uuid=self.children_name_mapping[WSchema.StateType.REPORT],
             callback=_cb
         )
+
+        self.__activate_period(callback=callback)
 
         return callback
 
@@ -779,15 +812,22 @@ class Value:
 
         data: LogValue
 
+        exec_func: Callable[[], None]
+
         if isinstance(value, list):
             if not len(value):
                 return
 
             # TODO: Make sure the timestamps are set.
             sorted_values = sorted(value, key=lambda r: r.timestamp)
+
+            if self.value_type == ValueBaseType.NUMBER:
+                if not force and not self.delta_ok(new_value=sorted_values[-1].data):
+                    sorted_values.pop()
+
             self._update_local_report(sorted_values[-1])
 
-            self.connection.put_bulk_state(
+            exec_func = lambda: self.connection.put_bulk_state(
                 uuid=self.children_name_mapping[WSchema.StateType.REPORT],
                 data=[
                     LogValue(
@@ -796,25 +836,33 @@ class Value:
                     ) for x in sorted_values
                 ],
             )
-            return
 
-        if not isinstance(value, LogValue):
-            the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
-            data = LogValue(
-                data=str(value),
-                timestamp=the_timestamp,
-            )
         else:
-            # TODO: Make sure the timestamp is set.
-            data = value
+            if not isinstance(value, LogValue):
+                the_timestamp = timestamp if timestamp is not None else datetime.utcnow()
+                data = LogValue(
+                    data=str(value),
+                    timestamp=the_timestamp,
+                )
+            else:
+                # TODO: Make sure the timestamp is set.
+                data: LogValue = value
 
-        self._update_local_report(data)
+            if self.value_type == ValueBaseType.NUMBER:
+                if not force and not self.delta_ok(new_value=data.data):
+                    return
 
-        # NOTE: Single Report
-        self.connection.put_state(
-            uuid=self.children_name_mapping[WSchema.StateType.REPORT],
-            data=data,
-        )
+            self._update_local_report(data)
+
+            # NOTE: Single Report
+            exec_func = lambda: self.connection.put_state(
+                uuid=self.children_name_mapping[WSchema.StateType.REPORT],
+                data=data,
+            )
+
+        if add_jitter:
+            return exec_with_jitter(exec_func)
+        return exec_func()
 
     def control(
         self,
