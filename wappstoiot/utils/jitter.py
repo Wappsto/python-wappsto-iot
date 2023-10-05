@@ -3,7 +3,7 @@ import threading
 import random
 
 
-jitter_range_sec: int = 3
+jitter_range_sec: int = 10
 
 
 def exec_with_jitter(obj, *args, **kwargs):
