@@ -26,14 +26,20 @@ def wait_until_or(check: Callable[[], bool], max_wait: int):
 
 def generate_value_extra_info(
     value_template: wappstoiot.ValueTemplate,
-    permission: wappstoiot.PermissionType
+    permission: wappstoiot.PermissionType,
+    period: Optional[str]=None,
+    delta: Optional[str]=None,
 ) -> Dict[str, Any]:
     value_settings = wappstoiot.modules.template.valueSettings[value_template]
 
     extra_info: Dict[str, Any] = {
         'type': value_settings.type,
-        'permission': permission
+        'permission': permission,
     }
+    if period:
+        extra_info['period'] = period
+    if delta:
+        extra_info['delta'] = delta
     # TODO: Should just be MVP.
     if value_settings.value_type == wappstoiot.modules.template.ValueBaseType.NUMBER:
         extra_info['number'] = {

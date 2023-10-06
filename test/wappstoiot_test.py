@@ -521,7 +521,9 @@ class TestValue(BaseValue):
         value_name = "moeller"
         extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
             value_template=value_template,
-            permission=permission
+            permission=permission,
+            period="0",
+            delta="0.0"
         )
 
         if value_exist:
@@ -1092,7 +1094,9 @@ class TestValue(BaseValue):
         value_name = "the_value"
         extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
             value_template=wappstoiot.ValueTemplate.NUMBER,
-            permission=old_permission
+            permission=old_permission,
+            period="0",
+            delta="0.0",
         )
 
         mock_device_server.add_object(
@@ -1180,7 +1184,9 @@ class TestValue(BaseValue):
         value_name = "the_value"
         extra_info: Dict[str, Any] = server_utils.generate_value_extra_info(
             value_template=old_template,
-            permission=wappstoiot.PermissionType.READWRITE
+            permission=wappstoiot.PermissionType.READWRITE,
+            period="0",
+            delta="0.0",
         )
 
         mock_device_server.add_object(
