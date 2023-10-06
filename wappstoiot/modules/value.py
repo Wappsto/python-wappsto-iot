@@ -1,6 +1,8 @@
 """Contain the Value Object."""
-import uuid
+import copy
+import functools
 import logging
+import uuid
 
 from enum import Enum
 from datetime import datetime
@@ -37,10 +39,10 @@ if TYPE_CHECKING:
 # #############################################################################
 
 
-class Period(str, Enum):
-    """Different Period options."""
-    PERIODIC_REFRESH = "periodic"
-    DROP_UNTIL = "drop"
+# class Period(str, Enum):
+#     """Different Period options."""
+#     PERIODIC_REFRESH = "periodic"
+#     DROP_UNTIL = "drop"
 
 
 class Delta(str, Enum):
@@ -86,6 +88,13 @@ class Value:
         ValueBaseType.XML: WSchema.XmlValue,
     }
 
+    __schema_2_value_type = {
+        WSchema.StringValue: ValueBaseType.STRING,
+        WSchema.NumberValue: ValueBaseType.NUMBER,
+        WSchema.BlobValue: ValueBaseType.BLOB,
+        WSchema.XmlValue: ValueBaseType.XML,
+    }
+
     def __init__(
         self,
         parent: 'Device',
@@ -115,7 +124,7 @@ class Value:
 
         self.__period_timer: Optional[PeriodClass] = None
 
-        self.value_type = value_type
+        self.value_type: ValueBaseType = value_type
 
         self.__callbacks: Dict[
             str,
@@ -162,7 +171,7 @@ class Value:
         self.element = self.schema(
             name=name,
             description=description,
-            period=period if period else 0.0,
+            period=period if period else 0,
             delta=delta if delta else 0.0,
             type=type,
             permission=permission,
@@ -240,7 +249,7 @@ class Value:
         """
         if self.value_type == ValueBaseType.NUMBER:
             if self.report_state.data == "NA":
-                return None
+                return None  # NOTE: Use None because then it's the same for string.
             return float(self.report_state.data)
         return self.report_state.data
 
@@ -350,29 +359,39 @@ class Value:
 
             if isinstance(element, WSchema.NumberValue):
                 new_model.number = element.number.model_copy(
-                    update=new_model.number
+                    update=new_model.number,
                 )
             elif isinstance(element, WSchema.StringValue):
                 new_model.string = element.string.model_copy(
-                    update=new_model.string
+                    update=new_model.string,
                 )
             elif isinstance(element, WSchema.BlobValue):
                 new_model.blob = element.blob.model_copy(
-                    update=new_model.blob
+                    update=new_model.blob,
                 )
             elif isinstance(element, WSchema.XmlValue):
                 new_model.xml = element.xml.model_copy(
-                    update=new_model.xml
+                    update=new_model.xml,
                 )
+
         else:
             if isinstance(element, WSchema.StringValue):
                 old_elem.pop('string')
+                self.value_type = ValueBaseType.NUMBER
             elif isinstance(element, WSchema.NumberValue):
                 old_elem.pop('number')
+                self.value_type = ValueBaseType.STRING
             elif isinstance(element, WSchema.BlobValue):
                 old_elem.pop('blob')
+                self.value_type = ValueBaseType.BLOB
             elif isinstance(element, WSchema.XmlValue):
                 old_elem.pop('xml')
+                self.value_type = ValueBaseType.XML
+                # TODO: Turn around. self.schema need to be of new type.
+
+            # TODO: Update Needed.
+            self.schema = type(self.element)  # self.__value_type_2_Schema[self.value_type]
+            self.value_type = self.__schema_2_value_type[type(self.element)]
 
             old_dict = self.schema(**old_elem)
             new_model = old_dict.model_copy(update=new_elem)
@@ -459,8 +478,8 @@ class Value:
         copy_self = copy.copy(self)
         copy_self.report = functools.partial(
             self.report,
-            force=force,
-            add_jitter=add_jitter,
+            force=True,
+            add_jitter=True,
         )
         self.__period_timer = Period(
             period=period,
@@ -473,12 +492,15 @@ class Value:
         """Check if the the value are outside the required delta range."""
         if self.value_type != ValueBaseType.NUMBER:
             return True
-        if self.getReportData() is None:
+
+        old_value: Optional[float] = self.getReportData()
+
+        if old_value is None:
             return True
         if self.element.delta is None:
             return True
 
-        delta_float:float = float(self.element.delta)
+        delta_float: float = float(self.element.delta)
 
         if delta_float == 0.0:
             return True
@@ -488,8 +510,8 @@ class Value:
             )
             return False
 
-        max_ignore: float = self.getReportData() + delta_float
-        min_ignore: float = self.getReportData() - delta_float
+        max_ignore: float = old_value + delta_float
+        min_ignore: float = old_value - delta_float
 
         return min_ignore >= new_value or new_value >= max_ignore
 
@@ -833,7 +855,7 @@ class Value:
         Report the new current value to Wappsto.
 
         The Report value is typical a measured value from a sensor,
-        whether it is a GPIO pin, a analog temperature sensor or a
+        whether it is a GPIO pin, an analog temperature sensor or a
         device over a I2C bus.
         """
         # TODO: Check if this value have a state that is read.
@@ -859,15 +881,16 @@ class Value:
 
             self._update_local_report(sorted_values[-1])
 
-            exec_func = lambda: self.connection.put_bulk_state(
-                uuid=self.children_name_mapping[WSchema.StateType.REPORT],
-                data=[
-                    LogValue(
-                        data=x.data,
-                        timestamp=x.timestamp
-                    ) for x in sorted_values
-                ],
-            )
+            def exec_func() -> None:
+                self.connection.put_bulk_state(
+                    uuid=self.children_name_mapping[WSchema.StateType.REPORT],
+                    data=[
+                        LogValue(
+                            data=x.data,
+                            timestamp=x.timestamp
+                        ) for x in sorted_values
+                    ],
+                )
 
         else:
             if not isinstance(value, LogValue):
@@ -889,10 +912,11 @@ class Value:
             self._update_local_report(data)
 
             # NOTE: Single Report
-            exec_func = lambda: self.connection.put_state(
-                uuid=self.children_name_mapping[WSchema.StateType.REPORT],
-                data=data,
-            )
+            def exec_func() -> None:
+                self.connection.put_state(
+                    uuid=self.children_name_mapping[WSchema.StateType.REPORT],
+                    data=data,
+                )
 
         if add_jitter:
             return exec_with_jitter(exec_func)
