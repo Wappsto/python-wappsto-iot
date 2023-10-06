@@ -23,6 +23,7 @@ from pydantic_core import core_schema
 
 from ..utils.Timestamp import timestamp_converter
 
+
 class LaxStrGenerator(GenerateSchema):
     """
     A more relax converter, that make it work like Pydantic v1.

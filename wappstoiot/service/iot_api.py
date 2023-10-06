@@ -785,7 +785,7 @@ class IoTAPI(ServiceClass):
         try:
             return self._no_reply_bulk_send(
                 data="\n".join(data_list),
-                url=f"/log_zip",
+                url="/log_zip",
                 method=WappstoMethod.POST
             )
         except TimeoutError:

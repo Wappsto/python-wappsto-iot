@@ -114,7 +114,7 @@ __connection_closed: bool = False
 __ping_pong_thread_killed = threading.Event()
 __offline_storage: Union[OfflineStorage, bool] = False
 __offline_storage_thread_killed = threading.Event()
-__network: Optional [Network] = None
+__network: Optional[Network] = None
 
 
 class ConnectionTypes(str, Enum):
