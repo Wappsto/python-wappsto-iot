@@ -162,7 +162,7 @@ class JsonData(BaseModel):
     """The JSONRpc param structure for sending."""
 
     url: str
-    data: Optional[Any]
+    data: Optional[Any] = None
     # data: Optional[Union[
     #     Device,
     #     State,
