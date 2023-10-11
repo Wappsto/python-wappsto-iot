@@ -329,7 +329,10 @@ def offline_storage_size() -> Optional[int]:
     return __offline_storage.storage_size()
 
 
-def wait_for_offline_storage(timeout: Optional[int] = None) -> None:
+def wait_for_offline_storage(
+    timeout: Optional[int] = None,
+    max_retry: int = 3,
+) -> None:
     """
     Wait for Offline Storage to upload the stored data.
 
@@ -341,9 +344,14 @@ def wait_for_offline_storage(timeout: Optional[int] = None) -> None:
     """
     observer.post(connection.StatusID.CONNECTED, None)
     end_time: int = time.time() + timeout if timeout else 0
+    timeout_count: int = max_retry
     while offline_storage_size() != 0:
         if timeout is not None and end_time < time.time():
-            raise TimeoutError('Offline Storage did not upload all data.')
+            if timeout_count >= 3:
+                raise TimeoutError('Offline Storage did not upload all data.')
+            timeout_count += 1
+            reconnect()
+
         time.sleep(0.1)
 
 

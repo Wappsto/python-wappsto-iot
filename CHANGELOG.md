@@ -11,6 +11,9 @@ v0.8.0 (Oct 05 2023)
  * Fixed an issue that resulted in refresh did not work.
  * Fix a issue there the Value type was not properly changed onm value type change.
 
+## Changed
+ * `wait_for_offline_storage` now had a retry option, where it make a socket reconnect on timeout util the retry count reached.
+
 
 v0.7.1 (Sep 26 2023)
 ===============================================================================
