@@ -137,6 +137,7 @@ def config(
     # {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
     offline_storage: Union[OfflineStorage, bool] = False,
     # none_blocking=True,  # Whether the post should wait for reply or not.
+    rpc_timeout_sec: Optional[int] = None,
 ) -> None:
     """
     Configure the WappstoIoT settings.
@@ -146,14 +147,6 @@ def config(
     This function will also connect to the WappstoIoT API on call.
     In the cases that this function is not called, the connection will be
     make when an action is make that requests the connection.
-
-    The 'minMaxEnforce' is default set to "Warning" where a warning is
-    reading to log, when the value range is outside the minimum & maximum
-    range.
-    The 'ignore' is where it do nothing when it is outside range.
-    The 'enforce' is where the range are enforced to fit the minimum &
-    maximum range. Meaning if it is above the maximum it is changed to
-    the maximum, if it is below the minimum, it is set to the minimum value.
     """
     global __config_folder
     global __connection_closed
@@ -173,7 +166,11 @@ def config(
     _setup_offline_storage(offline_storage)
 
     if connection == ConnectionTypes.IOTAPI:
-        _setup_IoTAPI(__config_folder, fast_send=fast_send)
+        _setup_IoTAPI(
+            __config_folder,
+            fast_send=fast_send,
+            rpc_timeout=rpc_timeout_sec,
+        )
 
     # elif connection == ConnectionTypes.RESTAPI:
     #     # TODO: Find & load configs.
@@ -185,6 +182,7 @@ def _setup_IoTAPI(
     __config_folder: Path,
     configs: None = None,
     fast_send: bool = False,
+    rpc_timeout: int = 3,
 ) -> None:
     # TODO: Setup the Connection.
     global __the_connection
@@ -194,6 +192,7 @@ def _setup_IoTAPI(
         crt=kwargs['crt'],
         key=kwargs['key'],
         fast_send=fast_send,
+        timeout=rpc_timeout,
     )
 
 

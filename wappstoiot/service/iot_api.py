@@ -84,6 +84,7 @@ class IoTAPI(ServiceClass):
         key: Path,
         worker_count: int = 2,
         fast_send: bool = False,
+        timeout: int = 3,
     ):
         """."""
         self.log = logging.getLogger(__name__)
@@ -92,7 +93,7 @@ class IoTAPI(ServiceClass):
         self.crt = crt
         self.key = key
 
-        self.timeout = 3
+        self.timeout = timeout
 
         self.fast_send = fast_send
 

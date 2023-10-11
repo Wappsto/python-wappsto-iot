@@ -5,6 +5,7 @@ v0.8.0 (Oct 05 2023)
 ## Added
  * Period and Delta functionality.
  * Can now send log data. Log data are not shown as a new value update.
+ * Option in `config` to set rpc_timeout.
 
 ## Fixed
  * Fixed an issue that resulted in refresh did not work.
