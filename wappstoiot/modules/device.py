@@ -104,7 +104,7 @@ class Device:
             protocol=protocol,
             communication=communication,
             meta=WSchema.DeviceMeta(
-                version=WSchema.WappstoVersion.V2_0,
+                version=WSchema.WappstoVersion.V2_1,
                 type=WSchema.DeviceMeta.WappstoMetaType.DEVICE,
                 id=self.uuid
             )

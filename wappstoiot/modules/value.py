@@ -177,7 +177,7 @@ class Value:
             permission=permission,
             **subValue,
             meta=WSchema.ValueMeta(
-                version=WSchema.WappstoVersion.V2_0,
+                version=WSchema.WappstoVersion.V2_1,
                 type=WSchema.ValueMeta.WappstoMetaType.VALUE,
                 id=self.uuid
             )

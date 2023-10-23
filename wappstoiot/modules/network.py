@@ -63,7 +63,7 @@ class Network(object):
             name=name,
             description=description,
             meta=WSchema.NetworkMeta(
-                version=WSchema.WappstoVersion.V2_0,
+                version=WSchema.WappstoVersion.V2_1,
                 type=WSchema.NetworkMeta.WappstoMetaType.NETWORK,
                 id=self.uuid
             )
