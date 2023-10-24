@@ -185,6 +185,7 @@ def _setup_IoTAPI(
     configs: None = None,
     fast_send: bool = False,
     rpc_timeout: int = 3,
+    max_reconnect_retry_count: Optional[int] = None,
 ) -> None:
     # TODO: Setup the Connection.
     global __the_connection
@@ -195,6 +196,7 @@ def _setup_IoTAPI(
         key=kwargs['key'],
         fast_send=fast_send,
         timeout=rpc_timeout,
+        max_reconnect_retry_count=max_reconnect_retry_count,
     )
 
 
