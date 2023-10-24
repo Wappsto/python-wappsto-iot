@@ -154,7 +154,7 @@ class TlsSocket(Connection):
         except ConnectionError:
             msg = "Get a ConnectionError, while trying to send"
             self.log.exception(msg)
-            self.reconnect()
+            self.reconnect() # retry_limit=5)
             return False
         except socket.timeout:
             msg = "Get a socket.timeout, while trying to send"
@@ -165,7 +165,7 @@ class TlsSocket(Connection):
             # UNSURE:
             msg = "Get a OSError, while trying to send"
             self.log.exception(msg)
-            self.reconnect()
+            self.reconnect() # retry_limit=5)
             return False
         except TimeoutError:
             msg = "Get a TimeoutError, while trying to send"
@@ -209,12 +209,12 @@ class TlsSocket(Connection):
                 if self.killed.is_set():
                     return
                 self.log.warning(f"Receive -> OSError: {err}")
-                self.reconnect()
+                self.reconnect() # retry_limit=5)
                 continue
             except TimeoutError:
                 # UNSURE:
                 self.log.exception("Receive -> Timeout")
-                self.reconnect()
+                self.reconnect() # retry_limit=5)
                 continue
             if data_chunk == b'':
                 self.log.debug("Server Closed socket.")
@@ -293,7 +293,8 @@ class TlsSocket(Connection):
                 if self.connect():
                     self.log.warning("Reconnected...")
                     return True
-            except OSError:
+            except OSError as err:
+                self.log.exception('Reconnecting error.')
                 pass  # NOTE: Happens if it have forgotten the IP for the url.
             self.log.warning("Trying to reconnect in 5 seconds")
             time.sleep(5)
