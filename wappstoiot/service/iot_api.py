@@ -236,6 +236,8 @@ class IoTAPI(ServiceClass):
                 else:
                     send_data = copy.copy(data)
 
+                _id = None
+
                 if isinstance(send_data, slxjsonrpc.RpcBatch):
                     _id = "; ".join(x.id for x in send_data.root)
                 elif send_data:
