@@ -138,6 +138,7 @@ def config(
     offline_storage: Union[OfflineStorage, bool] = False,
     # none_blocking=True,  # Whether the post should wait for reply or not.
     rpc_timeout_sec: Optional[int] = None,
+    max_reconnect_retry_count: Optional[int] = None,
 ) -> None:
     """
     Configure the WappstoIoT settings.
@@ -170,6 +171,7 @@ def config(
             __config_folder,
             fast_send=fast_send,
             rpc_timeout=rpc_timeout_sec,
+            max_reconnect_retry_count=max_reconnect_retry_count,
         )
 
     # elif connection == ConnectionTypes.RESTAPI:

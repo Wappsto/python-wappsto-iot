@@ -85,6 +85,7 @@ class IoTAPI(ServiceClass):
         worker_count: int = 2,
         fast_send: bool = False,
         timeout: int = 3,
+        max_reconnect_retry_count: Optional[int] = None,
     ):
         """."""
         self.log = logging.getLogger(__name__)
@@ -106,7 +107,8 @@ class IoTAPI(ServiceClass):
             port=self.port,
             ca=self.ca,
             crt=self.crt,
-            key=self.key
+            key=self.key,
+            max_reconnect_retry_count=max_reconnect_retry_count,
         )
 
         params = {

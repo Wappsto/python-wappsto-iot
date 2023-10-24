@@ -28,6 +28,7 @@ class TlsSocket(Connection):
         ca: Path,  # ca.crt
         crt: Path,  # client.crt
         key: Path,  # client.key
+        max_reconnect_retry_count: Optional[int] = None,
     ):
         """."""
         self.log = logging.getLogger(__name__)
@@ -44,6 +45,7 @@ class TlsSocket(Connection):
         self.socket_timeout = 30_000
         self.RECEIVE_SIZE = 2048
         self.killed = threading.Event()
+        self.max_reconnect_retry_count = max_reconnect_retry_count
 
         self.log.debug(f"Address: {self.address}")
         self.log.debug(f"Port: {self.port}")
@@ -154,7 +156,7 @@ class TlsSocket(Connection):
         except ConnectionError:
             msg = "Get a ConnectionError, while trying to send"
             self.log.exception(msg)
-            self.reconnect() # retry_limit=5)
+            self.reconnect()
             return False
         except socket.timeout:
             msg = "Get a socket.timeout, while trying to send"
@@ -165,7 +167,7 @@ class TlsSocket(Connection):
             # UNSURE:
             msg = "Get a OSError, while trying to send"
             self.log.exception(msg)
-            self.reconnect() # retry_limit=5)
+            self.reconnect()
             return False
         except TimeoutError:
             msg = "Get a TimeoutError, while trying to send"
@@ -209,12 +211,12 @@ class TlsSocket(Connection):
                 if self.killed.is_set():
                     return
                 self.log.warning(f"Receive -> OSError: {err}")
-                self.reconnect() # retry_limit=5)
+                self.reconnect()
                 continue
             except TimeoutError:
                 # UNSURE:
                 self.log.exception("Receive -> Timeout")
-                self.reconnect() # retry_limit=5)
+                self.reconnect()
                 continue
             if data_chunk == b'':
                 self.log.debug("Server Closed socket.")
@@ -285,9 +287,14 @@ class TlsSocket(Connection):
 
         self.log.warning("Reconnection...")
 
-        while retry_limit is None or retry_limit > 0:
-            if retry_limit:
-                retry_limit -= 1
+        retry_left: Optional[int] = (
+            retry_limit if retry_limit is not None
+            else self.max_reconnect_retry_count
+        )
+
+        while retry_left is None or retry_left > 0:
+            if retry_left:
+                retry_left -= 1
             self.disconnect()
             try:
                 if self.connect():
