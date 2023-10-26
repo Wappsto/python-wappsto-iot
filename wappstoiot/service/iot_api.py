@@ -82,9 +82,9 @@ class IoTAPI(ServiceClass):
         ca: Path,
         crt: Path,
         key: Path,
+        fast_send: bool,
+        timeout: int,
         worker_count: int = 2,
-        fast_send: bool = False,
-        timeout: int = 3,
         max_reconnect_retry_count: Optional[int] = None,
     ):
         """."""

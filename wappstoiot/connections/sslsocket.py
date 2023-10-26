@@ -245,6 +245,7 @@ class TlsSocket(Connection):
             'True' if the connection was successful.
         """
         if self.killed.is_set():
+            self.log.warning('Connection is set to be closing.')
             return False
 
         self._socket_setup()

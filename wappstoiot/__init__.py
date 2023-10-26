@@ -137,7 +137,7 @@ def config(
     # {"jsonrpc":"2.0","id":"PING-15","result":{"value":true,"meta":{"server_send_time":"2021-12-15T14:33:11.952629Z"}}}
     offline_storage: Union[OfflineStorage, bool] = False,
     # none_blocking=True,  # Whether the post should wait for reply or not.
-    rpc_timeout_sec: Optional[int] = None,
+    rpc_timeout_sec: int = 3,
     max_reconnect_retry_count: Optional[int] = None,
 ) -> None:
     """
