@@ -55,7 +55,7 @@ from .utils import name_check
 #                             __init__ Setup Stuff
 # #############################################################################
 
-__version__ = "v0.8.0"
+__version__ = "0.8.0"
 __auther__ = "Seluxit A/S"
 
 __all__ = [
@@ -182,9 +182,9 @@ def config(
 
 def _setup_IoTAPI(
     __config_folder: Path,
+    rpc_timeout: int,
+    fast_send: bool,
     configs: None = None,
-    fast_send: bool = False,
-    rpc_timeout: int = 3,
     max_reconnect_retry_count: Optional[int] = None,
 ) -> None:
     # TODO: Setup the Connection.

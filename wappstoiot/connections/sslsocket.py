@@ -306,6 +306,9 @@ class TlsSocket(Connection):
                 pass  # NOTE: Happens if it have forgotten the IP for the url.
             self.log.warning("Trying to reconnect in 5 seconds")
             time.sleep(5)
+
+        if retry_left <= 0:
+            raise ConnectionError('Max retry count was reached.')
         return False
 
     def disconnect(self) -> None:
