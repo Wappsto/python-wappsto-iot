@@ -46,6 +46,7 @@ from ..utils.Timestamp import timestamp_converter
 
 from ..connections.sslsocket import TlsSocket
 from ..connections.protocol import Connection
+from ..connections.protocol import MaxRetry
 
 
 RpcSchemas = Union[
@@ -218,6 +219,10 @@ class IoTAPI(ServiceClass):
                 # UNSURE: How do we check if it was send?
                 observer.post(StatusID.SEND, reply)
 
+            except MaxRetry as err:
+                self.log.warning(err)
+                self.close()
+                return
             except Exception:
                 self.log.error(f"data: {data}")
                 self.log.exception("Receive Handler Error:")
@@ -227,6 +232,10 @@ class IoTAPI(ServiceClass):
         # NOTE (MBK): Something do not work here!
         # if not data:
         #     return
+
+        if self.killed.is_set():
+            raise ConnectionError('Connection have been closed!')
+
         with self.connection.send_ready:  # NOTE: Waiting here, until ready!
             with self.jsonrpc.batch():
                 batch_size = self.jsonrpc.batch_size()

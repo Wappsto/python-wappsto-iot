@@ -14,6 +14,7 @@ from typing import Union
 
 from .protocol import StatusID
 from .protocol import Connection
+from .protocol import MaxRetry
 
 from ..utils import observer
 
@@ -308,7 +309,7 @@ class TlsSocket(Connection):
             time.sleep(5)
 
         if retry_left <= 0:
-            raise ConnectionError('Max retry count was reached.')
+            raise MaxRetry('Max retry count was reached.')
         return False
 
     def disconnect(self) -> None:

@@ -11,6 +11,10 @@ from typing import Callable
 from typing import Optional
 
 
+class MaxRetry(ConnectionError):
+    pass
+
+
 class StatusID(str, Enum):
     """The difference connection Statuses."""
     CONNECTING = "Connecting"
