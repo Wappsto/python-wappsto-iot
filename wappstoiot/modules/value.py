@@ -6,6 +6,7 @@ import uuid
 
 from enum import Enum
 from datetime import datetime
+from datetime import timedelta
 
 from typing import Any
 from typing import Callable
@@ -483,7 +484,7 @@ class Value:
         if period_float == float('inf'):
             return
 
-        period: datetime.timedelta = datetime.timedelta(seconds=period_float)
+        period: timedelta = timedelta(seconds=period_float)
         copy_self = copy.copy(self)
         copy_self.report = functools.partial(
             self.report,
