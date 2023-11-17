@@ -397,7 +397,6 @@ class Device:
         encoding: Optional[str] = None,
         description: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
-        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         """
         Create a Wappsto String Value.
@@ -443,7 +442,6 @@ class Device:
         encoding: Optional[str] = None,
         description: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
-        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         """
         Create a Wappsto BLOB Value.
@@ -489,7 +487,6 @@ class Device:
         namespace: Optional[str] = None,
         description: Optional[str] = None,
         period: Optional[int] = None,  # in Sec
-        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         """
         Create a Wappsto XML Value.
@@ -531,6 +528,8 @@ class Device:
         permission: PermissionType,
         value_template: ValueTemplate,
         description: Optional[str] = None,
+        period: Optional[int] = None,  # in Sec
+        delta: Optional[Union[int, float]] = None,
     ) -> Value:
         """
         Create a Wappsto Value.
@@ -560,6 +559,8 @@ class Device:
             name=name,
             value_uuid=value_uuid,
             permission=permission,
+            period=period,
+            delta=delta,
             **valueSettings[value_template].model_dump()
         )
 

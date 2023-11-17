@@ -1,5 +1,5 @@
 
-v0.8.0 (Oct 05 2023)
+v0.8.0 (Nov 17 2023)
 ===============================================================================
 
 ## Added
@@ -7,10 +7,11 @@ v0.8.0 (Oct 05 2023)
  * Can now send log data. Log data are not shown as a new value update.
  * Option in `config` to set rpc_timeout.
  * Added `max_reconnect_retry_count` in config, when reach it will raise a ConnectionError.
+ * Devices `createValue` now take `period` & `delta` settings.
 
 ## Fixed
  * Fixed an issue that resulted in refresh did not work.
- * Fix a issue there the Value type was not properly changed onm value type change.
+ * Fix a issue there the Value type was not properly changed on value type change.
 
 ## Changed
  * `wait_for_offline_storage` now had a retry option, where it make a socket reconnect on timeout util the retry count reached.
