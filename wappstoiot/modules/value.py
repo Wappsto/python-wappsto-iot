@@ -887,7 +887,7 @@ class Value:
             sorted_values = sorted(value, key=lambda r: r.timestamp)
 
             if self.value_type == ValueBaseType.NUMBER:
-                if not force and not self.delta_ok(new_value=sorted_values[-1].data):
+                if not force and not self.delta_ok(new_value=float(sorted_values[-1].data)):
                     self.log.warning(
                         f"Dropping value update for \"{self.name}\"."
                     )
@@ -917,11 +917,12 @@ class Value:
                 # TODO: Make sure the timestamp is set.
                 data: LogValue = value
 
-            if not force and not self.delta_ok(new_value=data.data):
-                self.log.warning(
-                    f"Dropping value update for \"{self.name}\"."
-                )
-                return
+            if self.value_type == ValueBaseType.NUMBER:
+                if not force and not self.delta_ok(new_value=float(data.data)):
+                    self.log.warning(
+                        f"Dropping value update for \"{self.name}\"."
+                    )
+                    return
 
             self._update_local_report(data)
 
