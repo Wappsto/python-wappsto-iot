@@ -472,6 +472,7 @@ class Value:
     def __activate_period(self, callback: Callable[['Value'], None]) -> None:
         if self.__period_timer is not None:
             self.__period_timer.close()
+
         if self.element.period is None:
             return
 
@@ -495,6 +496,9 @@ class Value:
             args=copy_self,
         )
         self.__period_timer.start()
+
+    def __deactivate_period(self) -> None:
+        self.__period_timer.stop()
 
     def delta_ok(self, new_value: Union[int, float]) -> bool:
         """Check if the the value are outside the required delta range."""
@@ -771,6 +775,7 @@ class Value:
 
     def cancelOnRefresh(self) -> None:
         """Cancel the callback set in onRefresh-method."""
+        self.__deactivate_period()
         self.connection.unsubscribe_state_event(
             uuid=self.children_name_mapping[WSchema.StateType.REPORT],
             callback=cast(
