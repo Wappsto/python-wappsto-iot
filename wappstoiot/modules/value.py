@@ -184,6 +184,7 @@ class Value:
         )
 
         if element:
+            self.__enable_period_delta(element)
             self.__update_self(element)
             # self.__print(element)
             if self.element != element:
@@ -346,6 +347,13 @@ class Value:
             }
 
         return subValue
+
+    def __enable_period_delta(self, element: WSchema.Value) -> None:
+        """Check & ensure that the period & delta are set right."""
+        if element.period is None:
+            self.element.period = 0
+        if element.delta is None:
+            self.element.delta = 0
 
     def __update_self(self, element: WSchema.Value) -> None:
         new_elem = self.element.model_dump(exclude_none=True)
