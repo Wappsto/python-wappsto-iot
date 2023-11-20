@@ -197,6 +197,7 @@ class Value:
                 )
             self.__update_state()
         else:
+            self.__enable_period_delta(self.element)
             self.connection.post_value(
                 device_uuid=self.parent.uuid,
                 data=self.element
@@ -356,6 +357,30 @@ class Value:
         if element.delta is None:
             self.element.delta = 0
 
+        def _update_period_delta_value(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
+            if method not in WappstoMethod.PUT:
+                return
+
+            if obj.delta != self.element.delta:
+                self.element.delta = obj.delta
+
+            if obj.period == self.element.period:
+                return
+
+            self.element.period = obj.period
+
+            if self.__period_timer is None:
+                return
+
+            self.__period_timer.close()
+            self.__update_period()
+
+
+        self.connection.subscribe_value_event(
+            uuid=self.uuid,
+            callback=_update_period_delta_value
+        )
+
     def __update_self(self, element: WSchema.Value) -> None:
         new_elem = self.element.model_dump(exclude_none=True)
         old_elem = element.model_dump(exclude_none=True)
@@ -494,9 +519,16 @@ class Value:
         self.__period_timer = Period(
             period=period,
             function=callback,
-            args=copy_self,
+            args=(copy_self,),
         )
         self.__period_timer.start()
+
+    def __update_period(self) -> None:
+        self.__activate_period(
+            function=self.__period_timer.call_function,
+            args=self.__period_timer.call_args,
+            kwargs=self.__period_timer.call_kwargs,
+        )
 
     def __deactivate_period(self) -> None:
         self.__period_timer.stop()
@@ -748,17 +780,17 @@ class Value:
 
         def _cb(
             obj: WSchema.State, method: WappstoMethod,
-            force: bool = False, add_jitter: bool = False,
+            force: bool = True, add_jitter: bool = False,
             # trace: Optional[str] = None,
         ) -> None:
             try:
                 if method == WappstoMethod.GET:
-                    # copy_self = copy.copy(self)
-                    # copy_self.report = functools.partial(
-                    #     self.report,
-                    #     trace=force,
-                    # )
-                    callback(self)
+                    copy_self = copy.copy(self)
+                    copy_self.report = functools.partial(
+                        self.report,
+                        force=force,
+                    )
+                    callback(copy_self)
             except Exception:
                 self.log.exception("onRefresh callback error.")
                 raise
@@ -948,9 +980,6 @@ class Value:
         A Control value is typical only changed if a target wanted value,
         have changed, whether it is because of an on device user controller,
         or the target was outside a given range.
-
-        ERROR: https://github.com/pydantic/pydantic/issues/4852
-
         """
         self.log.info(f"Sending Control for: {self.control_state.meta.id}")
         the_timestamp = timestamp if timestamp is not None else datetime.utcnow()

@@ -58,7 +58,9 @@ class Period(PeriodClass):
     Period is disabled if set to: 0, None or float('inf')
     """
     period: datetime.timedelta
-    call_function: Callable[[], None]
+    call_function: Callable[..., Any]
+    call_args: Optional[Tuple[Any, ...]]
+    call_kwargs: Optional[Dict[str, Any]]
     current_timer: threading.Timer
 
     def __init__(
@@ -71,9 +73,9 @@ class Period(PeriodClass):
         """Initialize the period."""
         self.period = period
 
-        f_args: Tuple[Any, ...] = args if args is not None else tuple()
-        f_kwargs: Dict[str, Any] = kwargs if kwargs is not None else {}
-        self.call_function = lambda: function(*f_args, **f_kwargs)
+        self.call_args: Tuple[Any, ...] = args
+        self.call_kwargs: Dict[str, Any] = kwargs
+        self.call_function = function
 
     def time_to_next_period(self) -> float:
         """Return the seconds to next time period are triggered."""
@@ -93,7 +95,9 @@ class Period(PeriodClass):
 
         self.current_timer = threading.Timer(
             interval=self.time_to_next_period(),
-            function=repeat_logic
+            function=repeat_logic,
+            args=self.call_args,
+            kwargs=self.call_kwargs,
         )
         self.current_timer.start()
 
