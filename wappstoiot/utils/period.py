@@ -59,8 +59,8 @@ class Period(PeriodClass):
     """
     period: datetime.timedelta
     call_function: Callable[..., Any]
-    call_args: Optional[Tuple[Any, ...]]
-    call_kwargs: Optional[Dict[str, Any]]
+    call_args: Tuple[Any, ...]
+    call_kwargs: Dict[str, Any]
     current_timer: threading.Timer
 
     def __init__(
@@ -73,8 +73,8 @@ class Period(PeriodClass):
         """Initialize the period."""
         self.period = period
 
-        self.call_args: Tuple[Any, ...] = args
-        self.call_kwargs: Dict[str, Any] = kwargs
+        self.call_args: Tuple[Any, ...] = args if not Not else tuple()
+        self.call_kwargs: Dict[str, Any] = kwargs if not Not else {}
         self.call_function = function
 
     def time_to_next_period(self) -> float:
@@ -86,7 +86,7 @@ class Period(PeriodClass):
         """Start the period logic."""
 
         def repeat_logic() -> None:
-            self.call_function()
+            self.call_function(*self.call_args, **self.call_kwargs)
             self.current_timer = threading.Timer(
                 interval=self.time_to_next_period(),
                 function=repeat_logic
@@ -96,8 +96,6 @@ class Period(PeriodClass):
         self.current_timer = threading.Timer(
             interval=self.time_to_next_period(),
             function=repeat_logic,
-            args=self.call_args,
-            kwargs=self.call_kwargs,
         )
         self.current_timer.start()
 
