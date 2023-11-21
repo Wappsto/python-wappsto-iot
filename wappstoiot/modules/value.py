@@ -510,8 +510,8 @@ class Value:
             return
 
         period: timedelta = timedelta(seconds=period_float)
-        copy_self = copy.copy(self)
-        copy_self.report = functools.partial(
+        self_copy = copy.copy(self)
+        self_copy.report = functools.partial(
             self.report,
             force=True,
             add_jitter=True,
@@ -519,7 +519,7 @@ class Value:
         self.__period_timer = Period(
             period=period,
             function=callback,
-            args=(copy_self,),
+            args=(self_copy,),
         )
         self.__period_timer.start()
 
@@ -785,12 +785,12 @@ class Value:
         ) -> None:
             try:
                 if method == WappstoMethod.GET:
-                    copy_self = copy.copy(self)
-                    copy_self.report = functools.partial(
+                    self_copy = copy.copy(self)
+                    self_copy.report = functools.partial(
                         self.report,
                         force=force,
                     )
-                    callback(copy_self)
+                    callback(self_copy)
             except Exception:
                 self.log.exception("onRefresh callback error.")
                 raise
