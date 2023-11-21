@@ -21,7 +21,9 @@ class PeriodClass(ABC):
     """
 
     period: datetime.timedelta
-    call_function: Callable[[], None]
+    call_function: Callable[..., Any]
+    call_args: Tuple[Any, ...]
+    call_kwargs: Dict[str, Any]
 
     @abstractmethod
     def __init__(
@@ -73,8 +75,8 @@ class Period(PeriodClass):
         """Initialize the period."""
         self.period = period
 
-        self.call_args: Tuple[Any, ...] = args if not Not else tuple()
-        self.call_kwargs: Dict[str, Any] = kwargs if not Not else {}
+        self.call_args: Tuple[Any, ...] = args if not args else tuple()
+        self.call_kwargs: Dict[str, Any] = kwargs if not kwargs else {}
         self.call_function = function
 
     def time_to_next_period(self) -> float:
