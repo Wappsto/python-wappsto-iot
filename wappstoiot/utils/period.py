@@ -75,8 +75,8 @@ class Period(PeriodClass):
         """Initialize the period."""
         self.period = period
 
-        self.call_args: Tuple[Any, ...] = args if not None else tuple()
-        self.call_kwargs: Dict[str, Any] = kwargs if not None else {}
+        self.call_args: Tuple[Any, ...] = args if args is not None else tuple()
+        self.call_kwargs: Dict[str, Any] = kwargs if kwargs is not None else {}
         self.call_function = function
 
     def time_to_next_period(self) -> float:
