@@ -376,7 +376,7 @@ class IoTAPI(ServiceClass):
 
     def _no_reply_send(
         self,
-        data: Optional[Union[WappstoObject, LogValue]],
+        data: Optional[Union[WappstoObject, LogValue, str]],
         url: str,
         method: WappstoMethod,
     ) -> bool:
@@ -797,7 +797,7 @@ class IoTAPI(ServiceClass):
         ]
 
         try:
-            return self._no_reply_bulk_send(
+            return self._no_reply_send(
                 data="\n".join(data_list),
                 url="/log_zip",
                 method=WappstoMethod.POST

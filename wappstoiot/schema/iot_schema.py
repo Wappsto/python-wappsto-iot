@@ -78,6 +78,7 @@ class WappstoObjectType(str, Enum):
     DEVICE = "device"
     VALUE = "value"
     STATE = "state"
+    LOG = "log_zip"
 
 
 ObjectType2BaseModel: Dict[WappstoObjectType, Union[
@@ -87,6 +88,7 @@ ObjectType2BaseModel: Dict[WappstoObjectType, Union[
     WappstoObjectType.DEVICE: Device,
     WappstoObjectType.VALUE: ValueUnion,
     WappstoObjectType.STATE: Union[State, LogValue],
+    WappstoObjectType.LOG: str,
 }
 
 

@@ -889,6 +889,32 @@ class Value:
             if self.report_state.timestamp:
                 self.report_state.timestamp = self.report_state.timestamp.replace(tzinfo=None)
 
+    def sendLogReports(
+        self,
+        data: Union[LogValue, List[LogValue]],
+        add_jitter: bool = True,
+    ) -> None:
+        """
+        Send values as log data.
+
+        When log data are sent, it will not be shown on wappsto as reported,
+        but will still be available in historical data.
+        """
+        sorted_values: List[LogValue] = (
+            [data] if not isinstance(data, list) else
+            data
+        )
+
+        def exec_func() -> None:
+            self.connection.post_log_state(
+                uuid=self.children_name_mapping[WSchema.StateType.REPORT],
+                data=sorted_values,
+            )
+
+        if add_jitter:
+            return exec_with_jitter(exec_func)
+        return exec_func()
+
     def report(
         self,
         value: Union[int, float, str, LogValue, List[LogValue], None],
@@ -916,27 +942,13 @@ class Value:
                 return
 
             # TODO: Make sure the timestamps are set.
-            sorted_values = sorted(value, key=lambda r: r.timestamp)
+            sorted_values: List[LogValue] = sorted(
+                value, key=lambda r: r.timestamp
+            )
 
-            if self.value_type == ValueBaseType.NUMBER:
-                if not force and not self.delta_ok(new_value=float(sorted_values[-1].data)):
-                    self.log.warning(
-                        f"Delta - Dropping value update for \"{self.name}\"."
-                    )
-                    sorted_values.pop()
+            data = sorted_values.pop()
 
-            self._update_local_report(sorted_values[-1])
-
-            def exec_func() -> None:
-                self.connection.put_bulk_state(
-                    uuid=self.children_name_mapping[WSchema.StateType.REPORT],
-                    data=[
-                        LogValue(
-                            data=x.data,
-                            timestamp=x.timestamp
-                        ) for x in sorted_values
-                    ],
-                )
+            self.sendLogReports(data=data)
 
         else:
             if not isinstance(value, LogValue):
@@ -946,24 +958,23 @@ class Value:
                     timestamp=the_timestamp,
                 )
             else:
-                # TODO: Make sure the timestamp is set.
                 data: LogValue = value
 
-            if self.value_type == ValueBaseType.NUMBER:
-                if not force and not self.delta_ok(new_value=float(data.data)):
-                    self.log.warning(
-                        f"Delta - Dropping value update for \"{self.name}\"."
-                    )
-                    return
-
-            self._update_local_report(data)
-
-            # NOTE: Single Report
-            def exec_func() -> None:
-                self.connection.put_state(
-                    uuid=self.children_name_mapping[WSchema.StateType.REPORT],
-                    data=data,
+        if self.value_type == ValueBaseType.NUMBER:
+            if not force and not self.delta_ok(new_value=float(data.data)):
+                self.log.warning(
+                    f"Delta - Dropping value update for \"{self.name}\"."
                 )
+                return
+
+        self._update_local_report(data)
+
+        # NOTE: Single Report
+        def exec_func() -> None:
+            self.connection.put_state(
+                uuid=self.children_name_mapping[WSchema.StateType.REPORT],
+                data=data,
+            )
 
         if add_jitter:
             return exec_with_jitter(exec_func)
