@@ -789,11 +789,11 @@ class IoTAPI(ServiceClass):
     def post_log_state(self, uuid: UUID, data: List[LogValue]) -> bool:
         """Make bulk changes the given state."""
         data_list = ["state_id,timestamp,data"] + [
-            ",".join(
+            ",".join([
                 str(uuid),
                 timestamp_converter(values.timestamp),
                 str(values.data),
-            ) for values in data
+            ]) for values in data
         ]
 
         try:
