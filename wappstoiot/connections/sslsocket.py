@@ -302,7 +302,7 @@ class TlsSocket(Connection):
                 if self.connect():
                     self.log.warning("Reconnected...")
                     return True
-            except OSError as err:
+            except OSError:
                 self.log.exception('Reconnecting error.')
                 pass  # NOTE: Happens if it have forgotten the IP for the url.
             self.log.warning("Trying to reconnect in 5 seconds")

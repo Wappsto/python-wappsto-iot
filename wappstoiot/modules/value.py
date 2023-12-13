@@ -375,7 +375,6 @@ class Value:
             self.__period_timer.close()
             self.__update_period()
 
-
         self.connection.subscribe_value_event(
             uuid=self.uuid,
             callback=_update_period_delta_value
