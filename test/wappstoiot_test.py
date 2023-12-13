@@ -276,16 +276,16 @@ class TestNetwork(BaseNetwork):
             )
             wappstoiot.createNetwork(mock_network_server.network_name)
             server_utils.wait_until_or(
-                lambda: len(mock_network_server.data_in) >= 2,
-                2
+                lambda: len(mock_network_server.data_in) >= 3,
+                2,
             )
         finally:
             wappstoiot.close()
 
         # To ensure that the Ping thread have closed, so the next test do not fail.
         server_utils.wait_until_or(
-            lambda: len(mock_network_server.data_in) >= 3,
-            2
+            lambda: len(mock_network_server.data_in) >= 4,
+            2,
         )
 
         mock_network_server.fail_check()
