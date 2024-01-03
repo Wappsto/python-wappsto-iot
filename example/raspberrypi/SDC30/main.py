@@ -6,9 +6,10 @@ created a user on wappsto, and that it have been used to
 download a certificate for a IoT unit.
 AND that it is executed on a raspberry pi.
 
-Downloading of the certificate can be done with:
-'python3 -m wappstoiot --path config'
-where it will promt you to login with your wappsto account.
+Downloading of the certificate can be done with the
+'IoT Certificate Manager' wapp.
+Download the certificates with target: 'certificate files',
+then unpack and saved into the config-folder of you project.
 """
 import time
 
