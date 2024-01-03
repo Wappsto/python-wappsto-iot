@@ -381,6 +381,7 @@ class Value:
         )
 
     def __update_self(self, element: WSchema.Value) -> None:
+        self.element.meta.version = element.meta.version
         new_elem = self.element.model_dump(exclude_none=True)
         old_elem = element.model_dump(exclude_none=True)
 
@@ -510,7 +511,7 @@ class Value:
 
         period: timedelta = timedelta(seconds=period_float)
         self_copy = copy.copy(self)
-        self_copy.report = functools.partial(
+        self_copy.report = functools.partial(  # type: ignore[method-assign]
             self.report,
             force=True,
             add_jitter=True,
@@ -524,13 +525,14 @@ class Value:
 
     def __update_period(self) -> None:
         self.__activate_period(
-            function=self.__period_timer.call_function,
-            args=self.__period_timer.call_args,
-            kwargs=self.__period_timer.call_kwargs,
+            callback=self.__period_timer.call_function,
+            # args=self.__period_timer.call_args,
+            # kwargs=self.__period_timer.call_kwargs,
         )
 
     def __deactivate_period(self) -> None:
-        self.__period_timer.stop()
+        if self.__period_timer is not None:
+            self.__period_timer.stop()
 
     def delta_ok(self, new_value: Union[int, float]) -> bool:
         """Check if the the value are outside the required delta range."""

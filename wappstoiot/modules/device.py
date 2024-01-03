@@ -146,6 +146,7 @@ class Device:
         # NOTE: If there was a diff, post local one.
         self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
         self.element.meta = element.meta.model_copy(update=self.element.meta)
+        self.element.meta.version = element.meta.version
         # for nr, value in enumerate(self.element.value):
         #     self.cloud_id_mapping[nr] = value
 
@@ -358,7 +359,7 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
         """
         kwargs = locals()
@@ -403,7 +404,7 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
         """
         kwargs = locals()
@@ -448,7 +449,7 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
         """
         kwargs = locals()
@@ -493,7 +494,7 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
         """
         kwargs = locals()

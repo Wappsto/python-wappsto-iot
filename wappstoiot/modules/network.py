@@ -119,6 +119,7 @@ class Network(object):
         # NOTE: If there was a diff, post local one.
         self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
         self.element.meta = element.meta.model_copy(update=self.element.meta)
+        self.element.meta.version = element.meta.version
         # for nr, device in enumerate(self.element.device):
         #     self.cloud_id_mapping[nr] = device
 
