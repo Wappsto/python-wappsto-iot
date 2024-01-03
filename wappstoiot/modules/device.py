@@ -541,6 +541,9 @@ class Device:
         name, permission, min, max, step, encoding & unit have been set
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
+
+        It no ValueTemplate fits you need, take a look at:
+        createNumberValue, createStringValue, createBlobValue or createXmlValue
         """
         illegal_chars: str = name_check.illegal_characters(name)
 
@@ -569,7 +572,7 @@ class Device:
         return value_obj
 
     def __add_value(self, value: Value, name: str) -> None:
-        """Helper function for Create, to only localy create it."""
+        """Helper function for Create, to only locally create it."""
         self.children_uuid_mapping[value.uuid] = value
         self.children_name_mapping[name] = value.uuid
 
