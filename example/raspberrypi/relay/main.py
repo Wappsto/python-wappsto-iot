@@ -44,7 +44,7 @@ def main():
     )
 
     def relay_control(obj, new_value):
-        GPIO.output(relay_pin, new_value)
+        GPIO.output(relay_pin, int(new_value))
         value.report(GPIO.input(relay_pin))
 
     value.onControl(
