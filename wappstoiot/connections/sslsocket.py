@@ -43,7 +43,7 @@ class TlsSocket(Connection):
 
         self.address = address
         self.port = port
-        self.socket_timeout = 30_000
+        self.socket_timeout_ms = 30_000
         self.RECEIVE_SIZE = 2048
         self.killed = threading.Event()
         self.max_reconnect_retry_count = max_reconnect_retry_count
@@ -110,12 +110,12 @@ class TlsSocket(Connection):
 
         if hasattr(socket, "TCP_USER_TIMEOUT"):
             self.log.debug(
-                f"Setting TCP_USER_TIMEOUT to {self.socket_timeout}ms."
+                f"Setting TCP_USER_TIMEOUT to {self.socket_timeout_ms}ms."
             )
             self.raw_socket.setsockopt(
                 socket.IPPROTO_TCP,
                 socket.TCP_USER_TIMEOUT,
-                self.socket_timeout
+                self.socket_timeout_ms
             )
 
         self.socket = self._ssl_wrap()
@@ -266,6 +266,7 @@ class TlsSocket(Connection):
             return True
 
         except Exception as e:
+            self.observer.post(StatusID.DISCONNETCED, None)
             self.log.error("Failed to connect: {}".format(e))
             raise
 
@@ -316,6 +317,7 @@ class TlsSocket(Connection):
         """Disconnect from the server."""
         if self.socket:
             self.socket.close()
+        self.observer.post(StatusID.DISCONNETCED, None)
 
     def close(self) -> None:
         """
