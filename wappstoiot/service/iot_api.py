@@ -347,7 +347,7 @@ class IoTAPI(ServiceClass):
 
     def _no_reply_bulk_send(
         self,
-        data: List[Any],
+        data: Union[List[Union[WappstoObject, LogValue]], str],
         url: str,
         method: WappstoMethod,
     ) -> bool:
@@ -785,15 +785,16 @@ class IoTAPI(ServiceClass):
                 'If Offline storage is enabled it will be send later.'
             )
             self.log.exception(msg)
+        return False
 
     def post_log_state(self, uuid: UUID, data: List[LogValue]) -> bool:
         """Make bulk changes the given state."""
         data_list = ["state_id,timestamp,data"] + [
-            ",".join(
+            ",".join([
                 str(uuid),
                 timestamp_converter(values.timestamp),
                 str(values.data),
-            ) for values in data
+            ]) for values in data
         ]
 
         try:
@@ -808,6 +809,7 @@ class IoTAPI(ServiceClass):
                 'If Offline storage is enabled it will be send later.'
             )
             self.log.exception(msg)
+        return False
 
     def put_state(self, uuid: UUID, data: Union[State, LogValue]) -> bool:
         """Make changes to a state."""
