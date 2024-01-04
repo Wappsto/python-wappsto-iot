@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 
 class ChangeType(str, Enum):
     """List of the different value that can be Changed."""
+
     value = "value"
     name = "name"
     manufacturer = "manufacturer"
@@ -362,7 +363,7 @@ class Device:
         This require you to setup manually, what `createValue`
         with `value_template` setup for you.
 
-        args:
+        Args:
             name: The displayed name on Wappsto.
             permission: Whether or not wappsto can read and/or write to the client.
             type: The displayed value on Wappsto.
@@ -432,7 +433,7 @@ class Device:
         This require you to setup manually, what `createValue`
         with `value_template` setup for you.
 
-        args:
+        Args:
             name: The displayed name on Wappsto.
             permission: Whether or not wappsto can read and/or write to the client.
             type: The displayed string on Wappsto.
@@ -489,7 +490,8 @@ class Device:
 
         This require you to setup manually, what `createValue`
         with `value_template` setup for you.
-        args:
+
+        Args:
             name: The displayed name on Wappsto.
             permission: Whether or not wappsto can read and/or write to the client.
             type: The displayed string on Wappsto.
@@ -547,7 +549,7 @@ class Device:
         This require you to setup manually, what `createValue`
         with `value_template` setup for you.
 
-        args:
+        Args:
             name: The displayed name on Wappsto.
             permission: Whether or not wappsto can read and/or write to the client.
             type: The displayed string on Wappsto.
@@ -607,7 +609,7 @@ class Device:
         It no ValueTemplate fits you need, take a look at:
         createNumberValue, createStringValue, createBlobValue or createXmlValue
 
-        args:
+        Args:
             name: The displayed name on Wappsto.
             permission: Whether or not wappsto can read and/or write to the client.
             value_template: Contain pre-make config parameters. That is ensured
@@ -649,7 +651,7 @@ class Device:
         return value_obj
 
     def __add_value(self, value: Value, name: str) -> None:
-        """Helper function for Create, to only locally create it."""
+        """Help function for Create, to only locally create it."""
         self.children_uuid_mapping[value.uuid] = value
         self.children_name_mapping[name] = value.uuid
 

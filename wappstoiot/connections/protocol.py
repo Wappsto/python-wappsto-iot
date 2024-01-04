@@ -13,11 +13,13 @@ from typing import Optional
 
 class MaxRetry(ConnectionError):
     """Custom Exception to signal that max Retries have been reach."""
+
     pass
 
 
 class StatusID(str, Enum):
     """The difference connection Statuses."""
+
     CONNECTING = "Connecting"
     CONNECTED = "Connected"
     DISCONNECTING = "Disconnecting"

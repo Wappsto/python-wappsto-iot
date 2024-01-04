@@ -161,7 +161,7 @@ class IoTAPI(ServiceClass):
         self.workers.submit(self._receive_handler)
 
     def close(self) -> None:
-        """Closes the IoTApi down."""
+        """Close the IoTApi down."""
         self.killed.set()
         self.log.debug("Closing Connection.")
         self.connection.close()
@@ -542,7 +542,7 @@ class IoTAPI(ServiceClass):
     # #########################################################################
 
     def ping(self) -> None:
-        """Sends a ping to check the connection."""
+        """Send a ping to check the connection."""
         return self._no_reply_send(
             data=None,
             url="/network",

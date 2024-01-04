@@ -286,9 +286,9 @@ class Network(object):
 
     def delete(self) -> None:
         """
-        Normally it is used to unclaim a Network & delete all children.
+        Prompt a factory reset.
 
-        If a network delete itself, it will prompt a factory reset.
+        Normally it is used to unclaim a Network & delete all children.
         This means that manufacturer and owner will be reset (or not),
         in relation of the rules set up in the certificates.
         """
@@ -343,7 +343,7 @@ class Network(object):
         return device_obj
 
     def __add_device(self, device: Device, name: str) -> None:
-        """Helper function for Create, to only localy create it."""
+        """Help function for Create, to only localy create it."""
         self.children_uuid_mapping[device.uuid] = device
         self.children_name_mapping[name] = device.uuid
 

@@ -23,6 +23,7 @@ from ..schema.iot_schema import WappstoMethod
 
 class StatusID(str, Enum):
     """The different states the service class can be in."""
+
     IDLE = "idle"
     # BATCHING = "batching"
     SENDING = "sending"
@@ -35,7 +36,7 @@ class ServiceClass(ABC):
     """Should handle the conversion of the data from the socket and UI."""
 
     def close(self) -> None:
-        """Closes the Service class down."""
+        """Close the Service class down."""
         pass
     # #########################################################################
     #                               Helper API
@@ -46,7 +47,7 @@ class ServiceClass(ABC):
         pass
 
     def ping(self) -> None:
-        """Should send a ping to check the connection."""
+        """Send a ping to check the connection."""
         pass
 
     # #########################################################################

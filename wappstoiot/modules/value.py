@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 class Delta(str, Enum):
     """Different Delta options."""
+
     ONLY_UPDATE_IF = ""
     EXTRA_UPDATES = ""
 
@@ -221,7 +222,7 @@ class Value:
 
     def getControlData(self) -> Optional[Union[float, str]]:
         """
-        Returns the last Control value.
+        Return the last Control value.
 
         The returned value will be the last Control value,
         unless there isn't one, then it will return None.
@@ -234,7 +235,7 @@ class Value:
 
     def getControlTimestamp(self) -> Optional[datetime]:
         """
-        Returns the timestamp for when last Control value was updated.
+        Return the timestamp for when last Control value was updated.
 
         The returned timestamp will be the last time Control value was updated,
         unless there isn't one, then it will return None.
@@ -245,7 +246,7 @@ class Value:
 
     def getReportData(self) -> Optional[Union[float, str]]:
         """
-        Returns the last Report value.
+        Return the last Report value.
 
         The returned value will be the last Report value.
         unless there isn't one, then it will return None.
@@ -258,7 +259,7 @@ class Value:
 
     def getReportTimestamp(self) -> Optional[datetime]:
         """
-        Returns the timestamp for when last Report value was updated.
+        Return the timestamp for when last Report value was updated.
 
         The returned timestamp will be the last time Control value was updated,
         unless there isn't one, then it will return None.
