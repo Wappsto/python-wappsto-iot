@@ -42,6 +42,7 @@ class OfflineStorageFiles(OfflineStorage):
     In [7]: kk = read()
     Time used per run: 173_536.595006ns
     """
+
     def __init__(self, location: Union[Path, str]):
         """."""
         self.log = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ class OfflineStorageFiles(OfflineStorage):
 
     @contextmanager
     def auto_save(self, data: str) -> Iterator[None]:
-        """Used when replying on a trace."""
+        """Ensure the data is save."""
         # self.send_pending(name=name)  # Are send on class creation.
         try:
             yield

@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 class IoTEvent(str, Enum):
     """Different IoT Event."""
+
     CREATE = "create"  # POST
     CHANGE = "change"  # PUT
     REQUEST = "request"  # GET
@@ -21,6 +22,7 @@ class IoTEvent(str, Enum):
 
 class ValueBaseType(str, Enum):
     """Internal use only!."""
+
     STRING = "string"
     NUMBER = "number"
     BLOB = "blob"
@@ -29,6 +31,7 @@ class ValueBaseType(str, Enum):
 
 class ValueSettinsSchema(BaseModel):
     """The Structure for which all templates should follow."""
+
     value_type: ValueBaseType
     type: str
     mapping: Optional[Dict[str, str]] = None  # Number only
@@ -52,6 +55,7 @@ class ValueTemplate(str, Enum):
     value parameters set, which include BaseType, name,
     permission, range, step and the unit.
     """
+
     __version__ = "0.0.5"
 
     ADDRESS_NAME = "ADDRESS_NAME"

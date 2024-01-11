@@ -439,6 +439,11 @@ class BaseValue(BaseModel):
 
     model_config: ConfigDict = ConfigDict(extra='forbid')  # type: ignore
 
+    @field_serializer('period', 'delta')
+    def serialize_timestamp(self, value: Optional[Union[int, float]]) -> Optional[str]:
+        """Convert period to Wappsto datetime standard."""
+        return str(value) if value is not None else None
+
 
 class Number(BaseModel):
     """Substructure for the Number value."""

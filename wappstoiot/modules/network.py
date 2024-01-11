@@ -119,6 +119,7 @@ class Network(object):
         # NOTE: If there was a diff, post local one.
         self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
         self.element.meta = element.meta.model_copy(update=self.element.meta)
+        self.element.meta.version = element.meta.version
         # for nr, device in enumerate(self.element.device):
         #     self.cloud_id_mapping[nr] = device
 
@@ -285,9 +286,9 @@ class Network(object):
 
     def delete(self) -> None:
         """
-        Normally it is used to unclaim a Network & delete all children.
+        Prompt a factory reset.
 
-        If a network delete itself, it will prompt a factory reset.
+        Normally it is used to unclaim a Network & delete all children.
         This means that manufacturer and owner will be reset (or not),
         in relation of the rules set up in the certificates.
         """
@@ -342,11 +343,11 @@ class Network(object):
         return device_obj
 
     def __add_device(self, device: Device, name: str) -> None:
-        """Helper function for Create, to only localy create it."""
+        """Help function for Create, to only locally create it."""
         self.children_uuid_mapping[device.uuid] = device
         self.children_name_mapping[name] = device.uuid
 
     def close(self) -> None:
-        """Stop all the internal  and children logic."""
+        """Stop all the internal and children logic."""
         for child in self.children_uuid_mapping.values():
             child.close()

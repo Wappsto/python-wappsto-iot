@@ -161,7 +161,7 @@ class IoTAPI(ServiceClass):
         self.workers.submit(self._receive_handler)
 
     def close(self) -> None:
-        """Closes the IoTApi down."""
+        """Close the IoTApi down."""
         self.killed.set()
         self.log.debug("Closing Connection.")
         self.connection.close()
@@ -347,7 +347,7 @@ class IoTAPI(ServiceClass):
 
     def _no_reply_bulk_send(
         self,
-        data: List[Any],
+        data: Union[List[Union[WappstoObject, LogValue]], str],
         url: str,
         method: WappstoMethod,
     ) -> bool:
@@ -542,7 +542,7 @@ class IoTAPI(ServiceClass):
     # #########################################################################
 
     def ping(self) -> None:
-        """Sends a ping to check the connection."""
+        """Send a ping to check the connection."""
         return self._no_reply_send(
             data=None,
             url="/network",
@@ -785,6 +785,7 @@ class IoTAPI(ServiceClass):
                 'If Offline storage is enabled it will be send later.'
             )
             self.log.exception(msg)
+        return False
 
     def post_log_state(self, uuid: UUID, data: List[LogValue]) -> bool:
         """Make bulk changes the given state."""
@@ -808,6 +809,7 @@ class IoTAPI(ServiceClass):
                 'If Offline storage is enabled it will be send later.'
             )
             self.log.exception(msg)
+        return False
 
     def put_state(self, uuid: UUID, data: Union[State, LogValue]) -> bool:
         """Make changes to a state."""

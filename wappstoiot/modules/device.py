@@ -41,6 +41,7 @@ if TYPE_CHECKING:
 
 class ChangeType(str, Enum):
     """List of the different value that can be Changed."""
+
     value = "value"
     name = "name"
     manufacturer = "manufacturer"
@@ -146,6 +147,7 @@ class Device:
         # NOTE: If there was a diff, post local one.
         self.element = element.model_copy(update=self.element.model_dump(exclude_none=True))
         self.element.meta = element.meta.model_copy(update=self.element.meta)
+        self.element.meta.version = element.meta.version
         # for nr, value in enumerate(self.element.value):
         #     self.cloud_id_mapping[nr] = value
 
@@ -358,8 +360,33 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
+
+        Args:
+            name: The displayed name on Wappsto.
+            permission: Whether or not wappsto can read and/or write to the client.
+            type: The displayed value on Wappsto.
+            min: The displayed min on Wappsto.
+            max: The displayed max on Wappsto.
+            step: The displayed step on Wappsto.
+            unit: The displayed unit on Wappsto. Ex: KW, m/s, hPa or m²
+            description: The description of the value.
+            si_conversion: Conversion algorithm from unit to a SI unit.
+                Example for Wh to J: [J] = 3600 * [Wh]
+            mapping: How the value should be displayed on Wappsto.
+                Example: The mapping: {'0': 'false', '1': 'true'}, will on wappsto
+                    show 0 as false & 1 as true. But the value will still be 0 or 1.
+            meaningful_zero: Whether or not a zero is truly nothing.
+            ordered_mapping: Whether or not the order in the mapping matter.
+            period: The time between forced update. the trigger is every
+                multiplex from 00:00 o' clock.
+                (Uses the callback set in onRefresh to force a update.)
+                (Can be overwritten by Wappsto)
+            delta: The change that need to happen before the value are updated
+                and sent to wappsto.
+                (Period & refresh request overwrites this)
+                (Can be overwritten by Wappsto)
         """
         kwargs = locals()
         kwargs.pop('self')
@@ -403,8 +430,21 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
+
+        Args:
+            name: The displayed name on Wappsto.
+            permission: Whether or not wappsto can read and/or write to the client.
+            type: The displayed string on Wappsto.
+            max: The displayed max size on Wappsto.
+            encoding: the encoding type of the data.
+                Used to display the data correctly on wappsto.
+            description: The description of the value.
+            period: The time between forced update. the trigger is every
+                multiplex from 00:00 o' clock.
+                (Uses the callback set in onRefresh to force a update.)
+                (Can be overwritten by Wappsto)
         """
         kwargs = locals()
         kwargs.pop('self')
@@ -448,8 +488,21 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
+
+        Args:
+            name: The displayed name on Wappsto.
+            permission: Whether or not wappsto can read and/or write to the client.
+            type: The displayed string on Wappsto.
+            max: The displayed max size on Wappsto.
+            encoding: the encoding type of the data.
+                Used to display the data correctly on wappsto.
+            description: The description of the value.
+            period: The time between forced update. the trigger is every
+                multiplex from 00:00 o' clock.
+                (Uses the callback set in onRefresh to force a update.)
+                (Can be overwritten by Wappsto)
         """
         kwargs = locals()
         kwargs.pop('self')
@@ -493,8 +546,20 @@ class Device:
 
         A Wappsto Value is where the changing data can be found & are handled.
 
-        This require you to setup manually, that `createValue`
+        This require you to setup manually, what `createValue`
         with `value_template` setup for you.
+
+        Args:
+            name: The displayed name on Wappsto.
+            permission: Whether or not wappsto can read and/or write to the client.
+            type: The displayed string on Wappsto.
+            xsd: The XMLs Schema definition.
+            namespace: The XMLNamespace for the data.
+            description: The description of the value.
+            period: The time between forced update. the trigger is every
+                multiplex from 00:00 o' clock.
+                (Uses the callback set in onRefresh to force a update.)
+                (Can be overwritten by Wappsto)
         """
         kwargs = locals()
         kwargs.pop('self')
@@ -540,6 +605,24 @@ class Device:
         name, permission, min, max, step, encoding & unit have been set
         for you, to be the right settings for the given type. But you can
         still change it, if you choose sow.
+
+        It no ValueTemplate fits you need, take a look at:
+        createNumberValue, createStringValue, createBlobValue or createXmlValue
+
+        Args:
+            name: The displayed name on Wappsto.
+            permission: Whether or not wappsto can read and/or write to the client.
+            value_template: Contain pre-make config parameters. That is ensured
+                to work well with Wappsto. Want something else?
+                Use createNumberValue, createStringValue or createBlobValue.
+            description: The description of the value.
+            period: The time between forced update. the trigger is every
+                multiplex from 00:00 o' clock. (Can be overwritten by Wappsto)
+                (Uses the callback set in onRefresh to force a update.)
+            delta: The change that need to happen before the value are updated
+                and sent to wappsto.
+                (Period & refresh request overwrites this)
+                (Can be overwritten by Wappsto)
         """
         illegal_chars: str = name_check.illegal_characters(name)
 
@@ -568,7 +651,7 @@ class Device:
         return value_obj
 
     def __add_value(self, value: Value, name: str) -> None:
-        """Helper function for Create, to only localy create it."""
+        """Help function for Create, to only locally create it."""
         self.children_uuid_mapping[value.uuid] = value
         self.children_name_mapping[name] = value.uuid
 

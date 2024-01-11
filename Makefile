@@ -43,7 +43,7 @@ build: clean-pyc clean-build
 
 publish: build test
 	@echo "Please make sure that you have set 'TWINE_PASSWORD'."
-	${PY_ENV}/bin/python3 -m twine upload -u seluxit --skip-existing dist/*
+	${PY_ENV}/bin/python3 -m twine upload -u __token__ --skip-existing dist/*
 
 install:
 	pip3 install .

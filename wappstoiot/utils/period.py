@@ -59,6 +59,7 @@ class Period(PeriodClass):
     The Period are always relative to UTC 00:00.
     Period is disabled if set to: 0, None or float('inf')
     """
+
     period: datetime.timedelta
     call_function: Callable[..., Any]
     call_args: Tuple[Any, ...]

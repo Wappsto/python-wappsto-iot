@@ -32,7 +32,7 @@ from ..utils.period import Period
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    # NOTE: To avoid ciclic import
+    # NOTE: To avoid circler import
     from .device import Device
 
 # #############################################################################
@@ -48,6 +48,7 @@ if TYPE_CHECKING:
 
 class Delta(str, Enum):
     """Different Delta options."""
+
     ONLY_UPDATE_IF = ""
     EXTRA_UPDATES = ""
 
@@ -221,7 +222,7 @@ class Value:
 
     def getControlData(self) -> Optional[Union[float, str]]:
         """
-        Returns the last Control value.
+        Return the last Control value.
 
         The returned value will be the last Control value,
         unless there isn't one, then it will return None.
@@ -234,7 +235,7 @@ class Value:
 
     def getControlTimestamp(self) -> Optional[datetime]:
         """
-        Returns the timestamp for when last Control value was updated.
+        Return the timestamp for when last Control value was updated.
 
         The returned timestamp will be the last time Control value was updated,
         unless there isn't one, then it will return None.
@@ -245,7 +246,7 @@ class Value:
 
     def getReportData(self) -> Optional[Union[float, str]]:
         """
-        Returns the last Report value.
+        Return the last Report value.
 
         The returned value will be the last Report value.
         unless there isn't one, then it will return None.
@@ -258,7 +259,7 @@ class Value:
 
     def getReportTimestamp(self) -> Optional[datetime]:
         """
-        Returns the timestamp for when last Report value was updated.
+        Return the timestamp for when last Report value was updated.
 
         The returned timestamp will be the last time Control value was updated,
         unless there isn't one, then it will return None.
@@ -375,13 +376,13 @@ class Value:
             self.__period_timer.close()
             self.__update_period()
 
-
         self.connection.subscribe_value_event(
             uuid=self.uuid,
             callback=_update_period_delta_value
         )
 
     def __update_self(self, element: WSchema.Value) -> None:
+        self.element.meta.version = element.meta.version
         new_elem = self.element.model_dump(exclude_none=True)
         old_elem = element.model_dump(exclude_none=True)
 
@@ -511,7 +512,7 @@ class Value:
 
         period: timedelta = timedelta(seconds=period_float)
         self_copy = copy.copy(self)
-        self_copy.report = functools.partial(
+        self_copy.report = functools.partial(  # type: ignore[method-assign]
             self.report,
             force=True,
             add_jitter=True,
@@ -525,13 +526,14 @@ class Value:
 
     def __update_period(self) -> None:
         self.__activate_period(
-            function=self.__period_timer.call_function,
-            args=self.__period_timer.call_args,
-            kwargs=self.__period_timer.call_kwargs,
+            callback=self.__period_timer.call_function,
+            # args=self.__period_timer.call_args,
+            # kwargs=self.__period_timer.call_kwargs,
         )
 
     def __deactivate_period(self) -> None:
-        self.__period_timer.stop()
+        if self.__period_timer is not None:
+            self.__period_timer.stop()
 
     def delta_ok(self, new_value: Union[int, float]) -> bool:
         """Check if the the value are outside the required delta range."""
@@ -942,13 +944,22 @@ class Value:
                 return
 
             # TODO: Make sure the timestamps are set.
-            sorted_values: List[LogValue] = sorted(
-                value, key=lambda r: r.timestamp
-            )
+            sorted_values = sorted(value, key=lambda r: r.timestamp)
 
-            data = sorted_values.pop()
+            if self.value_type == ValueBaseType.NUMBER:
+                new_value: float = (
+                    float(sorted_values[-1].data)
+                    if sorted_values[-1].data != 'NA'
+                    else float('nan')
+                )
+                if not force and not self.delta_ok(new_value=new_value):
+                    self.log.warning(
+                        f"Delta - Dropping value update for \"{self.name}\"."
+                    )
+                    data = sorted_values.pop()
+            # TODO: FIX me!
 
-            self.sendLogReports(data=data)
+            self.sendLogReports(data=sorted_values)
 
         else:
             if not isinstance(value, LogValue):
@@ -960,12 +971,17 @@ class Value:
             else:
                 data: LogValue = value
 
-        if self.value_type == ValueBaseType.NUMBER:
-            if not force and not self.delta_ok(new_value=float(data.data)):
-                self.log.warning(
-                    f"Delta - Dropping value update for \"{self.name}\"."
+            if self.value_type == ValueBaseType.NUMBER:
+                new_value: float = (
+                    float(data.data)
+                    if data.data != 'NA'
+                    else float('nan')
                 )
-                return
+                if not force and not self.delta_ok(new_value=new_value):
+                    self.log.warning(
+                        f"Delta - Dropping value update for \"{self.name}\"."
+                    )
+                    return
 
         self._update_local_report(data)
 

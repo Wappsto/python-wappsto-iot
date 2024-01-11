@@ -95,8 +95,6 @@ def onStatusChange(
 ) -> None:
     """
     Configure an action when the Status have changed.
-
-    def callback(StatusID: StatusID, newStatus: Any):
     """
     observer.subscribe(
         event_name=StatusID,
@@ -148,6 +146,14 @@ def config(
     This function will also connect to the WappstoIoT API on call.
     In the cases that this function is not called, the connection will be
     make when an action is make that requests the connection.
+
+    Args:
+        config_folder: The folder where it should find the certificate files.
+        fast_send: whether or not it should wait for the sent message to be parsed.
+        ping_pong_period_sec: The period for a ping package to be sent.
+        offline_storage: If it should store value that failed in been sent.
+        rpc_timeout_sec: The timeout for a sent RPC package.
+        max_reconnect_retry_count: How many times it should try reconnect before throw an exception.
     """
     global __config_folder
     global __connection_closed
