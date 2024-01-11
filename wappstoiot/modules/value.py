@@ -32,7 +32,7 @@ from ..utils.period import Period
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    # NOTE: To avoid ciclic import
+    # NOTE: To avoid circler import
     from .device import Device
 
 # #############################################################################

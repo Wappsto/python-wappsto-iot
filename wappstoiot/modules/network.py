@@ -343,11 +343,11 @@ class Network(object):
         return device_obj
 
     def __add_device(self, device: Device, name: str) -> None:
-        """Help function for Create, to only localy create it."""
+        """Help function for Create, to only locally create it."""
         self.children_uuid_mapping[device.uuid] = device
         self.children_name_mapping[name] = device.uuid
 
     def close(self) -> None:
-        """Stop all the internal  and children logic."""
+        """Stop all the internal and children logic."""
         for child in self.children_uuid_mapping.values():
             child.close()
