@@ -642,6 +642,7 @@ class Device:
             name=name,
             value_uuid=value_uuid,
             permission=permission,
+            description=description,
             period=period,
             delta=delta,
             **valueSettings[value_template].model_dump()
