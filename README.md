@@ -66,7 +66,7 @@ The following explains the example code found in [echo.py](./example/echo.py).
 
 ```python
 wappstoiot.config(
-    config_Folder="echo"
+    config_folder="echo"
 )
 ```
 The `config` function is setting up the folder for where Wappsto IoT are looking for the `ca.crt`, `client.key` and a `client.crt` files, which is used to connect to Wappsto.
