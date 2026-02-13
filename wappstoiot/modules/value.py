@@ -173,8 +173,8 @@ class Value:
         self.element = self.schema(
             name=name,
             description=description,
-            period=period if period else 0,
-            delta=delta if delta else 0.0,
+            period=period if period else "0",
+            delta=delta if delta else "0.0",
             type=type,
             permission=permission,
             **subValue,
@@ -354,21 +354,21 @@ class Value:
     def __enable_period_delta(self, element: WSchema.Value) -> None:
         """Check & ensure that the period & delta are set right."""
         if element.period is None:
-            self.element.period = 0
+            self.element.period = "0"
         if element.delta is None:
-            self.element.delta = 0
+            self.element.delta = "0"
 
         def _update_period_delta_value(obj: WSchema.ValueUnion, method: WappstoMethod) -> None:
             if method not in WappstoMethod.PUT:
                 return
 
             if obj.delta != self.element.delta:
-                self.element.delta = obj.delta
+                self.element.delta = str(obj.delta)
 
             if obj.period == self.element.period:
                 return
 
-            self.element.period = obj.period
+            self.element.period = str(obj.period)
 
             if self.__period_timer is None:
                 return
